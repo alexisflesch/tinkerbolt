@@ -13,6 +13,7 @@ import type { ProgressRepository } from '../application/progression/progress-rep
 import { embeddedLevels } from '../content/embedded-levels';
 import type * as EmbeddedLevels from '../content/embedded-levels';
 import { levelDocumentSchema } from '../domain/level-document';
+import tuto3 from '../content/levels/tuto-3.json';
 import type {
   ReceivedLevel,
   ReceivedLevelRepository,
@@ -2592,6 +2593,51 @@ describe('coque TinkerBolt', () => {
     expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
     openCatalogue();
     expect(screen.getByRole('button', { name: 'Fil de commande, quantité : 1' })).toBeEnabled();
+  });
+
+  it('ne réutilise pas pour la masse l’identifiant que la solution donne au ventilateur (tuto-3)', async () => {
+    const level = levelDocumentSchema.parse(tuto3);
+    window.history.replaceState(null, '', `/shared${await encodeShareFragment(level)}`);
+    render(<App />);
+    expect(await screen.findByText('Partage · Un peu de vent')).toBeVisible();
+    const board = screen.getByRole('region', { name: 'Plateau de jeu' });
+    const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
+    const openCatalogue = (): void => {
+      const toggle = screen.queryByRole('button', { name: 'Ouvrir le catalogue' });
+      if (toggle !== null) fireEvent.click(toggle);
+    };
+    const hoverWorldPoint = (x: number, y: number): void => {
+      const rawOrigin = canvas.getAttribute('data-camera-origin') ?? '0,0';
+      const [originX = 0, originY = 0] = rawOrigin.split(',').map(Number);
+      const zoom = Number(canvas.getAttribute('data-camera-zoom'));
+      const bounds = canvas.getBoundingClientRect();
+      firePointerEvent(board, 'pointermove', {
+        pointerId: 1,
+        pointerType: 'mouse',
+        clientX: bounds.left + (x - originX) * zoom,
+        clientY: bounds.top + (y - originY) * zoom,
+      });
+    };
+
+    openCatalogue();
+    fireEvent.click(screen.getByRole('button', { name: 'Ventilateur, quantité : 1' }));
+    tapWorldPoint(8, 2);
+
+    openCatalogue();
+    fireEvent.click(screen.getByRole('button', { name: 'Fil de commande, quantité : 1' }));
+    tapWorldPoint(1.2, 1.9);
+    tapWorldPoint(8, 2);
+    expect(canvas).toHaveAttribute('data-wires', 'placement-2>placement-1');
+
+    openCatalogue();
+    fireEvent.click(screen.getByRole('button', { name: 'Masse, quantité : 1' }));
+    hoverWorldPoint(4, 2);
+    expect(canvas).toHaveAttribute('data-placement-ghost', 'valid');
+
+    tapWorldPoint(4, 2);
+    expect(screen.queryByText('Cette action est indisponible.')).toBeNull();
+    openCatalogue();
+    expect(screen.getByRole('button', { name: 'Masse, quantité : 0' })).toBeDisabled();
   });
 
   it('enregistre comme niveau reçu le niveau d’un lien valide, hors progression, avant de le jouer (M8)', async () => {

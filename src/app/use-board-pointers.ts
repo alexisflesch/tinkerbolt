@@ -72,10 +72,16 @@ const placementCommand = (
           transform,
         });
 
-/** Ids already taken in the document: a reopened draft may hold `placement-1` already. */
+/**
+ * Ids already taken in the document: a reopened draft may hold `placement-1`
+ * already. A reference solution names its poses by id (`placementId`, for its
+ * wires): a placement taking one would stand in for that pose and invalidate
+ * the document.
+ */
 const isIdentifierUsed = (document: LevelDocument, id: string): boolean =>
   document.objects.some((placement) => placement.id === id) ||
-  document.inventory.some((entry) => entry.id === id);
+  document.inventory.some((entry) => entry.id === id) ||
+  (document.solution?.placements ?? []).some((pose) => pose.placementId === id);
 
 const unavailablePositionMessage = 'Placement refusé : la position tactile est indisponible.';
 const unavailableViewportMessage = 'Placement refusé : le cadrage du plateau est indisponible.';
