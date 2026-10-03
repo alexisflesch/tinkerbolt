@@ -21,6 +21,9 @@ données locales, reprise automatique de la construction avant simulation.
 Ces décisions ne sont pas encore implémentées : le stockage livré reste
 `localStorage`, et la construction de joueur n’est pas persistée.
 Le contrat C2 est proposé dans l’[ADR 0017](decisions/0017-player-construction-and-async-storage.md).
+Les [maquettes C4/C4a](maquettes/complements-desktop/c4-c4a.html) et leurs captures
+aux deux formats dans `tmp/c4/captures/` sont préparées, inspectées et en attente
+de validation ; aucun de ces nouveaux contrôles n’est implémenté dans l’application.
 Les contrats C2, maquettes et familles restent à valider dans leurs tâches.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Aucun changement du todo auteur, du contenu ou des assets.

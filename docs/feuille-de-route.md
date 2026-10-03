@@ -17,7 +17,8 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 **C0 et C1 terminés, gate globale verte.** C1 est corrigé dans le commit
 `6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
 C2 : [ADR 0017 proposée](decisions/0017-player-construction-and-async-storage.md),
-trois arbitrages soumis à l’auteur. C5 est implémenté
+trois arbitrages soumis à l’auteur. Les maquettes C4/C4a sont préparées,
+captures desktop inspectées, validation attendue. C5 est implémenté
 et vérifié (1206 tests Vitest, 89 E2E), validation visuelle attendue aux deux
 formats desktop. Les contrats de reprise ne sont pas encore acceptés ;
 l’amendement accepté des ADR 0011/0015 fixe seulement les
@@ -489,6 +490,28 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 - Format Markdown, neuf liens locaux et diff vérifiés. C2 reste partiel :
   **C2a et C3 attendent l’acceptation du contrat**. L’exception au codec normal
   et la provenance persistable sont documentées avant toute implémentation.
+
+### C4 / C4a — Maquettes desktop — proposées, validation visuelle attendue
+
+- Sol 6.1 `medium` a préparé la [maquette interactive](maquettes/complements-desktop/c4-c4a.html)
+  et son CSS : sélection après pose, menu de taille en résolution, propriétés
+  en création et propriétés d’un objet verrouillé. Aucun code de l’application.
+- Icône proposée ↔ près de la rotation, cible de 44 px ; tailles nommées et
+  proportionnelles. En résolution, proposition d’échange avec le stock : taille
+  courante conservée, alternative absente désactivée avec explication. Le panneau
+  droit est temporaire, sans voile ; pose ou glissement ne l’ouvre pas.
+- Premier contrôle visuel : menu débordant à 1280 × 720 et fermeture peu
+  contrastée. Agent corrigé : menu borné au plateau, défilement de secours,
+  fermeture blanche sur bleu. Nouvelles captures et contrôle navigateur des
+  ressources locaux sans erreur, format HTML/CSS et syntaxe JS vérifiés.
+- Police des captures : le Chromium de recette refuse le chargement CSS de
+  Nunito au premier écran, comme dans V7. Captures reprises avec les mêmes
+  octets locaux chargés par `FontFace` dans le script de recette ; maquette
+  inchangée. Les textes sont visibles dans les huit captures finales.
+- Huit captures dans `tmp/c4/captures/`, aux formats 1440 × 900 et 1280 × 720,
+  inspectées par l’orchestrateur. **Validation de l’auteur attendue avant C4/C4a**.
+  Le contrat normatif de séparation sélection/ouverture doit aussi être amendé
+  avant le code ; aucun geste téléphone nouveau n’est livré.
 
 ### C5 — Synchroniser résultat et modale — implémenté, validation visuelle attendue
 
