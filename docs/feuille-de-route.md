@@ -20,7 +20,8 @@ C2 : [ADR 0017 proposée](decisions/0017-player-construction-and-async-storage.m
 trois arbitrages soumis à l’auteur. Les maquettes C4/C4a sont préparées,
 captures desktop inspectées, validation attendue. C5 est implémenté
 et vérifié (1206 tests Vitest, 89 E2E), validation visuelle attendue aux deux
-formats desktop. Les contrats de reprise ne sont pas encore acceptés ;
+formats desktop. L’audit C8 est préparé, Q6 et la décision de version restent
+ouverts. Les contrats de reprise ne sont pas encore acceptés ;
 l’amendement accepté des ADR 0011/0015 fixe seulement les
 décisions de stockage et de reprise confirmées. Dexie et la reprise des
 constructions ne sont pas encore livrés.
@@ -287,7 +288,8 @@ et catalogue. Distinguer variantes d’une famille existante et nouvelles famill
 ### C9a à C9d — Intégrer une famille complète à la fois
 
 Ordre proposé : **C9a caisses → C9b électroaimant → C9c piston → C9d minuteur**.
-L’audit C8 confirme les dépendances, notamment métal/aimant et commande/minuteur.
+L’audit C8 relève les dépendances à trancher, notamment métal/aimant et
+commande/minuteur ; les dessins ne confirment aucun comportement ni cet ordre.
 
 Pour chacune :
 
@@ -559,6 +561,24 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 - Configuration Playwright et fichier d’essai auteur restaurés identiques.
   Ce helper reflète l’ouverture automatique actuellement livrée ; C4a/M1
   devront adapter le parcours lors du changement de comportement prévu.
+
+### C8 — Audit des assets — partiel, contrats Q6 et ordre attendus
+
+- Audit et documentation confiés à Luna `xhigh`, puis relus par l’orchestrateur.
+  [Relevé préparatoire](audit-assets-c8.md) : 17 groupes d’assets, onze familles
+  raccordées via douze groupes (balle bleue = variante), quatre groupes candidats
+  non intégrés et Bolt, mascotte relevant de C7. Les exports utilisent
+  `public/assets/sprites/`. Aucun code ou asset modifié.
+- Dimensions des dix PNG candidats mesurées et images consultées ; sources,
+  exports, schéma, registre, géométrie, renderer, simulation et catalogue
+  rapprochés. Contrôle Markdown, chemins référencés et whitespace sans erreur.
+- Caisses, électroaimant, piston et minuteur attendent leurs contrats acceptés
+  et l’ordre confirmé. Métal attiré et minuteur source de commande ne sont pas
+  déduits des dessins. Aucune famille C9 n’est commencée.
+- Conflit remonté avant code : ADR 0004 exige version et migration pour une
+  nouvelle famille ; C9 privilégie l’ajout compatible. Le contrat d’évolution
+  du schéma v2 doit être explicité dans sa décision propriétaire avant C9.
+  C8 reste **partiel**, aucun report de famille présumé accepté.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

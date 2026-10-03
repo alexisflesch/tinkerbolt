@@ -25,6 +25,10 @@ Les [maquettes C4/C4a](maquettes/complements-desktop/c4-c4a.html) et leurs captu
 aux deux formats dans `tmp/c4/captures/` sont préparées, inspectées et en attente
 de validation ; aucun de ces nouveaux contrôles n’est implémenté dans l’application.
 Les contrats C2, maquettes et familles restent à valider dans leurs tâches.
+L’[audit préparatoire C8](audit-assets-c8.md) rapproche les 17 groupes d’assets
+du code livré et mesure les sources candidates. Les caisses, l’électroaimant,
+le piston et le minuteur restent absents de l’application ; leurs contrats,
+l’ordre et la décision de version du format restent ouverts. C8 est partiel.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
 
