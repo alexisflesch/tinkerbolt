@@ -1,9 +1,8 @@
 # État du dépôt — TinkerBolt
 
 Dernière mise à jour : 3 octobre 2026. V1 desktop clôturée (V0 à V9), core
-validé par l’auteur. Nouvelle reprise C/M/F active : **C0 livré**, raccord
-documentaire sans changement de l’application. Dernière gate C0 verte :
-1200 tests Vitest et 89 E2E. U3 reste abandonnée.
+validé par l’auteur. Nouvelle reprise C/M/F active : **C0 et C1 livrés**.
+Dernière gate C1 verte : 1201 tests Vitest et 89 E2E. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -23,6 +22,12 @@ Ces décisions ne sont pas encore implémentées : le stockage livré reste
 Les contrats C2, maquettes et familles restent à valider dans leurs tâches.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
+
+C1 (`6150c94`, autre agent de l’auteur) corrige la pose après câblage dans le
+tutoriel 3 : les identifiants des poses de la solution cachée sont réservés,
+afin qu’un objet joueur ne les masque pas. Sa régression DOM et la gate globale
+ont été vérifiées par l’orchestrateur. C2 est en préparation, ses trois
+arbitrages de reprise restent soumis à l’auteur ; C5 avance indépendamment.
 
 ## Arrêt et reprise — historique v1
 
@@ -939,6 +944,11 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après C1 (3 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu, 1201 tests Vitest (90 fichiers), build et 89 E2E
+v1, aucun ignoré. Test ciblé du tutoriel 3 également vert. Serveur local sur
+4319, configuration Playwright et fichier d’essai auteur restaurés identiques.
 
 `pnpm check` après C0 (3 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu, 1200 tests Vitest (90 fichiers), build et 89 E2E

@@ -14,8 +14,10 @@ plus bas dans **l’historique v1**. La mention « aucun nouveau travail d’int
 … dans la présente session » décrit cette ancienne session ; la demande actuelle
 autorise la nouvelle reprise, sans rouvrir V0 à V9.
 
-**C0 terminé : raccord documentaire relu, gate globale verte.** Ensuite : C1,
-puis C2. Les contrats de C2 ne sont
+**C0 et C1 terminés, gate globale verte.** C1 est corrigé dans le commit
+`6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
+C2 : contrat préparé, trois arbitrages soumis à l’auteur ; C5, indépendant,
+avance pendant cette attente. Les contrats de C2 ne sont
 pas encore arrêtés ; l’amendement accepté des ADR 0011/0015 fixe seulement les
 décisions de stockage et de reprise confirmées. Dexie et la reprise des
 constructions ne sont pas encore livrés.
@@ -448,6 +450,23 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 - `pnpm check` vert : typecheck, lint, formatage, Knip, contenu,
   1200 tests Vitest et 89 E2E v1. Preview local sur 4319 ; configuration
   Playwright et fichier d’essai remis à l’identique après la gate.
+
+### C1 — Refus de pose après câblage — fait — `6150c94`
+
+- Correction réalisée et commitée par l’autre agent de l’auteur, puis reprise
+  sur instruction de l’auteur. Dans `tuto-3`, la solution cachée réserve
+  `placement-3` au ventilateur ; la masse réutilisait cet id après le fil,
+  donnant un document invalide. Le générateur de pose réserve désormais aussi
+  les `placementId` de la solution.
+- La régression `App.test.tsx` « ne réutilise pas pour la masse l’identifiant
+  que la solution donne au ventilateur (tuto-3) » vérifie ventilateur → fil →
+  masse, aperçu valide, absence de refus et décrément unique de l’inventaire.
+  Vérification ciblée de l’orchestrateur : 1 test réussi.
+- Le diagnostic préalable utilisait un autre niveau et n’avait pas reproduit
+  la collision ; aucune correction spéculative n’en est issue.
+- `pnpm check` après intégration de ce commit : vert, 1201 tests Vitest et
+  89 E2E v1. Fichier d’essai auteur et configuration Playwright restaurés
+  identiques. Aucun restylage ni changement de contenu des niveaux.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 
