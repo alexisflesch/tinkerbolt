@@ -247,7 +247,7 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     expect(receivedStorage().load(entryId)).toEqual({ status: 'ok', level: solved });
   });
 
-  it('« Remixer » après la victoire d’un niveau reçu pose la tentative gagnante, sans changer le niveau', () => {
+  it('« Remixer » après la victoire d’un niveau reçu pose la tentative gagnante, sans changer le niveau', async () => {
     const flush = createAnimationFrameHarness();
     expect(receivedStorage().save(entry()).status).toBe('ok');
     window.history.replaceState(null, '', `/my-levels/${entryId}/play`);
@@ -256,6 +256,8 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     placeBeam();
     const result = launchToOutcome(flush);
     expect(within(result).getByText('Victoire')).toBeVisible();
+    const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
+    fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' }));
     fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' }));
     const dialog = screen.getByRole('dialog', { name: 'Bravo !' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Remixer' }));

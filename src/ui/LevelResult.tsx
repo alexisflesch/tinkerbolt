@@ -12,6 +12,8 @@ import { Panel } from './Panel';
  */
 export interface CampaignResult {
   readonly tier: CampaignVictory['tier'];
+  /** C5: delayed with the dialog, retained after it closes. Defaults to available. */
+  readonly areActionsAvailable?: boolean;
   readonly onOpenResult: () => void;
 }
 
@@ -95,13 +97,15 @@ export function LevelResult({
         title="Victoire"
         dataAttributes={{ 'data-level-tier': campaign.tier }}
       >
-        <div className="level-result-actions">
-          <Button onClick={campaign.onOpenResult}>Voir le résultat</Button>
-          <Button tone="go" onClick={onReplay}>
-            <RotateCcw size={18} aria-hidden="true" />
-            Recommencer
-          </Button>
-        </div>
+        {campaign.areActionsAvailable !== false && (
+          <div className="level-result-actions">
+            <Button onClick={campaign.onOpenResult}>Voir le résultat</Button>
+            <Button tone="go" onClick={onReplay}>
+              <RotateCcw size={18} aria-hidden="true" />
+              Recommencer
+            </Button>
+          </div>
+        )}
       </Panel>
     );
   }

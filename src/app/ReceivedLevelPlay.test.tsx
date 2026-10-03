@@ -137,9 +137,11 @@ const launchToOutcome = (flush: (timestamp: number) => void): HTMLElement => {
 };
 
 /** U24: a received level only ever shows the Resolved tier. */
-const expectResolvedOnly = (result: HTMLElement): void => {
+const expectResolvedOnly = async (result: HTMLElement): Promise<void> => {
   expect(within(result).getByText('Victoire')).toBeVisible();
   expect(result).toHaveAttribute('data-level-tier', 'resolved');
+  const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
+  fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' }));
   fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' }));
   const dialog = screen.getByRole('dialog', { name: 'Bravo !' });
   const tiers = within(within(dialog).getByRole('list', { name: 'Paliers' })).getAllByRole(
@@ -210,7 +212,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     expect(header.querySelector('i, b')).toBeNull();
   });
 
-  it('met l’entrée à jour à la victoire, n’affiche que ✅ et ne touche pas la campagne', () => {
+  it('met l’entrée à jour à la victoire, n’affiche que ✅ et ne touche pas la campagne', async () => {
     const flush = createAnimationFrameHarness();
     expect(storage().save(entry(attributed)).status).toBe('ok');
     const { repository: progress, save: saveProgress } = createProgressRepository();
@@ -222,7 +224,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     expect(storedEntry(entryId)).toEqual(
       entry(attributed, { solved: true, bestObjectCount: 0, playerSolution: { placements: [] } }),
     );
-    expectResolvedOnly(result);
+    await expectResolvedOnly(result);
     expect(saveProgress).not.toHaveBeenCalled();
   });
 
@@ -244,7 +246,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     expect(storedEntry(entryId)).toEqual(before);
   });
 
-  it('continue la partie quand la victoire ne peut pas être enregistrée', () => {
+  it('continue la partie quand la victoire ne peut pas être enregistrée', async () => {
     const flush = createAnimationFrameHarness();
     const { repository, saves } = createReceivedLevelRepository(
       { status: 'error', code: 'quota-exceeded' },
@@ -256,7 +258,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     const result = launchToOutcome(flush);
 
     expect(saves).toHaveLength(1);
-    expectResolvedOnly(result);
+    await expectResolvedOnly(result);
   });
 
   it('enregistre la victoire d’un lien partagé gardé, avec l’attribution dans l’en-tête', async () => {
@@ -279,7 +281,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
       bestObjectCount: 0,
       playerSolution: { placements: [] },
     });
-    expectResolvedOnly(result);
+    await expectResolvedOnly(result);
     expect(saveProgress).not.toHaveBeenCalled();
   });
 
@@ -296,7 +298,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
 
     const result = launchToOutcome(flush);
 
-    expectResolvedOnly(result);
+    await expectResolvedOnly(result);
     expect(saves).toHaveLength(1);
   });
 
@@ -327,7 +329,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     expect(saves).toHaveLength(1);
 
     const result = launchToOutcome(flush);
-    expectResolvedOnly(result);
+    await expectResolvedOnly(result);
     expect(saves).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fermer le résultat' }));

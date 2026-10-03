@@ -33,6 +33,12 @@ import styles from '../ui/styles.css?raw';
 import { App } from './App';
 import type { RegisterServiceWorker } from './PwaUpdateProvider';
 import { screenPointToWorld } from './screen-point-to-world';
+import { useVictoryDialog } from './use-victory-dialog';
+
+const VictoryDialogTimerProbe = ({ hasVictory }: { readonly hasVictory: boolean }) => {
+  const victoryDialog = useVictoryDialog(hasVictory);
+  return victoryDialog.isOpen ? <div role="dialog" aria-label="Bravo !" /> : null;
+};
 
 /** Gesture fixtures stay stable when the published campaign changes (N2). */
 vi.mock('../content/embedded-levels', async (importOriginal) => {
@@ -746,6 +752,7 @@ describe('coque TinkerBolt', () => {
     expect(within(result).getByRole('button', { name: 'Retour à l’édition' })).toBeVisible();
     expect(within(result).queryByRole('button', { name: 'Recommencer' })).toBeNull();
     expect(within(result).queryByRole('button', { name: 'Retour aux niveaux' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
 
     fireEvent.click(within(result).getByRole('button', { name: 'Retour à l’édition' }));
 
@@ -1051,6 +1058,114 @@ describe('coque TinkerBolt', () => {
     expect(within(result).queryByRole('button', { name: 'Niveau suivant' })).toBeNull();
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).queryByRole('button', { name: /Niveau suivant/u })).toBeNull();
+  });
+
+  it('C5 synchronise les actions du résultat reçu et la modale après 600 ms', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const animationFrames = createAnimationFrameHarness();
+    openSelfSolvingReceivedLevel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
+    advanceSimulationToResult(animationFrames, 600);
+
+    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    expect(within(result).getByText('Victoire')).toBeVisible();
+    expect(
+      within(result).queryByRole('button', { name: 'Voir le résultat' }),
+    ).not.toBeInTheDocument();
+    expect(within(result).queryByRole('button', { name: 'Recommencer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(599);
+    });
+    expect(
+      within(result).queryByRole('button', { name: 'Voir le résultat' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(within(result).getByRole('button', { name: 'Voir le résultat' })).toBeVisible();
+    expect(within(result).getByRole('button', { name: 'Recommencer' })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: 'Bravo !' })).toBeVisible();
+  });
+
+  it('C5 garde les actions disponibles après fermeture de la modale', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const animationFrames = createAnimationFrameHarness();
+    openSelfSolvingReceivedLevel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
+    advanceSimulationToResult(animationFrames, 600);
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+
+    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const dialog = screen.getByRole('dialog', { name: 'Bravo !' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Voir la scène' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
+    expect(within(result).getByRole('button', { name: 'Voir le résultat' })).toBeVisible();
+    expect(within(result).getByRole('button', { name: 'Recommencer' })).toBeVisible();
+  });
+
+  it('C5 affiche ensemble les actions et la modale sans délai si les animations sont réduites', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+    }));
+    const animationFrames = createAnimationFrameHarness();
+    openSelfSolvingReceivedLevel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
+    advanceSimulationToResult(animationFrames, 600);
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+
+    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    expect(within(result).getByRole('button', { name: 'Voir le résultat' })).toBeVisible();
+    expect(within(result).getByRole('button', { name: 'Recommencer' })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: 'Bravo !' })).toBeVisible();
+  });
+
+  it('C5 annule l’ancien délai quand la victoire disparaît puis redémarre le délai', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { rerender } = render(<VictoryDialogTimerProbe hasVictory />);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    rerender(<VictoryDialogTimerProbe hasVictory={false} />);
+    rerender(<VictoryDialogTimerProbe hasVictory />);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(screen.getByRole('dialog', { name: 'Bravo !' })).toBeVisible();
+  });
+
+  it('C5 annule l’apparition différée lorsqu’on navigue vers la campagne', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const animationFrames = createAnimationFrameHarness();
+    openSelfSolvingReceivedLevel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
+    advanceSimulationToResult(animationFrames, 600);
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Campagne' }));
+
+    expect(screen.getByRole('region', { name: 'Campagne' })).toBeVisible();
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
   });
 
   it('bloque l’accès direct à un niveau verrouillé et propose la liste des niveaux (U5b)', () => {
@@ -1742,6 +1857,7 @@ describe('coque TinkerBolt', () => {
     // mounts both inside one shared `.status-slot`, unconditionally, so the
     // exact same DOM node exists for the whole lifetime of the app, and only
     // one reservation exists, sized to the larger of the two contents.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const animationFrames = createAnimationFrameHarness();
     openSelfSolvingReceivedLevel();
 
@@ -1781,6 +1897,12 @@ describe('coque TinkerBolt', () => {
     // makes the DOM-identity guarantee above actually prevent a resize in a
     // real browser (verified manually; jsdom does no layout).
     expect(styles).toMatch(/\.status-slot\s*\{[^}]*min-height:\s*\d/s);
+
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    const victoryDialog = screen.getByRole('dialog', { name: 'Bravo !' });
+    fireEvent.click(within(victoryDialog).getByRole('button', { name: 'Voir la scène' }));
 
     // Disparition: replaying returns to construction. The slot stays
     // mounted (same node) with its content cleared, and the camera — fit to

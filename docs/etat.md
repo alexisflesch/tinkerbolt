@@ -1,8 +1,9 @@
 # État du dépôt — TinkerBolt
 
 Dernière mise à jour : 3 octobre 2026. V1 desktop clôturée (V0 à V9), core
-validé par l’auteur. Nouvelle reprise C/M/F active : **C0 et C1 livrés**.
-Dernière gate C1 verte : 1201 tests Vitest et 89 E2E. U3 reste abandonnée.
+validé par l’auteur. Nouvelle reprise C/M/F active : **C0 et C1 livrés**,
+C5 implémenté, validation visuelle attendue. Dernière gate C5 verte :
+1206 tests Vitest et 89 E2E. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -27,7 +28,12 @@ C1 (`6150c94`, autre agent de l’auteur) corrige la pose après câblage dans l
 tutoriel 3 : les identifiants des poses de la solution cachée sont réservés,
 afin qu’un objet joueur ne les masque pas. Sa régression DOM et la gate globale
 ont été vérifiées par l’orchestrateur. C2 est en préparation, ses trois
-arbitrages de reprise restent soumis à l’auteur ; C5 avance indépendamment.
+arbitrages de reprise restent soumis à l’auteur. C5 synchronise désormais les
+actions de victoire et la modale au délai existant de 600 ms, ou sans délai si
+les animations sont réduites. Fermer la modale garde les actions disponibles ;
+une nouvelle tentative ou la navigation annule l’ancien délai. Le résultat
+d’un essai auteur reste immédiat. Captures aux deux formats desktop dans
+`tmp/c5/captures/`, inspectées ; validation visuelle de l’auteur attendue.
 
 ## Arrêt et reprise — historique v1
 
@@ -944,6 +950,15 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après C5 (3 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu (6 documents), 1206 tests Vitest (90 fichiers), build
+(55 entrées de précache) et 89 E2E v1, aucun ignoré. Premier passage : sept
+attentes de tests antérieurs au délai échouent ; synchronisations corrigées
+par l’agent de tests sans retrait d’assertion, puis gate entièrement verte.
+Serveur local sur 4319, configuration Playwright restaurée identique
+(SHA-256 `9b03b7d8…754cb`) et fichier d’essai auteur restauré identique
+(SHA-256 `1113625e…a92907`). Validation visuelle C5 attendue.
 
 `pnpm check` après C1 (3 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu, 1201 tests Vitest (90 fichiers), build et 89 E2E

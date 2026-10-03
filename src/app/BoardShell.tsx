@@ -552,6 +552,7 @@ export function BoardShell({
                   : {
                       campaign: {
                         tier: shownCampaignVictory.tier,
+                        areActionsAvailable: victoryDialog.areActionsAvailable,
                         onOpenResult: victoryDialog.open,
                       },
                     })}

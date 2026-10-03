@@ -16,8 +16,9 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 
 **C0 et C1 terminés, gate globale verte.** C1 est corrigé dans le commit
 `6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
-C2 : contrat préparé, trois arbitrages soumis à l’auteur ; C5, indépendant,
-avance pendant cette attente. Les contrats de C2 ne sont
+C2 : contrat préparé, trois arbitrages soumis à l’auteur. C5 est implémenté
+et vérifié (1206 tests Vitest, 89 E2E), validation visuelle attendue aux deux
+formats desktop. Les contrats de C2 ne sont
 pas encore arrêtés ; l’amendement accepté des ADR 0011/0015 fixe seulement les
 décisions de stockage et de reprise confirmées. Dexie et la reprise des
 constructions ne sont pas encore livrés.
@@ -26,7 +27,9 @@ constructions ne sont pas encore livrés.
 
 - Lire `index.md`, cette feuille, puis la ligne de routage de la tâche. Les
   historiques ne se lisent que par entrée citée ; ne pas parcourir `docs/` en entier.
-- Une tâche à la fois, dans l’ordre. Codex Sol 6.1 conduit la reprise, réalise
+- Une tâche à la fois, dans l’ordre. **Un seul sous-agent actif à la fois**, sur
+  instruction de l’auteur du 3 octobre 2026, puis revue et intégration avant
+  le suivant. Codex Sol 6.1 conduit la reprise, réalise
   les choix UI/UX et relit les travaux délégués. Terra peut prendre le code ;
   Luna en effort `xhigh` les tâches simples. Astra est interdit.
 - Respecter Red-Green-Refactor pour chaque comportement ou bug. Une tâche
@@ -467,6 +470,35 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 - `pnpm check` après intégration de ce commit : vert, 1201 tests Vitest et
   89 E2E v1. Fichier d’essai auteur et configuration Playwright restaurés
   identiques. Aucun restylage ni changement de contenu des niveaux.
+
+### C5 — Synchroniser résultat et modale — implémenté, validation visuelle attendue
+
+- Tests rouges confiés à Luna `xhigh`, production à un autre agent Sol 6.1
+  `medium`, puis revue et intégration par l’orchestrateur. Après la reprise,
+  un seul sous-agent actif à la fois, conformément à la demande de l’auteur.
+- Rouge observé : les boutons du résultat reçu sont présents avant le délai
+  de 600 ms. Cinq tests ajoutés couvrent 0/599/600 ms, fermeture avec actions
+  conservées, animations réduites, disparition puis nouvelle victoire et
+  annulation lors de la navigation. Le parcours auteur garde son résultat
+  immédiat et ne reçoit pas de modale de victoire joueur.
+- Le hook de victoire rend les actions disponibles au même instant que la
+  modale, avec le délai existant et aucun délai sous animations réduites.
+  Fermer la modale ne retire pas les actions. La simulation et le style
+  ne sont pas modifiés.
+- Première gate : sept tests préexistants cliquaient immédiatement « Voir le
+  résultat ». Leurs échecs sont reproduits par l’agent de tests, puis leurs
+  synchronisations attendent la modale automatique, la ferment et la rouvrent.
+  Assertions de palier, remix, score et données conservées ; aucun test affaibli,
+  supprimé ou ignoré. Les quatre suites ciblées passent (117 tests).
+- Gate intégrée `pnpm check` verte : typecheck, lint, formatage, Knip, contenu
+  (6 documents), 1206 tests Vitest (90 fichiers), build (55 entrées de précache)
+  et 89 E2E v1, aucun ignoré. Port isolé 4319 ; configuration Playwright et
+  fichier d’essai auteur restaurés identiques.
+- Captures du build dans `tmp/c5/captures/` : `avant-actions-`, `modale-` et
+  `actions-apres-fermeture-`, chacune en 1440 × 900 et 1280 × 720. Vérification
+  navigateur du délai et du maintien des actions ; captures inspectées par
+  l’orchestrateur. **Validation visuelle de l’auteur attendue**, C5 n’est pas
+  déclaré entièrement terminé.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

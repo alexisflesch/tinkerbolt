@@ -147,7 +147,7 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
     vi.restoreAllMocks();
   });
 
-  it('pose la tentative gagnante dans une nouvelle création, la victoire comptée', () => {
+  it('pose la tentative gagnante dans une nouvelle création, la victoire comptée', async () => {
     const flush = createAnimationFrameHarness();
     const save = vi.fn(() => ({ status: 'ok' as const }));
     const progress: ProgressRepository = {
@@ -167,6 +167,8 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
       for (let frame = 1; frame <= 240; frame += 1) flush(frame * 1000);
     });
     const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
+    fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' }));
     fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' }));
     fireEvent.click(
       within(screen.getByRole('dialog', { name: 'Bravo !' })).getByRole('button', {
