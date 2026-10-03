@@ -1,25 +1,41 @@
 # Découpage des tranches
 
-Ce fichier fait autorité sur le découpage du travail restant. Il ne redéfinit
-aucune stratégie : il rend exécutable par un orchestrateur ce que le cahier des
-charges décrit en intention et ce que `etat.md` constate.
+Ce fichier fait autorité sur le découpage en étapes et leurs dépendances.
+La **seule séquence active**, tâche par tâche, est dans `feuille-de-route.md` ;
+ce fichier ne crée pas un deuxième ordre d’exécution. L’état livré et les dettes
+courantes sont constatés par `etat.md`.
 
 Chaque tranche est verticale, commence par ses tests observables et se termine par
 `pnpm check`. Une tranche n'est pas déclarée terminée par l'agent qui l'a écrite.
 
-## État au 2 octobre 2026
+## Reprise après la clôture v1 — 3 octobre 2026
 
-| Tranche | État                                                                                                       |
-| ------- | ---------------------------------------------------------------------------------------------------------- |
-| T1      | ✅ Planck retenu après mesures sur téléphone (ADR 0002)        |
-| T2      | ✅                                                                                                         |
-| T3      | ✅ fantôme et fond suivant la caméra livrés ; ombres abandonnées (U3)                      |
-| T4a     | ✅                                                                                                         |
-| T4b     | ✅ sélection, déplacement direct, poignée de rotation, propriétés        |
-| T5      | ◐ N2 en cours : cinq tutoriels de Bolt copiés et solutions ciblées vérifiées ; gate Knip et finalisation restantes              |
-| T6      | ✅ progression, stockage local, partage et PWA ; finitions restantes dans la feuille de route |
+| Étape               | Tranche            | Dépendances et sortie                                                                                                                                                                                                                                                      |
+| ------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compléments desktop | C0 à C10           | V9 clôturée. C0 raccorde les sources ; C1 placement ; C2 contrats ; C2a Dexie asynchrone sans reprise `localStorage` ; C3 conservation ; C4/C4a poutres et propriétés ; C5 victoire ; C6 icônes/splash ; C7 Bolt ; C8 audit ; C9 familles acceptées ; C10 recette desktop. |
+| v2 téléphone        | M0 à M4            | C10. Contrat de gestes et maquettes validés, sélection/ouverture distinctes, portrait et paysage, recette et gate téléphone.                                                                                                                                               |
+| v3 Forge/Grist      | F0 à F3            | M4. Destination et bascule définies, mécanisme d’envoi vérifié, proposition dans TinkerBolt, modération et recette.                                                                                                                                                        |
+| v4 réserve          | Objectifs nouveaux | Décision et contrat séparés ; aucune implémentation anticipée en C/M/F.                                                                                                                                                                                                    |
 
-L'ordre d'exécution courant est dans `feuille-de-route.md`.
+Les dépendances de chaque tâche sont dans la feuille de route. Les contrats
+des nouvelles familles et la soumission Grist restent ouverts ; les maquettes
+restent à valider. C0 ne constate ni remplacement du stockage ni livraison UI.
+
+## Tranches fondatrices — état livré à la clôture v1
+
+| Tranche | État                                                                                                  |
+| ------- | ----------------------------------------------------------------------------------------------------- |
+| T1      | ✅ Planck retenu après mesures sur téléphone (ADR 0002)                                               |
+| T2      | ✅                                                                                                    |
+| T3      | ✅ fantôme et fond suivant la caméra livrés ; ombres abandonnées (U3)                                 |
+| T4a     | ✅                                                                                                    |
+| T4b     | ✅ sélection, déplacement direct, poignée de rotation, propriétés                                     |
+| T5      | ✅ cinq tutoriels livrés et vérifiés en V1/N2 ; recette v1 clôturée (V9)                              |
+| T6      | ✅ progression, stockage `localStorage`, partage et PWA livrés ; cible Dexie asynchrone prévue en C2a |
+
+Les descriptions T1 à T6 ci-dessous sont l’historique du découpage initial,
+pas des tâches actives. La v1 V0–V9 est clôturée. L’ordre courant C/M/F est
+exclusivement dans `feuille-de-route.md`.
 
 ## Convention
 
@@ -27,7 +43,8 @@ L'ordre d'exécution courant est dans `feuille-de-route.md`.
 - **Parallèle avec** : tranches sans intersection de fichiers, délégables en même
   temps dans des worktrees distincts.
 - **Sortie** : l'artefact vérifiable, pas une intention.
-- **Difficulté** : entrée de la table de routage de `.codex/skills/orchestrate`.
+- **Difficulté** : repère du découpage initial ; les rôles actuels sont dans
+  `AGENTS.md` et la feuille de route (Sol 6.1 pour l’UI/UX, Astra interdit).
 
 ---
 
@@ -121,16 +138,23 @@ Dépend de : T4b.
 Écrit dans : `src/ui/`, `src/infrastructure/`, `src/app/`.
 Difficulté : moyenne à haute selon le sous-lot.
 
-Sous-lots indépendants et délégables séparément : mode auteur sur le même plateau ;
-dépôts IndexedDB (brouillons, progression, préférences) ; import/export JSON ;
+Sous-lots livrés : mode auteur sur le même plateau ; dépôts `localStorage`
+(brouillons, progression, préférences, niveaux reçus, ADR 0011/0015 v1) ; import/export JSON ;
 codec URL borné avec checksum ; service worker et stratégie de mise à jour
 protégeant les brouillons.
 
+La mention IndexedDB du découpage initial était une intention, pas l’adaptateur
+livré. La nouvelle décision IndexedDB/Dexie asynchrone, sans reprise des anciennes
+données locales, relève des amendements du 3 octobre des ADR 0011/0015 et de C2a.
+
 ---
 
-## Dettes transverses
+## Dettes transverses du découpage initial — historique
 
-Rattachables à la tranche qui les rencontre, jamais traitées en refactoring isolé.
+Ces notes décrivent le début de T1–T6 ; elles ne sont pas un état actuel ni un
+backlog actif. Les dettes réellement restantes sont dans `etat.md`.
+Elles sont rattachables à la tâche qui les rencontre, jamais traitées en
+refactoring isolé.
 
 - Le test de zone utilise le centre du placement ; le confinement par forme
   complète est désormais possible (`family-geometry.ts`) : tâche L3.

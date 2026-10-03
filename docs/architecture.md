@@ -201,10 +201,26 @@ Des ports distincts représentent :
 - l'import/export de fichier ;
 - l'encodage/decode de fragment URL.
 
-`localStorage` implémente le stockage local derrière ces ports (ADR 0011, qui
-remplace l'IndexedDB envisagé au départ). Un adaptateur IndexedDB ou un futur
-service distant implémentera les mêmes ports sans entrer dans le domaine ou la
-simulation.
+La cible acceptée depuis le 3 octobre 2026 est **IndexedDB avec Dexie**, derrière
+des ports et appels **asynchrones** (ADR 0011/0015, amendements C0). Le domaine
+et la simulation restent indépendants de Dexie et d’IndexedDB ; l’application
+gère le chargement, les résultats d’erreur et les transactions nécessaires.
+L’adaptateur `localStorage` livré dans la v1 est remplacé en C2a : les ports et
+leurs consommateurs sont adaptés, pas seulement l’implémentation du stockage.
+L’état réellement livré reste dans `etat.md`.
+
+La nouvelle base démarre sans reprise des anciennes données `localStorage`,
+sur instruction explicite de l’auteur. Il n’y a ni import automatique ni double
+stockage. Cette exception ne supprime pas les codecs et migrations de documents
+de niveau ni la migration requise pour une future évolution incompatible de la
+nouvelle base. Chaque lecture persistée est validée par le schéma Zod approprié.
+
+Les créations d’Atelier et les constructions inachevées de joueur sont
+distinctes. Ces dernières restaurent automatiquement l’état engagé avant
+simulation et sa provenance d’inventaire ; jamais l’état physique ou
+l’historique. « Recommencer » permet de repartir de zéro. C2 fixe les contrats
+de sauvegarde, compatibilité, suppression et atomicité avant C2a/C3. La
+sauvegarde d’une construction ne modifie jamais le niveau source ni sa solution.
 
 Le codec URL ajoute version, algorithme, taille attendue et checksum ; son format
 exact est fixé par l'ADR 0011. Il refuse une charge trop grande avant et après

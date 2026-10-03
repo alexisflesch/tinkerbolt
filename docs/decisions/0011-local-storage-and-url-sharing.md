@@ -1,6 +1,6 @@
 # ADR 0011 - Persistance locale et partage par URL
 
-Statut : accepté
+Statut : accepté ; choix de stockage amendé le 3 octobre 2026 (cible C2–C3).
 
 Date : 2026-09-26
 
@@ -16,7 +16,9 @@ stockage ; le partage de niveaux créés en a besoin d'un format.
 
 ### `localStorage`, derrière des ports
 
-La persistance locale utilise `localStorage`, pas IndexedDB.
+Décision initiale, livrée dans la v1 : la persistance locale utilise
+`localStorage`. Elle est remplacée pour la reprise active par l’amendement
+du 3 octobre ci-dessous ; `etat.md` décrit l’adaptateur effectivement livré.
 
 - Les volumes sont petits : une progression tient en quelques kilo-octets, un
   niveau en quelques kilo-octets (plafond du codec : 256 Kio). Quelques dizaines
@@ -89,8 +91,8 @@ de l'utilisateur. Un fragment invalide affiche une erreur et n'altère rien.
 
 ## Conséquences
 
-- `architecture.md` § Stockage et partage est mis à jour : `localStorage` au lieu
-  d'IndexedDB.
+- Conséquence initiale : `architecture.md` § Stockage et partage utilisait
+  `localStorage` au lieu d'IndexedDB ; la cible est amendée le 3 octobre 2026.
 - `CompressionStream` impose des navigateurs récents (Chrome 103, Firefox 113,
   Safari 16.4) : c'est déjà la cible de la PWA. Node 24 le fournit pour les tests.
 - Le codec URL est asynchrone ; le codec de fichier reste synchrone.
@@ -171,3 +173,48 @@ assumée pour une version antérieure de l’application en cache.
   mais elle est marquée « Verrouillé ». Elle ne s’ouvre plus avant que le
   niveau soit de nouveau débloqué. Une création `creation-<aléa>` remixée
   depuis ce niveau reste ouverte. La boîte de confirmation le dit.
+
+## Amendement du 3 octobre 2026 — IndexedDB/Dexie et reprise locale (C0)
+
+Décisions confirmées par l’auteur pour la reprise après la clôture v1 :
+
+- Le stockage local passe à **IndexedDB avec Dexie** dès cette étape. Cette
+  dépendance structurante est acceptée ; sa version et ses conséquences
+  d’outillage sont documentées en C2a selon l’ADR 0003, avant installation.
+- Les ports de repositories et leurs appels deviennent **asynchrones**.
+  L’application prend en charge chargement et erreurs ; Dexie et IndexedDB
+  restent dans `infrastructure`, sans dépendance du domaine ou de la simulation.
+  Le passage ne consiste pas à échanger un adaptateur derrière les appels
+  synchrones actuels.
+- La nouvelle base démarre vide : **aucune migration ni reprise depuis les
+  anciennes clés `localStorage`**, aucun double stockage ou mécanisme de
+  transfert de progression, créations, niveaux reçus ou préférences. L’auteur
+  autorise leur perte car l’application n’est pas en production. Cette exception
+  porte sur ce remplacement ; elle ne retire ni les codecs et migrations de
+  fichiers de niveaux, ni la règle de migration des futurs formats persistants.
+- Les nouvelles données lues sont non fiables : enveloppes versionnées validées
+  par Zod, documents de niveau par le codec de fichier. Les opérations liées
+  utilisent les transactions définies en C2. Une donnée invalide n’est jamais
+  écrasée silencieusement ; C2 fixe le traitement dans la nouvelle base, sans
+  imposer les anciennes clés `tinkerbolt:backup:*` à IndexedDB.
+- Quota, ouverture impossible et erreurs de lecture/écriture donnent un résultat
+  maîtrisé et compréhensible. Le jeu reste utilisable sans persistance ; un
+  échec n’est jamais présenté comme une sauvegarde réussie.
+- Une construction de joueur est retrouvée **automatiquement** à la navigation
+  ou au rechargement, dans son état engagé avant simulation. « Recommencer »
+  permet de repartir de zéro. Aucun monde physique, état transitoire de simulation
+  ou historique annuler/rétablir n’est restauré. Le niveau source et sa solution
+  restent intacts. La création d’Atelier reste une persistance distincte (ADR 0015).
+
+**Contrats restant à arrêter en C2, avant code :** identité et compatibilité
+avec le niveau source, enveloppe versionnée de construction, provenance pour
+reconstruire l’inventaire, schéma initial de base et atomicité, devenir à la
+victoire, après modification ou suppression du niveau et lors d’une remise à
+zéro, traitement des données invalides et états d’erreur. Cet amendement ne
+choisit aucun de ces détails.
+
+**Livraison :** C2 fixe ces contrats, C2a remplace le stockage existant, C3
+implémente la reprise des constructions et vérifie les autosauvegardes d’Atelier.
+La [feuille de route](../feuille-de-route.md) porte seule l’ordre d’exécution ;
+cet amendement ne constate pas leur implémentation. Le codec de fichier, le
+format du lien partagé et les comportements de réception restent applicables.

@@ -1,6 +1,6 @@
 # ADR 0015 - « Mes niveaux » : niveaux reçus, créations et solution cachée
 
-Statut : accepté
+Statut : accepté ; stockage et reprise amendés le 3 octobre 2026 (cible C2–C3).
 
 Date : 2026-10-01
 
@@ -54,7 +54,9 @@ rouvre) une création.
 
 ### Stockage local
 
-Toujours `localStorage` derrière des ports de `src/application/`, avec les
+Le contrat suivant décrit le stockage livré dans la v1, désormais remplacé
+pour la reprise active par l’amendement du 3 octobre ci-dessous. Le stockage
+v1 est `localStorage` derrière des ports de `src/application/`, avec les
 règles de l'ADR 0011 (enveloppe versionnée validée par Zod, document de niveau
 par le codec de fichier, sauvegarde `tinkerbolt:backup:<clé>` avant d'écraser
 une valeur illisible, erreurs de quota en résultat, jamais en exception).
@@ -256,3 +258,37 @@ Route `/my-levels` (ADR 0008), dans le menu et sur l'accueil.
 - Hors de cette décision : synchronisation entre appareils, comptes, catalogue
   en ligne. Le transfert d'une création vers un autre appareil passe par
   l'export (puzzle), la réception, puis « Modifier » et « Révéler ».
+
+## Amendement du 3 octobre 2026 — stockage et construction à reprendre (C0)
+
+L’amendement de l’ADR 0011 fixe désormais **IndexedDB avec Dexie**, des ports et
+appels asynchrones, et **aucune reprise des anciennes données `localStorage`**.
+Les clés, sauvegardes de secours et migration de brouillons v1 → v2 décrites
+ci-dessus sont l’historique de la v1 ; elles ne constituent pas un parcours de
+transfert vers la nouvelle base. La validation Zod, les codecs de niveaux et
+leurs migrations restent requis. Les natures « niveau reçu figé » et « création
+modifiable », leurs identités et leur provenance restent applicables.
+
+La reprise locale distingue deux données :
+
+- **Création d’Atelier** : son document engagé est déjà autosauvegardé, avec sa
+  `source` intacte lorsqu’elle existe. C2a adapte ce mécanisme à l’asynchronisme,
+  C3 vérifie les dernières modifications et corrige les lacunes ; il ne crée pas
+  une deuxième autosauvegarde parallèle des mêmes brouillons.
+- **Construction inachevée de joueur** : une persistance dédiée retrouve
+  automatiquement les objets et fils engagés avant simulation, avec la provenance
+  nécessaire à l’inventaire. Elle couvre les niveaux de campagne et reçus,
+  y compris ceux ouverts depuis `/shared`. Elle ne modifie ni le niveau source
+  ni sa solution, et ne se confond pas avec progression ou `playerSolution`
+  gagnante. La simulation en cours et l’historique ne sont jamais repris.
+
+« Recommencer » permet au joueur de repartir de zéro. C2 doit fixer son
+périmètre exact et le contrat de suppression de la sauvegarde, l’identité et
+la compatibilité avec une source modifiée, le devenir à la victoire, après
+suppression d’un niveau reçu ou remise à zéro, l’enveloppe Zod versionnée et
+les transactions. Ces choix et les cas d’erreur restent ouverts ; aucune
+structure narrative n’est un schéma exécutable accepté par défaut.
+
+Les décisions sont acceptées avant code. Le stockage et la reprise sont à
+implémenter en C2a/C3 ; `etat.md` reste le constat de ce qui est livré et la
+[feuille de route](../feuille-de-route.md) la seule séquence active.

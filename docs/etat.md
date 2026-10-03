@@ -1,10 +1,9 @@
 # État du dépôt — TinkerBolt
 
-Dernière mise à jour : 3 octobre 2026. Feuille de route v1 desktop terminée
-(V0 à V9). V9 clôturée par l'auteur : le fonctionnement du core est validé.
-Les retouches et les détails visuels seront réévalués avec lui dans une
-nouvelle fenêtre. Dernière gate V9 verte : 1200 tests Vitest et 89 E2E.
-U3 reste abandonnée.
+Dernière mise à jour : 3 octobre 2026. V1 desktop clôturée (V0 à V9), core
+validé par l’auteur. Nouvelle reprise C/M/F active : **C0 livré**, raccord
+documentaire sans changement de l’application. Dernière gate C0 verte :
+1200 tests Vitest et 89 E2E. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -13,7 +12,19 @@ et ne contient ni décision ni spécification ; celles-ci restent dans
 `decisions/`. Le travail restant et son ordre sont dans
 [la feuille de route](feuille-de-route.md).
 
-## Arrêt et reprise — feuille de route v1
+## Reprise active après la v1
+
+La [feuille de route](feuille-de-route.md) porte seule les tâches C/M/F et
+leur ordre. C0 raccorde index, backlog, architecture et ADR 0011/0015 aux
+décisions confirmées : Dexie asynchrone, base vide sans transfert des anciennes
+données locales, reprise automatique de la construction avant simulation.
+Ces décisions ne sont pas encore implémentées : le stockage livré reste
+`localStorage`, et la construction de joueur n’est pas persistée.
+Les contrats C2, maquettes et familles restent à valider dans leurs tâches.
+Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
+rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
+
+## Arrêt et reprise — historique v1
 
 La feuille de route v1 (desktop d’abord) est dans
 [la feuille de route](feuille-de-route.md). **V0** (règle mobile-first suspendue,
@@ -928,6 +939,12 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après C0 (3 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu, 1200 tests Vitest (90 fichiers), build et 89 E2E
+v1, aucun ignoré. Serveur local isolé sur 4319. Configuration Playwright
+restaurée identique (SHA-256 `9b03b7d8…754cb`) et fichier d’essai auteur
+restauré identique (SHA-256 `1113625e…a92907`). Aucun changement d’écran.
 
 `pnpm check` à la clôture de V9 (3 octobre 2026) : **passe** — typecheck,
 lint, formatage, Knip, contenu (6 documents), 1200 tests Vitest (90 fichiers),
