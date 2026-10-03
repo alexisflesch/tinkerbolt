@@ -67,11 +67,14 @@ autour de l’origine du placement avant le contrôle des quatre coins.
 - le confinement par forme complète devra remplacer le test du centre lorsque le
   catalogue physique fournira des dimensions testables.
 
-## Contrat de reprise proposé — C2
+## Contrat de reprise accepté — C2
 
-La [proposition ADR 0017](0017-player-construction-and-async-storage.md)
-détaille l’enveloppe de construction qui pourrait persister document et
+L’[ADR 0017](0017-player-construction-and-async-storage.md)
+détaille l’enveloppe de construction qui persiste document et
 provenance ensemble, hors du `LevelDocument` partageable. Elle distingue
 le codec de tentative consommée du codec de niveau source et exige leur
-validation relationnelle. **Statut proposé : aucun détail C2 n’est acquis
-par ce renvoi**, notamment les trois arbitrages produit en attente.
+validation relationnelle. Le contrat C2 est accepté ; la victoire conserve
+la construction, le reset atomique efface la progression de campagne, ses
+solutions et toutes les constructions de campagne, et une source modifiée invalide la construction
+sans secours, avec avertissement `source-changed`. Aucune livraison n’est
+constatée par ce renvoi.

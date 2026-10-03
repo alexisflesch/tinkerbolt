@@ -194,9 +194,10 @@ Décisions confirmées par l’auteur pour la reprise après la clôture v1 :
   fichiers de niveaux, ni la règle de migration des futurs formats persistants.
 - Les nouvelles données lues sont non fiables : enveloppes versionnées validées
   par Zod, documents de niveau par le codec de fichier. Les opérations liées
-  utilisent les transactions définies en C2. Une donnée invalide n’est jamais
-  écrasée silencieusement ; C2 fixe le traitement dans la nouvelle base, sans
-  imposer les anciennes clés `tinkerbolt:backup:*` à IndexedDB.
+  utilisent les transactions définies en C2. Une donnée invalide est mise en
+  secours puis supprimée dans la même transaction ; une construction valide
+  devenue incompatible avec sa source est supprimée sans secours, selon l’ADR 0017. Les anciennes clés `tinkerbolt:backup:*` ne sont pas reprises dans
+  IndexedDB.
 - Quota, ouverture impossible et erreurs de lecture/écriture donnent un résultat
   maîtrisé et compréhensible. Le jeu reste utilisable sans persistance ; un
   échec n’est jamais présenté comme une sauvegarde réussie.
@@ -206,12 +207,14 @@ Décisions confirmées par l’auteur pour la reprise après la clôture v1 :
   ou historique annuler/rétablir n’est restauré. Le niveau source et sa solution
   restent intacts. La création d’Atelier reste une persistance distincte (ADR 0015).
 
-**Contrats restant à arrêter en C2, avant code :** identité et compatibilité
-avec le niveau source, enveloppe versionnée de construction, provenance pour
-reconstruire l’inventaire, schéma initial de base et atomicité, devenir à la
-victoire, après modification ou suppression du niveau et lors d’une remise à
-zéro, traitement des données invalides et états d’erreur. Cet amendement ne
-choisit aucun de ces détails.
+**Contrat C2 accepté avant code :** l’ADR 0017 fixe l’identité et la
+compatibilité avec le niveau source, l’enveloppe versionnée, la provenance, le
+schéma initial, les transactions et les erreurs. La construction est conservée
+après victoire ; le reset efface atomiquement, après barrière des écritures
+anciennes, toute la progression de campagne (solutions comprises) et toutes
+les constructions `campaign`. Une empreinte source différente invalide la
+construction sans secours et produit l’avertissement `source-changed`. Les
+créations et les reçus restent indépendants du reset.
 
 **Livraison :** C2 fixe ces contrats, C2a remplace le stockage existant, C3
 implémente la reprise des constructions et vérifie les autosauvegardes d’Atelier.
@@ -219,14 +222,18 @@ La [feuille de route](../feuille-de-route.md) porte seule l’ordre d’exécuti
 cet amendement ne constate pas leur implémentation. Le codec de fichier, le
 format du lien partagé et les comportements de réception restent applicables.
 
-## Contrat asynchrone proposé — C2
+## Contrat asynchrone accepté — C2
 
-La [proposition ADR 0017](0017-player-construction-and-async-storage.md)
+L’[ADR 0017](0017-player-construction-and-async-storage.md)
 décrit le schéma initial Dexie, les ports asynchrones, transactions et
 erreurs de la nouvelle base, sans reprise des anciennes données. Elle
 distingue les documents sources complets, toujours traités par le codec
 de fichier, du document consommé d’une construction : celui-ci nécessite
 un **codec de tentative dédié**, fondé sur `levelDocumentAttemptSchema`
 et les relations à la source/provenance, sans affaiblir le schéma de niveau.
-Ce renvoi ne valide pas le contrat : **ADR 0017 proposée**, trois arbitrages
-produit encore soumis à l’auteur. Les décisions C0 ci-dessus restent acceptées.
+Le contrat C2 est accepté : la victoire conserve la construction ; le reset
+efface atomiquement toute la progression de campagne, solutions comprises, et
+toutes les constructions `campaign` ; une source modifiée invalide la
+construction sans secours avec avertissement `source-changed`. Les créations
+et les reçus restent indépendants du reset. Les décisions C0 ci-dessus restent
+acceptées.

@@ -1,6 +1,6 @@
 # ADR 0017 — Construction de joueur et stockage asynchrone
 
-Statut : **proposé — C2, validation de l’auteur attendue**
+Statut : **acceptée — 3 octobre 2026**
 
 Date : 2026-10-03
 
@@ -10,22 +10,19 @@ Les amendements C0 des [ADR 0011](0011-local-storage-and-url-sharing.md) et
 [0015](0015-mes-niveaux.md) acceptent IndexedDB avec Dexie, les ports
 asynchrones, une base neuve sans reprise de `localStorage` et la reprise
 automatique de la construction engagée avant simulation. Ces décisions sont
-acquises. Le présent contrat détaille leur mise en œuvre ; il ne constate
-aucune livraison et reste proposé jusqu’à validation. La
+acquises. L’auteur a aussi tranché les trois arbitrages de C2 ci-dessous. Le
+présent contrat les formalise ; il ne constate aucune livraison. La
 [feuille de route](../feuille-de-route.md) porte l’ordre C2 → C2a → C3.
 
-Trois arbitrages produit restent explicitement ouverts :
+Les trois décisions produit acceptées sont :
 
-| Situation                       | Proposition soumise à l’auteur                                                                  | Conséquence                                                                                     |
-| ------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Victoire                        | Garder la construction d’avant lancement.                                                       | La rouvrir permet de l’améliorer ; « Recommencer » seul repart de zéro.                         |
-| Remise à zéro de la progression | Garder les constructions campagne, soumises aux verrous recalculés.                             | Une construction d’un niveau redevenu verrouillé attend son déblocage ; la confirmation le dit. |
-| Source modifiée                 | Conserver l’ancienne construction en secours, puis partir du nouveau niveau avec avertissement. | Aucune conversion heuristique ni reprise incompatible.                                          |
+| Situation                       | Décision retenue                                                                                                                        | Conséquence                                                                                                                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Victoire                        | Conserver la construction d’avant lancement.                                                                                            | La rouvrir permet de l’améliorer ; « Recommencer » seul repart de zéro.                                                                                                                                      |
+| Remise à zéro de la progression | Effacer atomiquement toute la progression de campagne, y compris ses solutions, et toutes les constructions `campaign`, gagnées ou non. | Les créations et niveaux reçus restent indépendants. La barrière des écritures anciennes précède la transaction ; un échec ne confirme pas le reset.                                                         |
+| Source modifiée                 | Supprimer la construction incompatible, puis repartir de la source courante avec l’avertissement `source-changed`.                      | Aucun secours ni reprise heuristique. Une empreinte différente est une garde rare, notamment lors d’une mise à jour de campagne ; un reçu reste immuable. Si la suppression échoue, la reprise échoue aussi. |
 
-Le silence de l’auteur n’accepte aucune proposition. C2a/C3 ne commencent
-pas sur la base de ce document au statut proposé.
-
-## Identité et compatibilité proposées
+## Identité et compatibilité
 
 Une construction est attachée à `{ scope: 'campaign' | 'received', levelId,
 sourceFingerprint }`. Une seule ligne courante existe pour la clé
@@ -35,10 +32,15 @@ il est l’id local `recu-…`, distinct de `document.id`.
 `sourceFingerprint` est le SHA-256 complet, 64 chiffres hexadécimaux
 minuscules, des octets UTF-8 de `encodeLevelFile(source)` après validation
 et migration de la source. Le niveau entier est couvert : changer même le
-titre rend la construction incompatible. L’identité des reçus conserve les
-16 chiffres actuels de l’ADR 0015. Une réception doublonnée compare aussi
-les documents canoniques ; une collision d’identité renvoie
-`identity-collision`, sans écraser la source existante.
+titre rend la construction incompatible. Une empreinte différente invalide
+la construction : après barrière des écritures de cette construction, la
+ligne est supprimée et le niveau courant démarre sans reprise, avec
+`source-changed`. Cette garde est rare pour une mise à jour du catalogue de
+campagne ; une réception doublonnée ne modifie jamais la source figée d’un
+reçu. L’identité des reçus conserve les 16 chiffres actuels de l’ADR 0015.
+Une réception doublonnée compare aussi les documents canoniques ; une
+collision d’identité renvoie `identity-collision`, sans écraser la source
+existante.
 
 `/shared` reçoit le document avant la recherche de construction ; il reprend
 la même clé que `/my-levels/:id/play`. Si le reçu ne peut être conservé, le
@@ -50,7 +52,7 @@ Les créations gardent leur autosauvegarde distincte, leur id et leur copie
 `source` éventuelle. Supprimer ou corriger cette source ne touche pas la
 création. Il n’y a pas de deuxième autosauvegarde du même brouillon.
 
-## Enveloppe et codec de construction proposés
+## Enveloppe et codec de construction
 
 ```ts
 interface PlayerConstructionEnvelope {
@@ -122,7 +124,7 @@ Ni historique, outil, caméra, panneaux, temps, positions physiques ou handles
 ne sont persistés. La provenance reste hors du `LevelDocument` partageable,
 conformément à l’[ADR 0005](0005-construction-attempt.md).
 
-## Base initiale proposée
+## Base initiale
 
 Base `tinkerbolt`, version Dexie 1. Les enveloppes logiques existantes gardent
 leur forme : `draft` v2, `received-level` v1, `progress` v1, `preferences` v1.
@@ -150,10 +152,12 @@ Si la sauvegarde de secours échoue, la ligne originale demeure et la lecture
 renvoie une erreur. Même règle avant tout remplacement. Aucun écrasement de
 secours ni suppression pour libérer du quota. Une version d’enveloppe future
 inconnue reste en place et renvoie `unsupported-version` ; elle ne devient
-pas un état vide réinscriptible. Le traitement d’une empreinte source modifiée
-reste soumis au troisième arbitrage ci-dessus.
+pas un état vide réinscriptible. Une construction valide devenue incompatible
+avec sa source n’est pas une donnée corrompue : elle est supprimée selon la
+décision ci-dessus, sans copie dans `backups`. La garantie de secours des
+données invalides reste inchangée.
 
-## Ports et transactions proposés
+## Ports et transactions
 
 Tous les appels des quatre repositories existants deviennent
 `Promise<Résultat>`, y compris `list`, `load`, `save`, `delete` et `clear`.
@@ -177,18 +181,18 @@ n’est requis à l’intérieur de celle-ci.
 
 Les méthodes atomiques restent dans les repositories concernés :
 
-| Port / opération                        | Périmètre atomique                                                                                                |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `DraftRepository.save`                  | document, copie source et date dans une ligne ; secours si nécessaire                                             |
-| `DraftRepository.create`                | insertion exclusive d’une création libre ; collision signalée et retentée avec aléa injecté                       |
-| `ReceivedLevelRepository.receive`       | création ou rafraîchissement après relecture ; doublon garde origine, record, victoire et solution                |
-| `ReceivedLevelRepository.recordVictory` | relire parent, fusionner meilleur compte et inscrire dernière solution gagnante ; parent absent = aucune écriture |
-| `ReceivedLevelRepository.delete`        | supprimer reçu et construction `[received,id]` ensemble ; créations indépendantes                                 |
-| `ProgressRepository.recordVictory`      | relire progression puis fusionner résultat/record de campagne                                                     |
-| `PreferencesRepository.patch`           | relire puis changer uniquement les champs fournis ; `author: null` efface le pseudo, champs omis conservés        |
-| `PlayerConstructionRepository.save`     | ligne entière, validation, présence/source du parent reçu vérifiées ensemble                                      |
-| `PlayerConstructionRepository.delete`   | construction ciblée seulement, après barrière des écritures anciennes                                             |
-| `ProgressRepository.clear`              | progression seule selon arbitrage proposé ; autres tables conservées                                              |
+| Port / opération                        | Périmètre atomique                                                                                                                                                                                                                        |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DraftRepository.save`                  | document, copie source et date dans une ligne ; secours si nécessaire                                                                                                                                                                     |
+| `DraftRepository.create`                | insertion exclusive d’une création libre ; collision signalée et retentée avec aléa injecté                                                                                                                                               |
+| `ReceivedLevelRepository.receive`       | création ou rafraîchissement après relecture ; doublon garde origine, record, victoire et solution                                                                                                                                        |
+| `ReceivedLevelRepository.recordVictory` | relire parent, fusionner meilleur compte et inscrire dernière solution gagnante ; parent absent = aucune écriture                                                                                                                         |
+| `ReceivedLevelRepository.delete`        | supprimer reçu et construction `[received,id]` ensemble ; créations indépendantes                                                                                                                                                         |
+| `ProgressRepository.recordVictory`      | relire progression puis fusionner résultat/record de campagne                                                                                                                                                                             |
+| `PreferencesRepository.patch`           | relire puis changer uniquement les champs fournis ; `author: null` efface le pseudo, champs omis conservés                                                                                                                                |
+| `PlayerConstructionRepository.save`     | ligne entière, validation, présence/source du parent reçu vérifiées ensemble                                                                                                                                                              |
+| `PlayerConstructionRepository.delete`   | supprimer atomiquement la construction ciblée, après invalidation des écritures futures de l’ancienne session et barrière des écritures déjà lancées ; échec = erreur, sans reprise incohérente                                           |
+| `ProgressRepository.clear`              | après barrière des écritures anciennes, effacer dans une transaction toute la progression de campagne (solutions comprises) et toutes les constructions `campaign` ; créations et reçus restent indépendants ; échec = rollback et erreur |
 
 Les méthodes de victoire reçoivent les données dérivées de l’instantané de
 lancement par les fonctions pures actuelles, avec identité source attendue.
@@ -198,11 +202,14 @@ opération atomique : les usages de fusion doivent employer les méthodes
 ci-dessus. Les écritures de paramètres ne peuvent perdre un autre champ,
 et une réception répétée ne peut effacer une victoire concurrente.
 
-Selon l’arbitrage proposé, une victoire conserve la construction ; elle ne
-requiert donc pas sa suppression dans la transaction de record. Si l’auteur
-choisit son effacement, record et suppression devront être atomiques.
+Une victoire conserve la construction ; son enregistrement de progression
+n’en supprime donc aucune. Le reset de progression, lui, supprime toute la
+progression de campagne, solutions comprises, et toutes les constructions de
+campagne dans une transaction unique, après la barrière qui empêche les
+anciennes écritures de les ressusciter. Si cette transaction échoue, elle ne
+produit aucun reset partiel ni confirmation de réussite.
 
-## Déclenchement, reprise et erreurs proposés
+## Déclenchement, reprise et erreurs
 
 - Vérifier source et verrou avant reprise, puis attendre la lecture avant de
   monter la session. Un niveau neuf ne peut écraser une construction encore
@@ -229,8 +236,19 @@ choisit son effacement, record et suppression devront être atomiques.
   la construction. Il repart de la source intacte, sans restaurer solution
   d’auteur ni modifier progression, inventaire source ou niveau reçu.
   Une écriture tardive de cette instance ne peut ressusciter l’état supprimé.
-  Si l’effacement échoue, jouer frais en mémoire reste possible mais un
-  message indique que l’ancienne construction pourrait revenir.
+  Si l’effacement échoue, l’opération renvoie une erreur et ne confirme pas le
+  redémarrage ; la construction persistée reste cohérente et disponible.
+- Une remise à zéro de progression invalide les écritures de campagne
+  antérieures, puis supprime toute la progression de campagne, y compris ses
+  solutions, et toutes les constructions `campaign` dans la même transaction.
+  Les constructions `received`, les niveaux reçus et les créations ne sont pas
+  concernés. Tout échec annule la transaction et est renvoyé comme erreur.
+- Si l’empreinte de la source courante diffère, invalider les écritures de
+  l’ancienne construction, attendre celles déjà lancées, puis supprimer sa
+  ligne. Après suppression réussie, démarrer une tentative neuve depuis la
+  source courante et présenter `source-changed`. Une suppression échouée
+  renvoie une erreur ; elle ne déplace pas la construction en secours et ne
+  lance pas une reprise qui pourrait être incohérente.
 
 Codes conservés : `storage-unavailable`, `quota-exceeded` et les erreurs de
 validation des repositories. Codes ajoutés : `invalid-construction`,
@@ -252,17 +270,23 @@ entre onglets, ni synchronisation distante.
 ## Critères de validation avant livraison
 
 - **C2a** : CRUD et réouverture de base ; validations Zod et codecs ; insertions
-  exclusives ; transactions de réception, préférences, records et suppression
-  reçu/construction ; rollback, données invalides avec secours, versions
-  inconnues, quota et base indisponible ; base neuve sans lecteur/transfert
-  `localStorage`. Version et conséquences de Dexie documentées selon ADR 0003.
+  exclusives ; transactions de réception, préférences, records, suppression
+  reçu/construction et reset progression/constructions campagne ; rollback,
+  données invalides avec secours, versions inconnues, quota et base indisponible ;
+  base neuve sans lecteur/transfert `localStorage`. Le reset ne touche pas aux
+  créations ni aux reçus. Version et conséquences de Dexie documentées selon
+  ADR 0003.
 - **C3** : campagne et reçus, `/shared` compris ; dernière pose, déplacement,
   rotation, fil, retrait et undo/redo repris exactement ; source/solution
   intactes, quantités exactes, décor déplaçable sans provenance ; corruption
   relationnelle rejetée ; geste refusé/annulé sans écriture ; rechargement en
-  simulation sans moteur/historique ; suppression, reset, victoire et source
-  changée conformes aux arbitrages acceptés. Vérifier aussi les derniers
-  engagements de propriétés et métadonnées d’Atelier.
+  simulation sans moteur/historique ; victoire qui conserve la construction ;
+  reset qui efface atomiquement progression et toutes les constructions de
+  campagne après barrière d’écritures ; source changée qui supprime la
+  construction incompatible sans secours puis avertit `source-changed` ;
+  échecs de suppression/reset signalés sans faux succès ni reprise incohérente.
+  Vérifier aussi les derniers engagements de propriétés et métadonnées
+  d’Atelier.
 - Red-Green-Refactor sur les comportements, gate globale et captures pour
   les nouveaux états visibles selon les règles du dépôt. Cette ADR seule
   n’exige aucun test artificiel ; elle n’est pas une implémentation.

@@ -282,25 +282,30 @@ La reprise locale distingue deux données :
   ni sa solution, et ne se confond pas avec progression ou `playerSolution`
   gagnante. La simulation en cours et l’historique ne sont jamais repris.
 
-« Recommencer » permet au joueur de repartir de zéro. C2 doit fixer son
-périmètre exact et le contrat de suppression de la sauvegarde, l’identité et
-la compatibilité avec une source modifiée, le devenir à la victoire, après
-suppression d’un niveau reçu ou remise à zéro, l’enveloppe Zod versionnée et
-les transactions. Ces choix et les cas d’erreur restent ouverts ; aucune
-structure narrative n’est un schéma exécutable accepté par défaut.
+« Recommencer » permet au joueur de repartir de zéro. Le contrat de suppression
+et les autres choix C2 sont désormais acceptés dans l’ADR 0017 : après victoire,
+la construction reste conservée ; une remise à zéro efface atomiquement toute
+la progression de campagne, solutions comprises, et toutes les constructions
+de campagne ; une construction devenue
+incompatible avec sa source est supprimée sans secours, puis le niveau courant
+démarre avec l’avertissement `source-changed`. La suppression d’un niveau reçu
+et sa construction liée reste atomique comme décrit ci-dessus.
 
 Les décisions sont acceptées avant code. Le stockage et la reprise sont à
 implémenter en C2a/C3 ; `etat.md` reste le constat de ce qui est livré et la
 [feuille de route](../feuille-de-route.md) la seule séquence active.
 
-## Contrat de reprise proposé — C2
+## Contrat de reprise accepté — C2
 
-La [proposition ADR 0017](0017-player-construction-and-async-storage.md)
+L’[ADR 0017](0017-player-construction-and-async-storage.md)
 détaille identité, compatibilité source, enveloppe et provenance de la
 construction, réception et suppression atomiques, autosauvegarde et erreurs.
 Elle conserve la distinction entre création, reçu figé et construction ;
 une reprise exacte conserve aussi un décor déplaçable sans le faire passer
-pour un objet d’inventaire. **Statut proposé** : garder après victoire,
-garder sous verrou après remise à zéro de progression et mettre en secours
-une construction incompatible restent des arbitrages en attente. Aucun
-stockage Dexie ni reprise n’est déclaré livré par ce renvoi.
+pour un objet d’inventaire. Le contrat C2 est accepté : garder la construction
+après victoire, effacer atomiquement toute la progression de campagne,
+solutions comprises, et toutes les constructions `campaign` au reset, puis
+supprimer sans secours une construction
+incompatible avec la source et avertir `source-changed`. Les créations et les
+reçus restent indépendants du reset. Aucun stockage Dexie ni reprise n’est
+déclaré livré par ce renvoi.
