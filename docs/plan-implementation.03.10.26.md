@@ -474,24 +474,24 @@ outils auteur et la compatibilité des niveaux existants. Exemples conservés du
 todo : balle à l’écran pendant 15 s, deux balles dans deux paniers, caisse à
 déplacer. Aucun de ces exemples n’est déjà un contrat technique.
 
-## 8. Règles de livraison et lectures à la reprise
+## 8. Méthode de réalisation — mise à jour du 3 octobre 2026
 
-- Suivre Red-Green-Refactor pour chaque comportement ou bug. Une tâche
-  documentaire ou un audit sans comportement n’exige pas de test artificiel.
-- Pendant le travail : `pnpm check:fast`. Avant de déclarer terminé :
-  **`pnpm check`**. Faire `pnpm build` avant un Playwright isolé.
-- Fournir et inspecter les captures d’un changement visible ; garder la tâche
-  en validation visuelle attendue tant que l’auteur n’a pas validé.
-  Desktop : 1440 × 900 et 1280 × 720. v2 : portrait et paysage concernés.
-- Lire la ligne de routage de `docs/index.md` correspondant à la tâche :
-  stockage pour C2–C3 ; gestes/rendu pour C1, C4 et M ; catalogue et modèle
-  d’objet pour C8–C9 ; PWA/assets pour C6 ; stockage/partage et licence pour F.
-  Ces lectures ciblées sont nécessaires parce que le todo couvre plusieurs
-  domaines. Ne pas relire les historiques sans entrée citée par une tâche.
-- Journal : une entrée par tâche, avec décisions, tests rouges pertinents,
-  résultat, gate, captures et validation de l’auteur. L’état réellement livré
-  reste dans `etat.md` ; ce fichier de préparation ne constate aucune livraison. Les nouvelles entrées
-  C/M/F sont tenues dans `feuille-de-route.md`, pas ici.
+Les [règles de la reprise active](feuille-de-route.md#règles-de-la-reprise-active)
+font autorité sur la méthode. Elles ont été allégées à la demande de l’auteur :
+un agent à la fois réalise tests et code, les lectures et comptes rendus sont
+ciblés, et la gate globale précède la clôture de chaque lot. Red-Green-Refactor
+et les invariants restent applicables. Aucune capture ni vérification d’image
+pendant l’implémentation actuelle ; la recette visuelle est différée.
+
+La prochaine tâche reste C3, après C2a livré. Son découpage de réalisation est
+maintenu dans [la tâche active C3](feuille-de-route.md#c3--conserver-et-retrouver-ce-qui-a-été-commencé) :
+**C3.1 validation/persistance**, puis **C3.2 raccord/sauvegarde/reprise**. La tâche
+entière n’est pas terminée à la livraison du premier lot.
+
+Les critères visuels des sections préparatoires décrivent la recette finale,
+avec le report ci-dessus. Le journal et les étapes réellement livrées restent
+dans `feuille-de-route.md` et `etat.md` ; ce plan ne tient pas un second journal
+d’implémentation.
 
 ## 9. Journal de préparation
 

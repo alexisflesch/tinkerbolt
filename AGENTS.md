@@ -21,10 +21,14 @@ son journal. L'état réellement livré est dans `docs/etat.md`.
 `docs/feuille-de-route-luna.md` est l'historique de la reprise précédente : on
 n'y lit que l'entrée qu'une tâche cite.
 
-Le découpage en tranches est dans `docs/backlog.md`. La reprise est conduite par
-Codex (Sol 6.1, équivalent d'Opus) ; il peut déléguer une sous-tâche délimitée
-à Terra (équivalent de Sonnet), ou à Luna en effort `xhigh` pour les tâches
-simples, et reste responsable du résultat. `gpt-6-astra` n'est jamais utilisé.
+Le découpage en tranches est dans `docs/backlog.md`. Codex Sol 6.1 conduit
+la reprise et reste responsable du résultat. Un seul sous-agent est actif à la
+fois, sans délégation imbriquée. Le même agent réalise les tests et
+l’implémentation d’un lot ; les corrections locales peuvent être faites par
+l’orchestrateur. Sol 6.1 est préféré pour l’UI, Luna en effort `xhigh` pour les
+tâches simples ; les autres choix suivent la difficulté et les modèles disponibles.
+`gpt-6-astra` n’est jamais utilisé. La méthode de reprise détaillée est dans
+`docs/feuille-de-route.md` § Règles de la reprise active.
 
 Le code, les schémas exécutables et les tests priment sur les exemples narratifs.
 Un exemple obsolète doit être corrigé ou supprimé.

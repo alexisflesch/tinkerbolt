@@ -1,117 +1,78 @@
 ---
 name: orchestrate
-description: Découper une tranche de travail TinkerBolt en sous-tâches, déléguer chacune à un agent Codex avec le modèle et l'effort adaptés, puis intégrer les résultats derrière la gate du dépôt. Utiliser quand la demande couvre plusieurs couches, plusieurs fichiers indépendants, ou une tranche entière de docs/backlog.md. Ne pas utiliser pour un changement tenant dans un seul fichier ou une seule couche.
+description: Conduire une tranche TinkerBolt avec des lots bornés, une délégation séquentielle adaptée à la difficulté et une validation finale. Utiliser pour orchestrer une tâche de la feuille de route ou sur demande explicite ; un changement local peut être réalisé directement.
 metadata:
-  short-description: Déléguer une tranche TinkerBolt à des agents Codex, un modèle par job
+  short-description: Livrer des lots bornés avec un seul agent à la fois
 ---
 
 # Orchestration TinkerBolt
 
-Tu ne codes pas. Tu découpes, tu délègues, tu vérifies, tu intègres.
+Réduire le coût de coordination en conservant les contrats, le TDD et la
+validation du dépôt. Les instructions de l’auteur priment sur ce skill.
 
-Écrire toi-même une sous-tâche que tu viens de définir est un échec
-d'orchestration : soit la tranche ne méritait pas ce skill, soit tu court-circuites
-la revue croisée.
+## Cadrer et lire
 
-## 1. Cadrer
+- Commencer par `docs/index.md`, puis le point de reprise, les règles actives et
+  la tâche concernée dans `docs/feuille-de-route.md`, ainsi que `AGENTS.md`.
+  La feuille fait autorité sur l’ordre ; le plan préparatoire est un contexte.
+- Utiliser `rg` et lire les sections utiles avant d’élargir. Ne pas charger les
+  historiques, les ADR entières ou tous les fichiers d’une couche par défaut.
+  Réutiliser les lectures déjà faites si leur contenu n’a pas changé.
+- Consulter `git status --short`. Préserver les modifications de l’auteur et
+  travailler autour d’elles ; clarifier seulement un chevauchement réel.
+  Ne pas imposer un dépôt propre ni une gate initiale systématique.
+- Définir un lot par résultat vérifiable, avec ses dépendances et ses fichiers.
+  Un lot peut traverser plusieurs couches. Découper une tâche trop large en
+  étapes livrables, sans déclarer la tâche entière terminée après une étape.
 
-1. Lire `AGENTS.md` et `docs/index.md`.
-2. Identifier la tranche dans `docs/backlog.md`. Si la demande n'y correspond pas,
-   la formuler dans le même format avant de continuer.
-3. Vérifier les dépendances de la tranche. Une tranche dont les dépendances ne sont
-   pas intégrées ne démarre pas : le dire et proposer la tranche débloquante.
-4. Établir l'état de départ : `git status --short` et `pnpm typecheck` doivent être
-   propres. Un dépôt sale se règle avec l'utilisateur avant toute délégation.
+## Réaliser et déléguer
 
-## 2. Découper
+- **Un seul sous-agent actif à la fois ; un seul propriétaire d’écriture.**
+  Les sous-agents ne délèguent pas. L’orchestrateur peut lire pendant leur
+  travail, mais attend leur arrêt avant d’écrire dans le même arbre.
+- Confier tests rouges, implémentation verte et refactoring au **même agent**.
+  Conserver la preuve que le test échoue pour la bonne raison. Une modification
+  documentaire n’exige pas de test artificiel.
+- Déléguer un lot complet lorsque cela apporte un modèle adapté ou un contexte
+  borné. Réutiliser l’agent pour ses corrections et les étapes liées. Ne pas
+  créer un agent pour chaque lecture, test, correction de gate ou compte rendu.
+- L’orchestrateur peut réaliser directement un changement local, une correction
+  d’intégration ou une tâche documentaire. Il reste responsable du résultat.
+- Donner un brief court : résultat, périmètre, lectures ciblées, contraintes
+  particulières et commandes de validation. Ne pas transmettre tout l’historique.
+  Le canal natif suffit ; aucun fichier de brief ou worktree n’est obligatoire.
+  Isoler le travail seulement si nécessaire.
+- Choisir selon [routing.md](references/routing.md) si une délégation est utile.
+  Sol 6.1 pour l’UI ; Astra est toujours exclu.
+- Relire le diff ciblé et les preuves. Une seconde revue indépendante est utile
+  si un risque important reste mal couvert (migration, atomicité, physique) ;
+  elle n’est pas une étape automatique de chaque lot.
 
-Une sous-tâche valide respecte les quatre conditions suivantes :
+## Valider et livrer
 
-- **un seul propriétaire d'écriture** : aucun autre agent n'écrit dans ses fichiers ;
-- **une sortie vérifiable** : un test qui échoue puis passe, pas « améliorer X » ;
-- **une liste de lecture close** : issue du routage de `docs/index.md` ;
-- **elle tient dans un contexte** : au-delà, elle se redécoupe.
+- Pendant le travail, lancer les tests concernés et les contrôles pertinents ;
+  utiliser `pnpm check:fast` pour une vérification intermédiaire plus large.
+- Avant clôture, lancer **`pnpm check` sur l’ensemble intégré**. Ne pas répéter
+  les vérifications déjà vertes sans changement ou doute nouveau. En cas
+  d’échec, corriger et vérifier d’abord le cas ciblé, puis relancer la gate.
+  Faire `pnpm build` avant un Playwright isolé.
+- Garder les logs détaillés dans un fichier ; remonter le résumé ou les erreurs
+  utiles. Éviter les dumps de DOM, diffs complets et listes de tests verts.
+- Suivre l’instruction actuelle de l’auteur : aucune capture ni vérification
+  d’image pendant l’implémentation. Consigner la recette visuelle différée ;
+  ne pas annoncer une validation à l’œil qui n’a pas eu lieu.
+- Mettre à jour le journal et l’état livré de façon concise, puis committer le
+  lot validé selon les règles de la reprise. Ne pas pousser sans autorisation.
+- Rapport final court : comportement livré, validation, commit, reste à faire.
+  Signaler les limites réelles et contradictions, sans répéter le brief.
+- Respecter le périmètre autorisé et tout arrêt demandé. Pour changer de
+  conversation, laisser une reprise de 10 à 20 lignes : dernier commit, prochaine
+  étape, contrats utiles, commandes et points ouverts. Ne pas recréer un historique.
 
-L'axe de découpage par défaut est la couche d'architecture, parce que c'est celui
-que le lint et `src/architecture/layer-boundaries.test.ts` font déjà respecter :
-`domain`, `application`, `simulation`, `presentation`, `infrastructure`, `ui`,
-`content`, `e2e`.
+## Références facultatives
 
-Le TDD impose un ordre, pas un parallélisme naïf. Dans une même couche, le test
-rouge et son implémentation verte sont **deux sous-tâches séquentielles confiées à
-deux agents différents** : celui qui écrit le test ne doit pas être celui qui le
-fait passer. C'est la seule protection réelle contre un test écrit pour arranger
-une implémentation.
+- [routing.md](references/routing.md) : modèle et effort pour une délégation.
+- [protocol.md](references/protocol.md) : brief et rapport compacts.
+- [roles.md](references/roles.md) : périmètres pour un lot inhabituel.
 
-## 3. Choisir le modèle
-
-Lire `references/routing.md`. Règles qui ne se négocient pas :
-
-- **Jamais `ultra` pour un sous-agent.** Cet effort délègue lui-même ; imbriquer
-  une orchestration dans une orchestration rend le résultat non traçable.
-- **Descendre d'un cran par rapport à l'instinct**, puis escalader avec les preuves
-  de l'échec. Une escalade documentée coûte moins qu'un `sol max` systématique.
-- **Le modèle suit la difficulté du raisonnement, pas la taille du diff.** Un
-  adaptateur physique de 40 lignes est plus dur qu'un composant React de 300.
-
-## 4. Déléguer
-
-Une sous-tâche par processus, en fond, worktree dédié dès qu'il y a parallélisme.
-
-```bash
-git worktree add ../tinkerbolt-<tache> -b <tache>
-
-codex exec \
-  --cd ../tinkerbolt-<tache> \
-  -m <modèle> \
-  -c model_reasoning_effort=<effort> \
-  --output-last-message /tmp/<tache>.report.md \
-  "$(cat /tmp/<tache>.brief.md)"
-```
-
-`<modèle>` est l'identifiant complet (`gpt-6-luna`, `gpt-5.6-terra`,
-`gpt-6-sol`), pas le nom court de la table de routage. `gpt-6-astra` est exclu.
-Si tu es toi-même `gpt-6-luna` et suis la feuille de route, `-m gpt-6-luna` est
-la seule valeur permise.
-
-Le brief est un fichier, jamais une chaîne inline : il doit être relisible quand le
-rapport surprend. Sa forme est imposée par `references/protocol.md`.
-
-Ne jamais passer `--dangerously-bypass-approvals-and-sandbox`. Un sous-agent qui a
-besoin de plus de droits remonte le blocage ; c'est à toi de trancher.
-
-## 5. Intégrer
-
-1. Lire chaque rapport. Un rapport qui n'établit pas sa sortie vérifiable est un
-   échec, quelle que soit la qualité du diff.
-2. Relire le diff toi-même : `git diff main...<tache>`. Chercher d'abord les
-   violations d'invariants d'`AGENTS.md`, pas les préférences de style.
-3. Déléguer une revue croisée des tranches à risque à un agent qui n'a pas écrit le
-   code, ou à `$review-agent`.
-4. Intégrer dans l'ordre des dépendances, une branche à la fois.
-5. Lancer `pnpm check` **une fois, sur l'intégration complète**. Les sous-agents
-   lancent `pnpm check:fast` ; ils ne lancent ni le build ni Playwright, qui
-   coûtent trop cher en parallèle et ne prouvent rien sur une branche isolée.
-6. Nettoyer : `git worktree remove`.
-
-Un échec de `pnpm check` à l'intégration se rejoue comme une sous-tâche, avec la
-sortie d'erreur dans le brief. Ne le corrige pas à la main pour « débloquer » :
-c'est le moment où l'orchestration produit sa vraie valeur.
-
-## 6. Rendre compte
-
-Une seule sortie pour l'utilisateur :
-
-- ce qui est intégré et prouvé par quel test ;
-- ce qui a été délégué à quel modèle et à quel effort, et ce que ça a coûté en
-  escalades ;
-- ce qui reste ouvert, avec la tranche qui le portera ;
-- toute contradiction trouvée entre deux documents, avec le document à corriger.
-
-Ne jamais annoncer une tranche terminée sans `pnpm check` vert sur l'intégration.
-
-## Références
-
-- `references/routing.md` — table modèle × effort, règles d'escalade.
-- `references/roles.md` — rôles délégables, périmètre d'écriture, liste de lecture.
-- `references/protocol.md` — format imposé du brief et du rapport.
+Ne lire une référence que si elle aide le lot courant.

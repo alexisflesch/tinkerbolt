@@ -21,7 +21,7 @@ Pour les poutres, une petite icône de redimensionnement (similaire à la rotati
 
 Quand on quitte un niveau ou un brouillon de l'atelier il faut garder ce que le joueur a commencé à faire en local storage quelque part
 
-À ce sujet, utilise-t-on bien une db (dixiedb ?) en local storage ? Si non, il est probablement temps de le faire. Il me faut un avis sur la question.
+À ce sujet, utilise-t-on bien une db en local storage ? Si non, il est probablement temps de le faire. Il me faut un avis sur la question.
 
 Il faut compléter l'inventaire avec les objets dans art/ qui n'ont pas encore été intégrés
 

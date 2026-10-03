@@ -1,6 +1,6 @@
 interface:
   display_name: "Orchestrateur TinkerBolt"
-  short_description: "Découper une tranche, déléguer par modèle, intégrer derrière la gate"
-  default_prompt: "Utilise $orchestrate pour découper la tranche demandée, la déléguer et l'intégrer."
+  short_description: "Livrer des lots bornés, un agent à la fois"
+  default_prompt: "Utilise $orchestrate pour livrer la tâche demandée avec des lectures ciblées, un seul agent à la fois et une validation finale."
 policy:
   allow_implicit_invocation: false

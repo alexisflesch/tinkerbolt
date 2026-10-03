@@ -28,20 +28,38 @@ ports asynchrones ; la reprise des constructions de joueur reste C3.
 
 ## Règles de la reprise active
 
-- Lire `index.md`, cette feuille, puis la ligne de routage de la tâche. Les
-  historiques ne se lisent que par entrée citée ; ne pas parcourir `docs/` en entier.
-- Une tâche à la fois, dans l’ordre. **Un seul sous-agent actif à la fois**, sur
-  instruction de l’auteur du 3 octobre 2026, puis revue et intégration avant
-  le suivant. Codex Sol 6.1 conduit la reprise, réalise
-  les choix UI/UX et relit les travaux délégués. Terra peut prendre le code ;
-  Luna en effort `xhigh` les tâches simples. Astra est interdit.
-- Respecter Red-Green-Refactor pour chaque comportement ou bug. Une tâche
-  documentaire ou un audit n’exige pas de test artificiel.
-- `pnpm check:fast` pendant le travail ; `pnpm check` avant clôture. Faire
-  `pnpm build` avant un Playwright isolé. La session principale tient le journal,
-  l’état livré et la dernière gate. Un commit par tâche après `pnpm check`,
-  message en français à l’impératif avec son identifiant ; ne jamais pousser
-  sans autorisation.
+- Lire `index.md`, puis le point de reprise, ces règles et la tâche concernée,
+  ainsi que `AGENTS.md`. Suivre la ligne de routage ; utiliser `rg` et les
+  sections utiles, sans charger toute la feuille ni les historiques.
+  Réutiliser les lectures déjà faites tant qu’elles n’ont pas changé.
+- Une tâche à la fois, dans l’ordre ; la découper en lots vérifiables si nécessaire.
+  **Un seul sous-agent actif à la fois**, sans délégation imbriquée. Le même agent
+  réalise tests et code, puis ses corrections. Le réutiliser pour les étapes
+  liées ; ne pas déléguer chaque micro-opération. L’orchestrateur peut réaliser
+  directement les changements locaux et documentaires. Un seul propriétaire
+  d’écriture à la fois ; préserver les modifications de l’auteur.
+- Codex Sol 6.1 conduit la reprise et prend l’UI. Pour le reste, choisir selon
+  la difficulté et les modèles disponibles : Sol en effort `medium` pour le
+  courant, `high` pour les invariants complexes ; Luna `xhigh` pour le mécanique.
+  Astra est interdit. Ne pas diminuer systématiquement l’effort pour provoquer
+  une tentative puis une escalade. Revue supplémentaire seulement pour un risque
+  concret insuffisamment couvert.
+- Respecter Red-Green-Refactor pour chaque comportement ou bug, avec preuve de
+  l’échec attendu et de la réussite. Une tâche documentaire n’exige pas de test
+  artificiel. Tests ciblés au fil du travail ; `pnpm check:fast` pour élargir.
+  **`pnpm check` avant clôture du lot intégré**. En cas d’échec, vérifier d’abord
+  la correction sur son périmètre, puis relancer la gate globale. Faire
+  `pnpm build` avant un Playwright isolé. Conserver les logs détaillés dans un
+  fichier et afficher le bilan ou les erreurs utiles.
+- Brief et rapport courts ; aucune transmission systématique de l’historique
+  complet. La session principale tient le journal, l’état livré et la dernière
+  gate. Un commit par lot validé, message en français à l’impératif avec son
+  identifiant ; une étape partielle ne clôture pas sa tâche. Ne jamais pousser
+  sans autorisation. Rapport final : résultat, validation, commit et suite.
+- Pour reprendre dans une nouvelle conversation, laisser un résumé de 10 à
+  20 lignes avec commit, prochaine étape, contrats utiles et points ouverts.
+  Respecter les arrêts demandés ; signaler toute extension importante du lot
+  avant d’y consacrer du travail supplémentaire.
 - Maquettes validées par l’auteur avant tout choix visuel. Fournir et inspecter
   les captures : 1440 × 900 et 1280 × 720 pour les compléments desktop ; formats
   portrait et paysage concernés pour v2. Garder « validation visuelle attendue »
@@ -215,6 +233,21 @@ précise leurs dépendances supplémentaires.
   corrompues, le quota et le stockage indisponible.
 - **Sortie :** navigation et rechargement retrouvent la construction conservée ;
   un échec de sauvegarde est compréhensible et garde la session utilisable.
+
+**Lots de réalisation, dans cet ordre (C3 reste une seule tâche) :**
+
+1. **C3.1 — Validation et persistance :** enveloppe/codec, compatibilité avec
+   la source, port et repository des constructions, reconstruction de la
+   provenance et de l’inventaire, opérations liées à suppression/reset.
+   Tests de réouverture, atomicité, corruption et erreurs de stockage.
+2. **C3.2 — Sauvegarde et reprise dans le jeu :** raccord aux commandes validées,
+   navigation et rechargement en campagne/niveaux reçus, conservation de l’état
+   avant simulation, victoire, « Recommencer » et avertissements ; vérification
+   des créations d’Atelier. Tests des parcours et des erreurs de sauvegarde.
+
+Chaque lot a sa gate et son commit. C3.1 peut être livré sans annoncer la reprise
+joueur ; C3 n’est clos qu’après les parcours de C3.2. Les contrats restent ceux
+de l’ADR 0017 ; ce découpage ne crée aucune nouvelle décision produit.
 
 ### C4 — Choisir la taille d’une poutre depuis le plateau
 
@@ -444,6 +477,17 @@ déplacer. Aucun de ces exemples n’est déjà un contrat technique.
 
 Une entrée par tâche : résultat, décisions, tests rouges pertinents, gate,
 captures et validation de l’auteur. Les reports et blocages sont explicites.
+
+### Méthode de travail — allégée — 3 octobre 2026
+
+- À la demande de l’auteur, skill et règles actives alignés : un agent séquentiel
+  par lot, tests et code ensemble, corrections dans le même contexte, lectures
+  et rapports ciblés, gate globale à la clôture.
+- C3 découpé en C3.1 persistance/validation puis C3.2 raccord/reprise ; aucune
+  implémentation C3 engagée. Recette visuelle toujours différée.
+- Références du skill et `AGENTS.md` alignés ; plan préparatoire renvoyé vers
+  les règles actives. Modification documentaire, validation consignée dans le
+  rapport de livraison ; le todo de l’auteur reste intact.
 
 ### C0 — Raccord des sources — fait — 3 octobre 2026
 
