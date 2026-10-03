@@ -16,17 +16,18 @@ le journal.
 ## Point de reprise (3 octobre 2026)
 
 **Fait et commité** (validation prévue pour chaque tâche, rien n'est poussé) :
-V0, V1, V2a–c, V3, V4 (maquettes validées), V5, V6, V7, T1 et V7b
+V0, V1, V2a–c, V3, V4 (maquettes validées), V5, V6, V7, T1, V7b et V8
 (suppression de la fiche de calibrage, révélation dev conservée ; validation
 visuelle attendue). V7b : le test U6 a été corrigé et relancé seul à la demande
-de l'auteur, après la gate complète à 87/88 E2E. Dernier commit
+de l'auteur, après la gate complète à 87/88 E2E. V8 : parcours complet
+desktop couvert, gate verte (1200 tests Vitest, 89 E2E). Dernier commit
 d'implémentation : voir `git log`.
 
 **Validé par l'auteur** : maquettes V4 ; police Nunito vue dans son navigateur
 (V7). **Validation visuelle attendue** : captures V2b, V6, V7 (elles étaient
 dans le scratchpad de la session, perdues ; les régénérer pour V9).
 
-**Prochaines tâches, dans l'ordre** : V8, V9.
+**Prochaine tâche** : V9 (recette finale avec l'auteur).
 
 **Réponses de l'auteur à garder** :
 
@@ -290,7 +291,8 @@ livrée quand l'auteur l'a validée.
 
 ## 3. En attente de l'auteur
 
-- Validation des maquettes (V4), puis des captures de V2b, V6, V7.
+- Maquettes V4 validées. Validation des captures de V2b, V6, V7 et V7b
+  attendue, regroupée dans la recette V9.
 - Captures non validées des phases précédentes : on ne les revalide pas une
   à une ; V9 couvre l'état final.
 
@@ -975,3 +977,43 @@ an accessible element with the role "heading" and name "Amène la balle jusqu’
 - Fichier d'essai restauré identique (SHA-256 `1113625e…a92907`, mode 644),
   configuration Playwright restaurée identique (SHA-256 `9b03b7d8…754cb`).
 - Pour l'auteur : valider les captures V7b. Rien n'est poussé ; suite : V8.
+
+### V8 — Parcours beta-testeur — fait (validation visuelle attendue) — commit V8 (3 octobre 2026)
+
+- Scénario délégué à un nouveau sous-agent Sol 6.1, puis relu par la session
+  principale. `e2e/beta-journey.spec.ts` part d'un navigateur vierge : accueil,
+  résolution réelle du tutoriel 1, modification depuis la campagne, création
+  d'un puzzle, export vérifié par fichier et lien, réception sur un autre
+  appareil, résolution réelle et remix de la construction gagnante.
+- Aucun brouillon ni progrès injecté. Les coordonnées de pose viennent du
+  tutoriel embarqué, lu par le codec ; les actions passent par l'interface.
+  Le fichier téléchargé est validé par `decodeLevelFile`, le lien par
+  `decodeShareFragment` ; leurs documents sont identiques. Un troisième
+  contexte vierge reçoit le lien en joueur avec la solution cachée.
+  Une seconde réception garde la victoire et ne crée pas de doublon.
+- Hésitations observées : dans l'atelier, le catalogue propose la poutre
+  moyenne ; sa longueur se règle dans les propriétés. Le refus d'essayer ou
+  d'exporter une création sans objets « À placer » indique explicitement
+  comment la rendre jouable. Le scénario suit ces indications et vérifie
+  l'export. Aucun correctif de production ni restylage nécessaire ; l'icône
+  « Jouer » grisée reste conforme à la décision de l'auteur.
+- Nouveau parcours de recette d'un comportement existant : aucun rouge
+  artificiel ni changement de production. Au premier déroulement, le test
+  cherchait un rôle `alert` pour l'explication d'« Essayer en joueur », rendue
+  dans un paragraphe, et un bouton « Importer un fichier », nommé « Importer ».
+  Locators corrigés d'après le DOM ; contenu attendu et parcours conservés.
+- `pnpm build` puis scénario isolé : 1 test réussi. Typecheck, ESLint ciblé
+  et Prettier passent. Gate globale `pnpm check` : typecheck, lint, formatage,
+  Knip, contenu (6 documents), 1200 tests Vitest (90 fichiers), build
+  (55 entrées de précache, 2600,20 Kio) et **89 tests Playwright v1 réussis**,
+  aucun ignoré. U6 passe aussi dans cette gate.
+- Gate sur le port isolé 4319 : configuration temporaire restaurée identique
+  (SHA-256 `9b03b7d8…754cb`). Fichier d'essai de l'auteur écarté puis restauré
+  identique (SHA-256 `1113625e…a92907`, mode 644).
+- Seize captures durables dans `tmp/v8/captures/`, aux deux formats desktop :
+  accueil, atelier sans solution, refus expliqué, atelier puzzle, export
+  vérifié, réception fichier, remix gagnant, réception du lien en joueur.
+  Inspectées par le sous-agent ; captures des refus, export, réception et
+  remix relues par la session principale. Pas de débordement des dialogues ;
+  défilement normal de l'accueil et de Mes niveaux en 1280 × 720.
+- Pour l'auteur : captures et textes à valider dans V9. Rien n'est poussé.

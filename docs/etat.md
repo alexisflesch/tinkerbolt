@@ -1,6 +1,6 @@
 # État du dépôt — TinkerBolt
 
-Dernière mise à jour : 3 octobre 2026. Feuille de route v1 (desktop d’abord) ; V0, V1 (fin de N2), V2a (démo supprimée), V2b (pas de bordure, pas de perte par le haut ; validation visuelle attendue) et V2c (repli hors ligne de `/my-levels`) V3 (navigation et vocabulaire ; validation visuelle attendue) V5 (aperçu des niveaux), V6 (carte de niveau commune ; validation visuelle attendue) et V7 (accueil, en-tête, scrollbar, police Nunito ; validation visuelle attendue) livrées. V7b livrée (validation visuelle attendue) : fiche supprimée, révélation dev conservée, test U6 corrigé et relancé seul sur instruction de l'auteur. Prochaine tâche : V8 (parcours beta-testeur). U3 reste abandonnée.
+Dernière mise à jour : 3 octobre 2026. Feuille de route v1 (desktop d’abord) ; V0, V1 (fin de N2), V2a (démo supprimée), V2b (pas de bordure, pas de perte par le haut ; validation visuelle attendue) et V2c (repli hors ligne de `/my-levels`) V3 (navigation et vocabulaire ; validation visuelle attendue) V5 (aperçu des niveaux), V6 (carte de niveau commune ; validation visuelle attendue) et V7 (accueil, en-tête, scrollbar, police Nunito ; validation visuelle attendue) livrées. V7b livrée (validation visuelle attendue) : fiche supprimée, révélation dev conservée, test U6 corrigé et relancé seul sur instruction de l'auteur. V8 livrée : parcours beta-testeur desktop complet, gate verte (1200 tests Vitest, 89 E2E), validation visuelle attendue. Prochaine tâche : V9 (recette avec l’auteur). U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -41,7 +41,17 @@ La gate complète a trouvé une attente prématurée dans **U6 — remet l’ate
 Le helper attend maintenant l'URL `/editor` et le plateau visible, puis
 conserve l'assertion du texte. U6 passe seul après un nouveau build ; la gate
 globale n'est pas relancée, à la demande explicite de l'auteur.
-Prochaine tâche : **V8** (parcours beta-testeur).
+**V8** couvre maintenant le parcours complet du bêta-testeur sur desktop :
+résoudre le tutoriel 1, le modifier, marquer une poutre « À placer », exporter
+le puzzle vérifié en fichier et en lien, le recevoir dans un navigateur vierge,
+le résoudre et remixer la construction gagnante. Fichier et lien sont validés
+par leurs codecs et comparés ; une nouvelle réception conserve la victoire
+sans doublon. Un troisième contexte reçoit le lien avec la solution cachée.
+Les refus d'essayer et d'exporter sans objet « À placer » expliquent la marche
+à suivre ; aucun changement de production nécessaire. Captures aux deux
+formats dans `tmp/v8/captures/`, validation de l'auteur attendue.
+La gate globale de V8 est verte, y compris U6 corrigé.
+Prochaine tâche : **V9** (recette finale avec l'auteur).
 Les sources auteur et son fichier d’essai restent intacts ; rien n’est poussé.
 
 ## Stack en place
@@ -906,6 +916,15 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après V8 (3 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu (6 documents embarqués), 1200 tests Vitest
+(90 fichiers), build (précache : 55 entrées, 2600,20 Kio) et **89 tests
+Playwright v1 réussis**, aucun ignoré. Le nouveau parcours complet et U6
+passent dans la suite globale. Port isolé 4319, configuration restaurée
+identique (SHA-256 `9b03b7d8…754cb`) ; fichier d'essai écarté puis restauré
+identique (SHA-256 `1113625e…a92907`, mode 644). Seize captures desktop
+conservées dans `tmp/v8/captures/` ; validation visuelle de l'auteur attendue.
 
 Validation ciblée après le correctif U6 de V7b (3 octobre 2026) : `pnpm build`
 passe, puis le seul test « U6 — remet l’atelier à zéro après confirmation au
