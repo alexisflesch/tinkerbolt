@@ -1,7 +1,6 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import type { DraftCreation } from '../application/drafts/draft-repository';
 import { campaignDraftId } from '../application/drafts/campaign-draft';
 import { saveFreeCreation, startFreeCreation } from '../application/drafts/save-free-creation';
 import { puzzleFromWorkshop } from '../application/puzzle/puzzle-workshop';
@@ -10,6 +9,9 @@ import type { LevelDocument } from '../domain/level-document';
 import { AppFrame } from '../ui/AppFrame';
 import { Panel } from '../ui/Panel';
 import { BoardShell } from './BoardShell';
+import { awaitDraftWrites, orderDraftWrite } from './draft-writes';
+import { StorageLoading } from './StorageLoading';
+import { useStorageRead } from './use-storage-read';
 import { useDraftRepository } from './draft-repository-context';
 import { LockedLevelPage } from './LockedLevelPage';
 import { randomIdPart } from './random-id-part';
@@ -75,20 +77,38 @@ function FreeEditor({ onCreated }: { readonly onCreated: (draftId: string) => vo
   const drafts = useDraftRepository();
   const navigate = useNavigate();
   const createdIdRef = useRef<string | null>(null);
-
+  const queueKey = useRef(Symbol('free-editor'));
+  const active = useRef(true);
+  const [unsaved, setUnsaved] = useState(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   return (
     <Workshop
       initialDocument={embeddedWorkshopDocument}
+      unsaved={unsaved}
+      beforeLeave={() => awaitDraftWrites(drafts)}
       onDocumentCommitted={(document) => {
-        if (createdIdRef.current !== null) {
-          saveFreeCreation(drafts, createdIdRef.current, document);
-          return;
-        }
-        const started = startFreeCreation(drafts, document, randomIdPart);
-        if (started.status === 'error') return;
-        createdIdRef.current = started.draftId;
-        onCreated(started.draftId);
-        void navigate(`/editor?draft=${encodeURIComponent(started.draftId)}`, { replace: true });
+        void orderDraftWrite(drafts, queueKey.current, async () => {
+          if (createdIdRef.current !== null)
+            return saveFreeCreation(drafts, createdIdRef.current, document);
+          const started = await startFreeCreation(drafts, document, randomIdPart);
+          if (started.status === 'ok') {
+            createdIdRef.current = started.draftId;
+            if (active.current) {
+              onCreated(started.draftId);
+              void navigate(`/editor?draft=${encodeURIComponent(started.draftId)}`, {
+                replace: true,
+              });
+            }
+          }
+          return started;
+        }).then((result) => {
+          if (active.current) setUnsaved(result.status === 'error');
+        });
       }}
     />
   );
@@ -96,6 +116,8 @@ function FreeEditor({ onCreated }: { readonly onCreated: (draftId: string) => vo
 
 interface WorkshopProps {
   readonly initialDocument: LevelDocument;
+  readonly beforeLeave?: (() => Promise<void>) | undefined;
+  readonly unsaved?: boolean;
   readonly onDocumentCommitted?: (document: LevelDocument) => void;
   /** « Jouer » from « Mes niveaux » (M9): open on the puzzle when there is one. */
   readonly startPlaying?: boolean;
@@ -121,6 +143,8 @@ function Workshop({
   onDocumentCommitted,
   startPlaying = false,
   authorSource,
+  beforeLeave,
+  unsaved = false,
 }: WorkshopProps) {
   const [workshopDocument, setWorkshopDocument] = useState(initialDocument);
   const [playtest, setPlaytest] = useState<LevelDocument | null>(() => {
@@ -161,6 +185,10 @@ function Workshop({
       }}
       onPlayAsPlayer={setPlaytest}
       authorSource={authorSource}
+      beforeLeave={beforeLeave}
+      saveNotice={
+        unsaved ? 'Dernières modifications non enregistrées sur cet appareil.' : undefined
+      }
     />
   );
 }
@@ -171,9 +199,11 @@ function Workshop({
  * old envelope), whatever is stored. The lock is recomputed from progress.
  */
 function DraftEditor({ draftId }: { readonly draftId: string }) {
-  const { levels: levelProgress } = useCampaignProgress();
+  const { levels: levelProgress, loading } = useCampaignProgress();
   const levelIndex = embeddedLevels.findIndex((level) => campaignDraftId(level) === draftId);
   const campaignLevel = embeddedLevels[levelIndex];
+
+  if (loading) return <StorageLoading title="Brouillon" />;
 
   if (campaignLevel !== undefined && levelProgress[campaignLevel.id]?.unlocked !== true) {
     return (
@@ -190,10 +220,15 @@ function StoredDraftEditor({ draftId }: { readonly draftId: string }) {
   const drafts = useDraftRepository();
   // `location.state` is typed `any`: read it as `unknown` and narrow it.
   const navigationState: unknown = useLocation().state;
-  const [draft] = useState<DraftCreation | null>(() => {
-    const result = drafts.load(draftId);
-    return result.status === 'ok' ? result.creation : null;
-  });
+  const [unsaved, setUnsaved] = useState(false);
+  const loaded = useStorageRead(
+    useCallback(async () => {
+      await awaitDraftWrites(drafts);
+      return drafts.load(draftId);
+    }, [drafts, draftId]),
+  );
+  if (loaded === null) return <StorageLoading title="Brouillon" />;
+  const draft = loaded.status === 'ok' ? loaded.creation : null;
 
   if (draft === null) {
     return (
@@ -215,14 +250,20 @@ function StoredDraftEditor({ draftId }: { readonly draftId: string }) {
   return (
     <Workshop
       initialDocument={draft.document}
+      unsaved={unsaved}
+      beforeLeave={() => awaitDraftWrites(drafts)}
       startPlaying={asksToPlayPuzzle(navigationState)}
       authorSource={draft.source}
       onDocumentCommitted={(document) => {
         // Best effort, like progress (ADR 0011): a failed save never blocks editing.
         // The creation's source (ADR 0015) is kept as loaded.
-        drafts.save({
-          document,
-          ...(draft.source === undefined ? {} : { source: draft.source }),
+        void orderDraftWrite(drafts, draftId, () =>
+          drafts.save({
+            document: { ...document, id: draftId },
+            ...(draft.source === undefined ? {} : { source: draft.source }),
+          }),
+        ).then((result) => {
+          setUnsaved(result.status === 'error');
         });
       }}
     />

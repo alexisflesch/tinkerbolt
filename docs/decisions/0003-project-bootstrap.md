@@ -228,6 +228,26 @@ la gate reste reproductible hors ligne.
 - Zod, React, Vite, le futur renderer, le futur moteur physique, IndexedDB et le
   service worker sont traités comme sensibles et passent leurs suites complètes.
 
+### Amendement C2a — IndexedDB, 3 octobre 2026
+
+L’ADR 0017 acceptée remplace les adaptateurs `localStorage` par IndexedDB :
+**Dexie 4.4.6**, dépendance runtime épinglée, fournit les tables, transactions
+et migrations de base. **fake-indexeddb 6.2.5**, dépendance de développement
+épinglée, fournit une fabrique IndexedDB isolée pour les tests de repositories.
+Les deux projets sont sous licence Apache-2.0 et maintenus ; versions retenues
+vérifiées sur les [releases Dexie](https://github.com/dexie/Dexie.js/releases)
+et [fake-indexeddb](https://github.com/dumbmatter/fakeIndexedDB/releases).
+
+Dexie reste dans l’infrastructure. Les ports applicatifs retournent des
+promesses de résultats, sans exposer tables ni transactions. Aucun transfert
+de l’ancien stockage. Les empreintes et payloads sont préparés avant les
+transactions : aucun appel asynchrone extérieur à IndexedDB dans leur portée,
+conformément à la [documentation transactionnelle](https://dexie.org/docs/Dexie/Dexie.transaction()).
+Les tests fake-indexeddb vérifient validation, réouverture et rollback ; les
+parcours Playwright couvrent aussi le vrai IndexedDB du navigateur.
+Les scripts d’installation restent bloqués ; aucune nouvelle exception.
+Les nouvelles dépendances ne remplacent ni les codecs ni leurs migrations.
+
 Un audit automatisé de vulnérabilités est utile comme signal, mais sa sortie n'est
 pas assimilée aveuglément à une faille exploitable. Toute alerte affectant du code
 livré est analysée, documentée et corrigée ou acceptée explicitement.

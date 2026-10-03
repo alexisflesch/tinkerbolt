@@ -5,10 +5,12 @@ import type { DraftRepository } from '../application/drafts/draft-repository';
 import type { PreferencesRepository } from '../application/preferences/preferences-repository';
 import type { ProgressRepository } from '../application/progression/progress-repository';
 import type { ReceivedLevelRepository } from '../application/received/received-level-repository';
-import { createLocalStorageDraftRepository } from '../infrastructure/storage/local-storage-draft-repository';
-import { createLocalStoragePreferencesRepository } from '../infrastructure/storage/local-storage-preferences-repository';
-import { createLocalStorageProgressRepository } from '../infrastructure/storage/local-storage-progress-repository';
-import { createLocalStorageReceivedLevelRepository } from '../infrastructure/storage/local-storage-received-level-repository';
+import { createIndexedDBDraftRepository } from '../infrastructure/storage/indexed-db-draft-repository';
+import { createIndexedDBPreferencesRepository } from '../infrastructure/storage/indexed-db-preferences-repository';
+import { createIndexedDBProgressRepository } from '../infrastructure/storage/indexed-db-progress-repository';
+import { createIndexedDBReceivedLevelRepository } from '../infrastructure/storage/indexed-db-received-level-repository';
+
+import { createTinkerboltDatabase } from '../infrastructure/storage/tinkerbolt-database';
 
 import { BenchPage } from './BenchPage';
 import { BenchPlayPage } from './BenchPlayPage';
@@ -37,11 +39,11 @@ import {
 interface AppProps {
   /** Injectable local progress port, primarily used by application tests. */
   readonly progressRepository?: ProgressRepository;
-  /** Injectable local draft port (L26); defaults to `localStorage`. */
+  /** Injectable local draft port (L26); defaults to IndexedDB. */
   readonly draftRepository?: DraftRepository;
-  /** Injectable local port for received levels (ADR 0015); defaults to `localStorage`. */
+  /** Injectable local port for received levels (ADR 0015); defaults to IndexedDB. */
   readonly receivedLevelRepository?: ReceivedLevelRepository;
-  /** Injectable local preferences port (ADR 0011, M14); defaults to `localStorage`. */
+  /** Injectable local preferences port (ADR 0011, M14); defaults to IndexedDB. */
   readonly preferencesRepository?: PreferencesRepository;
   /**
    * Dev-mode override (U5b): `main.tsx` passes `import.meta.env.DEV` here so
@@ -61,46 +63,28 @@ interface AppProps {
 }
 
 const unavailableProgressRepository: ProgressRepository = {
-  load: () => ({ status: 'error', code: 'storage-unavailable' }),
-  save: () => ({ status: 'error', code: 'storage-unavailable' }),
-  clear: () => ({ status: 'error', code: 'storage-unavailable' }),
+  load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+  save: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+  recordVictory: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+  clear: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
 };
 
-const createBrowserProgressRepository = (): ProgressRepository => {
-  try {
-    if (typeof window === 'undefined') return unavailableProgressRepository;
-    return createLocalStorageProgressRepository(window.localStorage);
-  } catch {
-    return unavailableProgressRepository;
-  }
-};
-
-const createBrowserDraftRepository = (): DraftRepository => {
-  try {
-    if (typeof window === 'undefined') return unavailableDraftRepository;
-    // Composition point: the real clock is injected here, like `BenchPage`'s default `now`.
-    return createLocalStorageDraftRepository(window.localStorage, () => new Date());
-  } catch {
-    return unavailableDraftRepository;
-  }
-};
-
-const createBrowserReceivedLevelRepository = (): ReceivedLevelRepository => {
-  try {
-    if (typeof window === 'undefined') return unavailableReceivedLevelRepository;
-    return createLocalStorageReceivedLevelRepository(window.localStorage);
-  } catch {
-    return unavailableReceivedLevelRepository;
-  }
-};
-
-const createBrowserPreferencesRepository = (): PreferencesRepository => {
-  try {
-    if (typeof window === 'undefined') return unavailablePreferencesRepository;
-    return createLocalStoragePreferencesRepository(window.localStorage);
-  } catch {
-    return unavailablePreferencesRepository;
-  }
+const browserRepositories = () => {
+  if (typeof indexedDB === 'undefined' || typeof IDBKeyRange === 'undefined')
+    return {
+      drafts: unavailableDraftRepository,
+      received: unavailableReceivedLevelRepository,
+      preferences: unavailablePreferencesRepository,
+      progress: unavailableProgressRepository,
+    };
+  const db = createTinkerboltDatabase({ indexedDB, IDBKeyRange });
+  const clock = () => new Date();
+  return {
+    drafts: createIndexedDBDraftRepository(db, clock),
+    received: createIndexedDBReceivedLevelRepository(db, clock),
+    preferences: createIndexedDBPreferencesRepository(db, clock),
+    progress: createIndexedDBProgressRepository(db, clock),
+  };
 };
 
 export function App({
@@ -112,37 +96,16 @@ export function App({
   developmentMode = false,
   registerServiceWorker,
 }: AppProps = {}) {
-  const [browserDraftRepository] = useState(() =>
-    draftRepository === undefined ? createBrowserDraftRepository() : unavailableDraftRepository,
-  );
-  const [browserReceivedLevelRepository] = useState(() =>
-    receivedLevelRepository === undefined
-      ? createBrowserReceivedLevelRepository()
-      : unavailableReceivedLevelRepository,
-  );
-  const [browserPreferencesRepository] = useState(() =>
-    preferencesRepository === undefined
-      ? createBrowserPreferencesRepository()
-      : unavailablePreferencesRepository,
-  );
-  const [browserProgressRepository] = useState(() =>
-    progressRepository === undefined
-      ? createBrowserProgressRepository()
-      : unavailableProgressRepository,
-  );
-  const repository = progressRepository ?? browserProgressRepository;
+  const [browser] = useState(browserRepositories);
+  const repository = progressRepository ?? browser.progress;
 
   return (
     <PwaUpdateProvider registerServiceWorker={registerServiceWorker}>
       <DevelopmentModeContext value={developmentMode}>
         <CampaignProgressProvider repository={repository} unlockAllLevels={unlockAllLevels}>
-          <DraftRepositoryContext value={draftRepository ?? browserDraftRepository}>
-            <ReceivedLevelRepositoryContext
-              value={receivedLevelRepository ?? browserReceivedLevelRepository}
-            >
-              <PreferencesRepositoryContext
-                value={preferencesRepository ?? browserPreferencesRepository}
-              >
+          <DraftRepositoryContext value={draftRepository ?? browser.drafts}>
+            <ReceivedLevelRepositoryContext value={receivedLevelRepository ?? browser.received}>
+              <PreferencesRepositoryContext value={preferencesRepository ?? browser.preferences}>
                 <BrowserRouter basename={import.meta.env.BASE_URL}>
                   <Routes>
                     <Route path="/" element={<HomePage />} />

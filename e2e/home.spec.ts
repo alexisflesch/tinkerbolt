@@ -1,3 +1,4 @@
+import { progressFixture, seedIndexedDB } from './indexed-db-fixture';
 import { expect, test } from '@playwright/test';
 
 const HERO_TITLE = 'Amène la balle jusqu’au panier.';
@@ -100,17 +101,10 @@ test('ouvre chaque destination et revient à l’accueil depuis le menu', async 
 
 test('reprend la progression enregistrée après rechargement', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'tinkerbolt:progress',
-      JSON.stringify({
-        kind: 'progress',
-        version: 1,
-        data: { 'tuto-1': { resolved: true, bestObjectCount: 1 } },
-      }),
-    );
-  });
   await page.goto('/');
+  await seedIndexedDB(page, [
+    await progressFixture({ 'tuto-1': { resolved: true, bestObjectCount: 1 } }),
+  ]);
   await page.reload();
   await expect(
     page

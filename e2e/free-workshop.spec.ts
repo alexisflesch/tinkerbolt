@@ -1,9 +1,7 @@
+import { browserRows } from './indexed-db-fixture';
 import { expect, test, type Page } from '@playwright/test';
 
-const draftKeys = (page: Page): Promise<string[]> =>
-  page.evaluate(() =>
-    Object.keys(window.localStorage).filter((key) => key.startsWith('tinkerbolt:draft:')),
-  );
+const draftKeys = (page: Page): Promise<unknown[]> => browserRows(page, 'creations');
 
 test('M13 — l’atelier libre s’enregistre à la première modification, sans entrée d’historique', async ({
   page,

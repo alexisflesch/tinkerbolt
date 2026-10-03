@@ -16,6 +16,7 @@ interface AppFrameProps {
   /** Screen-specific commands listed first in the header menu. */
   readonly menuActions?: readonly MenuAction[];
   readonly children: ReactNode;
+  readonly beforeNavigate?: (() => Promise<void>) | undefined;
 }
 
 /**
@@ -31,6 +32,7 @@ export function AppFrame({
   headerAction,
   menuActions,
   children,
+  beforeNavigate,
 }: AppFrameProps) {
   return (
     <div className={`app-shell app-shell-${variant}`}>
@@ -39,6 +41,7 @@ export function AppFrame({
         subtitle={subtitle}
         attribution={attribution}
         action={headerAction}
+        beforeNavigate={beforeNavigate}
         {...(menuActions === undefined ? {} : { menuActions })}
       />
       <main className="app-main">{children}</main>

@@ -22,18 +22,28 @@ const createMemoryDraftRepository = (initial: readonly LevelDocument[] = []) => 
   const drafts = new Map(initial.map((document) => [document.id, document]));
   const saved: DraftCreationContent[] = [];
   const repository: DraftRepository = {
-    list: () => ({ status: 'ok', ids: [...drafts.keys()] }),
-    load: (id) => {
+    list: () => Promise.resolve({ status: 'ok', ids: [...drafts.keys()] }),
+    load: async (id) => {
+      await Promise.resolve();
       const document = drafts.get(id);
       return { status: 'ok', creation: document === undefined ? null : { document, updatedAt } };
     },
-    save: (creation) => {
+    save: async (creation) => {
+      await Promise.resolve();
       const { document } = creation;
       saved.push(creation);
       drafts.set(document.id, document);
       return { status: 'ok' };
     },
-    delete: (id) => {
+    create: async (creation) => {
+      await Promise.resolve();
+      if (drafts.has(creation.document.id)) return { status: 'error', code: 'identity-collision' };
+      saved.push(creation);
+      drafts.set(creation.document.id, creation.document);
+      return { status: 'ok' };
+    },
+    delete: async (id) => {
+      await Promise.resolve();
       drafts.delete(id);
       return { status: 'ok' };
     },
@@ -42,7 +52,7 @@ const createMemoryDraftRepository = (initial: readonly LevelDocument[] = []) => 
 };
 
 describe('brouillon d’un niveau de la campagne (U17)', () => {
-  it('ouvre un niveau à solution sans la poser, le niveau gardé intact comme source (M6, ADR 0015)', () => {
+  it('ouvre un niveau à solution sans la poser, le niveau gardé intact comme source (M6, ADR 0015)', async () => {
     const puzzle: LevelDocument = {
       ...levelTwo,
       solution: {
@@ -56,7 +66,7 @@ describe('brouillon d’un niveau de la campagne (U17)', () => {
     };
     const { repository, saved } = createMemoryDraftRepository();
 
-    openCampaignDraft(repository, puzzle);
+    await openCampaignDraft(repository, puzzle);
 
     expect(saved).toHaveLength(1);
     const [creation] = saved;
@@ -66,11 +76,11 @@ describe('brouillon d’un niveau de la campagne (U17)', () => {
     expect(creation?.source).toEqual(puzzle);
   });
 
-  it('enregistre la création sous un identifiant distinct et un titre « (remix) », sans toucher l’original (M6, ADR 0016)', () => {
+  it('enregistre la création sous un identifiant distinct et un titre « (remix) », sans toucher l’original (M6, ADR 0016)', async () => {
     const original = structuredClone(levelTwo);
     const { repository, saved } = createMemoryDraftRepository();
 
-    expect(openCampaignDraft(repository, levelTwo)).toEqual({
+    expect(await openCampaignDraft(repository, levelTwo)).toEqual({
       status: 'ok',
       draftId: 'campaign-02-par-dessus-le-mur-brouillon',
     });
@@ -81,35 +91,35 @@ describe('brouillon d’un niveau de la campagne (U17)', () => {
     expect(levelTwo).toEqual(original);
   });
 
-  it('garde la description du niveau d’origine dans la création (M14b)', () => {
+  it('garde la description du niveau d’origine dans la création (M14b)', async () => {
     const { repository, saved } = createMemoryDraftRepository();
     expect(levelTwo.metadata.description).toMatch(/^Esquisse non calibrée\./u);
 
-    openCampaignDraft(repository, levelTwo);
+    await openCampaignDraft(repository, levelTwo);
 
     expect(saved[0]?.document.metadata.description).toBe(levelTwo.metadata.description);
   });
 
-  it('rouvre un brouillon existant sans écraser les ajustements de l’auteur', () => {
+  it('rouvre un brouillon existant sans écraser les ajustements de l’auteur', async () => {
     const edited = {
       ...levelTwoCreation().document,
       metadata: { title: 'Par-dessus le mur modifié' },
     };
     const { repository, saved } = createMemoryDraftRepository([edited]);
 
-    expect(openCampaignDraft(repository, levelTwo)).toEqual({
+    expect(await openCampaignDraft(repository, levelTwo)).toEqual({
       status: 'ok',
       draftId: 'campaign-02-par-dessus-le-mur-brouillon',
     });
     expect(saved).toEqual([]);
   });
 
-  it('pose la solution de l’auteur dans une nouvelle création quand elle est révélée d’office (M11, ADR 0015 § Révéler)', () => {
+  it('pose la solution de l’auteur dans une nouvelle création quand elle est révélée d’office (M11, ADR 0015 § Révéler)', async () => {
     const { repository, saved } = createMemoryDraftRepository();
     const revealed = workshopFromPuzzle(levelTwo);
     expect(levelTwo.solution?.placements.length).toBeGreaterThan(0);
 
-    openCampaignDraft(repository, levelTwo, { revealSolution: true });
+    await openCampaignDraft(repository, levelTwo, { revealSolution: true });
 
     expect(saved).toHaveLength(1);
     const [creation] = saved;
@@ -120,25 +130,25 @@ describe('brouillon d’un niveau de la campagne (U17)', () => {
     expect(creation?.source).toEqual(levelTwo);
   });
 
-  it('rouvre telle quelle une création existante, même révélée d’office (M11)', () => {
+  it('rouvre telle quelle une création existante, même révélée d’office (M11)', async () => {
     const { repository, saved } = createMemoryDraftRepository([levelTwoCreation().document]);
 
-    expect(openCampaignDraft(repository, levelTwo, { revealSolution: true })).toEqual({
+    expect(await openCampaignDraft(repository, levelTwo, { revealSolution: true })).toEqual({
       status: 'ok',
       draftId: 'campaign-02-par-dessus-le-mur-brouillon',
     });
     expect(saved).toEqual([]);
   });
 
-  it('signale un stockage indisponible sans lever d’exception', () => {
+  it('signale un stockage indisponible sans lever d’exception', async () => {
     const { repository } = createMemoryDraftRepository();
     const unavailable: DraftRepository = {
       ...repository,
-      load: () => ({ status: 'error', code: 'storage-unavailable' }),
-      save: () => ({ status: 'error', code: 'storage-unavailable' }),
+      load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+      save: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
 
-    expect(openCampaignDraft(unavailable, levelTwo)).toEqual({
+    expect(await openCampaignDraft(unavailable, levelTwo)).toEqual({
       status: 'error',
       code: 'storage-unavailable',
     });

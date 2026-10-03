@@ -47,14 +47,23 @@ const createMemoryRepository = (initial: Readonly<Record<string, DraftCreation>>
   const entries = new Map(Object.entries(initial));
   const saves: DraftCreationContent[] = [];
   const repository: DraftRepository = {
-    list: () => ({ status: 'ok', ids: [...entries.keys()] }),
-    load: (id) => ({ status: 'ok', creation: entries.get(id) ?? null }),
-    save: (creation) => {
+    list: () => Promise.resolve({ status: 'ok', ids: [...entries.keys()] }),
+    load: (id) => Promise.resolve({ status: 'ok', creation: entries.get(id) ?? null }),
+    save: async (creation) => {
+      await Promise.resolve();
       saves.push(creation);
       entries.set(creation.document.id, { ...creation, updatedAt: '2026-10-01T12:00:00.000Z' });
       return { status: 'ok' };
     },
-    delete: (id) => {
+    create: async (creation) => {
+      await Promise.resolve();
+      if (entries.has(creation.document.id)) return { status: 'error', code: 'identity-collision' };
+      saves.push(creation);
+      entries.set(creation.document.id, { ...creation, updatedAt: '2026-10-01T12:00:00.000Z' });
+      return { status: 'ok' };
+    },
+    delete: async (id) => {
+      await Promise.resolve();
       entries.delete(id);
       return { status: 'ok' };
     },
@@ -63,7 +72,7 @@ const createMemoryRepository = (initial: Readonly<Record<string, DraftCreation>>
 };
 
 describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () => {
-  it('enregistre une nouvelle création `creation-<aléa>` titrée « (copie) », avec la même source', () => {
+  it('enregistre une nouvelle création `creation-<aléa>` titrée « (copie) », avec la même source', async () => {
     const original: DraftCreation = {
       document: workshop('campaign-01-brouillon', 'Mon remix'),
       source,
@@ -73,7 +82,7 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
       'campaign-01-brouillon': original,
     });
 
-    const result = duplicateCreation(repository, 'campaign-01-brouillon', () => 'abc123');
+    const result = await duplicateCreation(repository, 'campaign-01-brouillon', () => 'abc123');
 
     expect(result).toEqual({ status: 'ok', draftId: 'creation-abc123' });
     expect(saves).toEqual([
@@ -90,7 +99,7 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
     expect(entries.get('campaign-01-brouillon')).toEqual(original);
   });
 
-  it('garde la description et les autres métadonnées de l’original (M14b)', () => {
+  it('garde la description et les autres métadonnées de l’original (M14b)', async () => {
     const base = workshop('creation-1', 'Mon remix');
     const { repository, saves } = createMemoryRepository({
       'creation-1': {
@@ -102,7 +111,7 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
       },
     });
 
-    duplicateCreation(repository, 'creation-1', () => 'f00d');
+    await duplicateCreation(repository, 'creation-1', () => 'f00d');
 
     expect(saves[0]?.document.metadata).toEqual({
       title: 'Mon remix (copie)',
@@ -112,7 +121,7 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
     });
   });
 
-  it('duplique une création sans source sans lui en inventer une', () => {
+  it('duplique une création sans source sans lui en inventer une', async () => {
     const { repository, saves } = createMemoryRepository({
       'creation-1': {
         document: workshop('creation-1', 'De zéro'),
@@ -120,13 +129,13 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
       },
     });
 
-    duplicateCreation(repository, 'creation-1', () => 'f00d');
+    await duplicateCreation(repository, 'creation-1', () => 'f00d');
 
     expect(saves).toHaveLength(1);
     expect(saves[0]).not.toHaveProperty('source');
   });
 
-  it('tronque le titre d’origine pour garder « (copie) » entier', () => {
+  it('tronque le titre d’origine pour garder « (copie) » entier', async () => {
     const { repository, saves } = createMemoryRepository({
       'creation-1': {
         document: workshop('creation-1', 'a'.repeat(MAX_TITLE_LENGTH)),
@@ -134,14 +143,14 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
       },
     });
 
-    duplicateCreation(repository, 'creation-1', () => 'f00d');
+    await duplicateCreation(repository, 'creation-1', () => 'f00d');
 
     const title = saves[0]?.document.metadata.title ?? '';
     expect(title).toHaveLength(MAX_TITLE_LENGTH);
     expect(title).toBe(`${'a'.repeat(MAX_TITLE_LENGTH - ' (copie)'.length)} (copie)`);
   });
 
-  it('tire un autre aléa quand l’identifiant est déjà pris', () => {
+  it('tire un autre aléa quand l’identifiant est déjà pris', async () => {
     const { repository } = createMemoryRepository({
       'creation-1': {
         document: workshop('creation-1', 'Prise'),
@@ -150,31 +159,31 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
     });
     const draws = ['1', '2'];
 
-    expect(duplicateCreation(repository, 'creation-1', () => draws.shift() ?? 'x')).toEqual({
+    expect(await duplicateCreation(repository, 'creation-1', () => draws.shift() ?? 'x')).toEqual({
       status: 'ok',
       draftId: 'creation-2',
     });
   });
 
-  it('rend une erreur sans rien écrire pour une création introuvable ou illisible', () => {
+  it('rend une erreur sans rien écrire pour une création introuvable ou illisible', async () => {
     const { repository, saves } = createMemoryRepository({});
     const unavailable: DraftRepository = {
       ...repository,
-      load: () => ({ status: 'error', code: 'storage-unavailable' }),
+      load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
 
-    expect(duplicateCreation(repository, 'absente', () => 'f00d')).toEqual({
+    expect(await duplicateCreation(repository, 'absente', () => 'f00d')).toEqual({
       status: 'error',
       code: 'invalid-draft',
     });
-    expect(duplicateCreation(unavailable, 'absente', () => 'f00d')).toEqual({
+    expect(await duplicateCreation(unavailable, 'absente', () => 'f00d')).toEqual({
       status: 'error',
       code: 'storage-unavailable',
     });
     expect(saves).toEqual([]);
   });
 
-  it('rend une erreur de quota comme un résultat', () => {
+  it('rend une erreur de quota comme un résultat', async () => {
     const { repository } = createMemoryRepository({
       'creation-1': {
         document: workshop('creation-1', 'Pleine'),
@@ -183,10 +192,10 @@ describe('dupliquer une création (M9, ADR 0015 § Page « Mes niveaux »)', () 
     });
     const full: DraftRepository = {
       ...repository,
-      save: () => ({ status: 'error', code: 'quota-exceeded' }),
+      create: () => Promise.resolve({ status: 'error', code: 'quota-exceeded' }),
     };
 
-    expect(duplicateCreation(full, 'creation-1', () => 'f00d')).toEqual({
+    expect(await duplicateCreation(full, 'creation-1', () => 'f00d')).toEqual({
       status: 'error',
       code: 'quota-exceeded',
     });

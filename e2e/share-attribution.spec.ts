@@ -1,3 +1,4 @@
+import { storedEnvelope } from './indexed-db-fixture';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 
@@ -100,8 +101,8 @@ test('partage avec un pseudo, refuse un pseudo invalide et le retient (M14)', as
       .getByRole('dialog', { name: 'Exporter le niveau' })
       .getByRole('textbox', { name: 'Pseudo (facultatif)' }),
   ).toHaveValue('Lili');
-  const preferences = await page.evaluate(() => localStorage.getItem('tinkerbolt:preferences'));
-  expect(JSON.parse(preferences ?? 'null')).toEqual({
+  const preferences = await storedEnvelope(page, 'preferences', 'player');
+  expect(preferences).toEqual({
     kind: 'preferences',
     version: 1,
     data: { author: 'Lili' },

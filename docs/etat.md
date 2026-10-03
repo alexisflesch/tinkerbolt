@@ -1,9 +1,9 @@
 # État du dépôt — TinkerBolt
 
 Dernière mise à jour : 3 octobre 2026. V1 desktop clôturée (V0 à V9), core
-validé par l’auteur. Nouvelle reprise C/M/F active : **C0 et C1 livrés**,
-C5 implémenté, validation visuelle attendue. Dernière gate T2 verte :
-1206 tests Vitest et 89 E2E. U3 reste abandonnée.
+validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2 et C2a livrés**.
+C5 implémenté ; recette visuelle différée sur instruction de l’auteur.
+Dernière gate C2a verte : 1164 tests Vitest et 89 E2E. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -18,13 +18,20 @@ La [feuille de route](feuille-de-route.md) porte seule les tâches C/M/F et
 leur ordre. C0 raccorde index, backlog, architecture et ADR 0011/0015 aux
 décisions confirmées : Dexie asynchrone, base vide sans transfert des anciennes
 données locales, reprise automatique de la construction avant simulation.
-Ces décisions ne sont pas encore implémentées : le stockage livré reste
-`localStorage`, et la construction de joueur n’est pas persistée.
-Le contrat C2 est proposé dans l’[ADR 0017](decisions/0017-player-construction-and-async-storage.md).
+C2a est livré : les quatre stockages utilisent désormais
+Dexie avec ports asynchrones. Aucun transfert des anciennes données locales.
+La construction de joueur n’est pas encore persistée (C3).
+Le contrat C2 est accepté dans l’[ADR 0017](decisions/0017-player-construction-and-async-storage.md) :
+conserver après victoire, effacer progression et constructions de campagne au
+reset, supprimer une construction incompatible avec une source modifiée sans
+secours. La reprise de constructions reste à implémenter dans C3.
 Les [maquettes C4/C4a](maquettes/complements-desktop/c4-c4a.html) et leurs captures
-aux deux formats dans `tmp/c4/captures/` sont préparées, inspectées et en attente
-de validation ; aucun de ces nouveaux contrôles n’est implémenté dans l’application.
-Les contrats C2, maquettes et familles restent à valider dans leurs tâches.
+aux deux formats dans `tmp/c4/captures/` ont été examinées par l’auteur. Les
+positions demandées sont corrigées : rotation au coin haut gauche, taille à
+droite centrée ; la poursuite est autorisée. Aucun de ces nouveaux contrôles
+n’est implémenté dans l’application. La recette visuelle est différée sur instruction de l’auteur ; elle ne bloque
+pas l’implémentation autorisée. Les contrats des nouvelles familles restent
+à accepter dans leurs tâches.
 L’[audit préparatoire C8](audit-assets-c8.md) rapproche les 17 groupes d’assets
 du code livré et mesure les sources candidates. Les caisses, l’électroaimant,
 le piston et le minuteur restent absents de l’application ; leurs contrats,
@@ -35,8 +42,8 @@ rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
 C1 (`6150c94`, autre agent de l’auteur) corrige la pose après câblage dans le
 tutoriel 3 : les identifiants des poses de la solution cachée sont réservés,
 afin qu’un objet joueur ne les masque pas. Sa régression DOM et la gate globale
-ont été vérifiées par l’orchestrateur. C2 est proposé, ses trois
-arbitrages de reprise restent soumis à l’auteur. C5 synchronise désormais les
+ont été vérifiées par l’orchestrateur. C2 est accepté après les arbitrages de
+l’auteur. C5 synchronise désormais les
 actions de victoire et la modale au délai existant de 600 ms, ou sans délai si
 les animations sont réduites. Fermer la modale garde les actions disponibles ;
 une nouvelle tentative ou la navigation annule l’ancien délai. Le résultat
@@ -187,58 +194,51 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
 
 ### Stockage
 
-- Dépôt des niveaux reçus M3 (ADR 0015 § Stockage local) : port
-  `ReceivedLevelRepository` (`src/application/received/`, list, load, save,
-  delete) et adaptateur `localStorage`
-  (`src/infrastructure/storage/local-storage-received-level-repository.ts`), sur
-  le modèle des brouillons : index `tinkerbolt:received`, une enveloppe
-  `{ kind: "received-level", version: 1, data }` par
-  `tinkerbolt:received:<id>`, identifiant `recu-<16 chiffres hexadécimaux>`,
-  document relu par le codec de fichier, `receivedAt` ISO 8601 fourni par
-  l’appelant, `playerSolution` validée par le schéma `solution` du domaine
-  (désormais exporté), ni record ni solution du joueur sur une entrée non
-  résolue. Valeur illisible sauvegardée sous `tinkerbolt:backup:` avant
-  écrasement, quota et stockage indisponible en résultats d’erreur. Fourni à
-  l’app par `ReceivedLevelRepositoryContext` depuis M8.
-- Enveloppe des créations v2 M4 (ADR 0015 § Stockage local) : le port
-  `DraftRepository` lit et écrit une création entière (`DraftCreation` :
-  `document`, `source?`, `updatedAt`) ; `save` reçoit `document` et `source?`
-  et l’adaptateur la date avec son horloge injectée
-  (`createLocalStorageDraftRepository(storage, now)`, `() => new Date()` passé
-  par `App`). Toute écriture produit `{ kind: "draft", version: 2, data }` où
-  `document` et `source` sont la valeur JSON du texte du codec de fichier,
-  relue par le codec (migrations comprises), comme pour les niveaux reçus. Une
-  enveloppe v1 (`levelFile` en chaîne) reste lisible : création sans `source`,
-  `updatedAt` donné par l’horloge à la première lecture, qui la réécrit en v2
-  (au mieux : un échec d’écriture rend quand même la création, la lecture
-  suivante retente, M4b) ; les lectures suivantes renvoient la même date. Une
-  `source` invalide rend l’entrée invalide (sauvegarde
-  `tinkerbolt:backup:draft:<id>` puis avertissement). L’éditeur conserve la
-  `source` chargée à chaque enregistrement.
-- Préférences M14 (ADR 0016 § Pseudo) : port `PreferencesRepository`
-  (`src/application/preferences/`) et adaptateur `localStorage`
-  (`local-storage-preferences-repository.ts`) : enveloppe
-  `{ kind: "preferences", version: 1, data: { author?, firstLevelHintDone? } }` sous
-  `tinkerbolt:preferences`, pseudo validé par la règle `metadata.author`,
-  valeur illisible sauvegardée sous `tinkerbolt:backup:preferences`, quota et
-  stockage indisponible en résultats d’erreur ; fourni par
-  `PreferencesRepositoryContext`. Le pseudo exporté y est retenu (un champ
-  vidé l’oublie) et préremplit l’export d’une création sans `author` ; une
-  erreur de lecture ou d’écriture n’empêche jamais l’export. U8 y ajoute
-  `firstLevelHintDone: true` (aide du niveau 1 fermée ou suivie ; ADR 0011,
-  amendement du 2 octobre 2026), champ facultatif sans changement de
-  version : une valeur antérieure se relit à l’identique ; retenir le pseudo
-  conserve ce champ, et inversement.
-- Paramètres U11 (ADR 0011, amendement du 2 octobre 2026) : le port
-  `ProgressRepository` a une opération `clear()`. L’adaptateur `localStorage`
-  retire la seule clé `tinkerbolt:progress`. Une valeur illisible est d’abord
-  copiée sous `tinkerbolt:backup:progress`. Un quota dépassé ou un stockage
-  indisponible donne un résultat d’erreur. `CampaignProgressProvider` expose
-  `resetCampaignProgress()`, qui n’oublie la progression affichée qu’une fois
-  le stockage d’accord. Le cas d’usage `rememberAuthor(repository, author?)`
-  (`src/application/preferences/remember-author.ts`) relit les préférences,
-  remplace ou retire `author` seul, et réécrit tels quels tous les autres
-  champs. Il n’écrit rien si la lecture échoue et ne lève jamais d’exception.
+- C2a : une base `tinkerbolt`, version Dexie 1 (version native IndexedDB 10),
+  composée dans `App` avec horloge réelle injectée. Six tables : `creations`,
+  `receivedLevels`, `progress`, `preferences`, `playerConstructions`, `backups`.
+  Les quatre repositories existants et leurs consommateurs sont asynchrones ;
+  chargement visible avant lecture du plateau, pseudo, collections ou verrous.
+  La table de constructions est déclarée pour C3, sans reprise joueur livrée.
+  Les quatre adaptateurs localStorage sont retirés ; aucun transfert legacy.
+- Créations : `DraftRepository` conserve `document`, `source?` et `updatedAt`
+  dans une ligne d’enveloppe `draft` v2. Les niveaux passent par le codec de
+  fichier et ses migrations ; la base neuve ne lit pas d’enveloppe draft v1.
+  `create` insère exclusivement et retente une collision d’identité avec
+  l’aléa injecté. Chaque état engagé est ordonné par création, y compris les
+  commits arrivant pendant la première insertion ; id et URL sont adoptés
+  seulement après réussite. Lecture, navigation interne et lancement attendent
+  les sauvegardes en cours. Une erreur laisse l’édition disponible et montre
+  « Dernières modifications non enregistrées sur cet appareil. » ; un succès
+  ultérieur retire ce message. La source chargée est conservée à chaque save.
+- Reçus : `ReceivedLevelRepository` stocke l’enveloppe `received-level` v1,
+  id `recu-<16 chiffres hexadécimaux>`, source validée par le codec de fichier,
+  origine, date, record et solution du joueur. `receive` relit et fusionne
+  atomiquement un doublon ; une collision de documents canoniques est refusée.
+  `recordVictory` vérifie la source intacte et la présence du parent, puis garde
+  le meilleur compte et la dernière solution gagnante. `delete` supprime le
+  reçu et sa construction liée dans la même transaction ; créations indépendantes.
+- Préférences : enveloppe `preferences` v1 dans la ligne `player`, pseudo validé
+  par `authorSchema`, indices/refus d’installation facultatifs. `patch` fusionne
+  seulement les champs demandés ; `rememberAuthor` utilise ce patch et
+  `author: null` efface le pseudo sans perdre les drapeaux. Lecture attendue
+  avant formulaire ; l’export conserve une saisie déjà engagée pendant la lecture.
+  Un échec du stockage n’empêche pas l’export et n’annonce aucun pseudo enregistré.
+- Progression : enveloppe `progress` v1 dans la ligne `campaign`. Les victoires
+  utilisent `recordVictory` atomique ; la mémoire reste jouable avec avertissement
+  si le stockage échoue. `clear` supprime progression et constructions `campaign`
+  dans une transaction, sans toucher aux créations, reçus ou préférences.
+  Le provider attend les victoires engagées avant reset, ignore leurs réponses
+  obsolètes et confirme le reset seulement après réussite. La barrière des
+  écritures de construction sera raccordée avec C3.
+- Toute ligne lue est validée par Zod strict, colonnes et enveloppe cohérentes.
+  Une donnée invalide est copiée brute dans `backups`, puis retirée ou remplacée
+  dans la même transaction ; un échec du secours garde la valeur d’origine.
+  Une version future de base ou d’enveloppe reste intacte et produit une erreur.
+  Quota et indisponibilité sont des résultats typés. Les listes secourent aussi
+  une clé numérique invalide ; delete reçu et reset protègent les constructions
+  liées de version future. Les tests utilisent une IDBFactory neuve ; les fixtures
+  E2E encodent et relisent les données avec les repositories/codecs de production.
 - Créations de niveaux de campagne U17 : chaque carte de `/levels` porte
   « Modifier le niveau N » (M11), qui ouvre `/editor?draft=<id>-brouillon`.
   Depuis M6, une création neuve est construite par `creationFromLevel` (sans
@@ -285,7 +285,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   invalide n’enregistre rien. Le dépôt est fourni par
   `ReceivedLevelRepositoryContext`
   (`src/app/received-level-repository-context.ts`), branché dans `App`
-  (`localStorage` par défaut, prop `receivedLevelRepository` pour les tests).
+  (Dexie par défaut, prop `receivedLevelRepository` pour les tests).
   Validation visuelle attendue (statut discret, captures
   `test-results/shared/shared-not-kept-*.png`).
 - Page « Mes niveaux » M9 (ADR 0015 § Page « Mes niveaux », ADR 0008
@@ -615,7 +615,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   `offersFirstLevelHint` et `firstLevelHintStep`
   (`src/app/first-level-hint.ts`, purs), `FirstLevelHint` (`src/ui/`),
   `useFirstLevelHint` (`PlayLevelPage.tsx`). Tests `first-level-hint.test.ts`,
-  `local-storage-preferences-repository.test.ts`,
+  `indexed-db-preferences-contracts.test.ts`,
   `LevelExportDialog.test.tsx`, `App.test.tsx` et parcours
   `e2e/first-level-hint.spec.ts` (toucher, rechargement, boîtes disjointes du
   plateau et des boutons ; captures
@@ -684,14 +684,15 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   `Dialog` où « Annuler » est ciblé. Le texte dit la perte (niveaux résolus,
   records ; seul le niveau 1 reste ouvert) et ce qui est gardé (créations,
   niveaux reçus, pseudo, et la création « Modifier le niveau » d’un niveau
-  qui redevient verrouillé). Après confirmation, seule `tinkerbolt:progress`
-  est effacée. Un statut discret dit « Progression remise à zéro : seul le
+  qui redevient verrouillé). Depuis C2a, la confirmation mentionne aussi les
+  solutions et constructions de campagne ; la progression et ces constructions
+  sont effacées atomiquement. Un statut discret dit « Progression remise à zéro : seul le
   niveau 1 est ouvert. ». L’accueil, la liste des niveaux et les URL directes
   reflètent la campagne neuve, sans rechargement. Une erreur de stockage est
   dite dans la page, sans exception. Le libellé suit « Remettre à zéro » : le
   mot « Réinitialiser » n’est plus employé dans l’interface. Tests
-  `local-storage-progress-repository.test.ts`, `remember-author.test.ts`,
-  `local-storage-preferences-repository.test.ts`, `SettingsPage.test.tsx` et
+  `indexed-db-progress-contracts.test.ts`, `remember-author.test.ts`,
+  `indexed-db-preferences-contracts.test.ts`, `SettingsPage.test.tsx` et
   parcours tactile `e2e/settings.spec.ts` (390 × 844 et 844 × 390 ; captures
   `test-results/settings/{repos,pseudo-invalide,confirmation,statut}-{390x844,844x390,1440x900}.png`).
   **Détails visuels à réévaluer en fenêtre fraîche.**
@@ -818,10 +819,9 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
 
 - **Atelier libre sans message d’échec (M13).** Si l’enregistrement de la
   première modification échoue (quota, stockage indisponible), l’atelier
-  continue sans changer d’URL et retente à la modification suivante, sans
-  rien dire à l’auteur. Les enregistrements suivants d’une création échouent
-  de même en silence (comme ceux de tout brouillon). Un message discret reste à
-  décider.
+  continue sans changer d’URL et retente à la modification suivante. Depuis C2a,
+  un message discret signale les modifications non enregistrées, puis disparaît
+  à la prochaine sauvegarde réussie.
 - **Partage pendant une simulation (M14).** La boîte d’export reste ouverte
   pendant qu’une machine tourne ; un export à ce moment produit bien le
   fichier et le lien, mais l’atelier refuse les commandes de titre, de
@@ -833,8 +833,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   d’a… » de l’attribution, tronquée par une ellipse (accepté par le pilote
   en M11).
 - **Autosauvegarde non limitée (L26, M13).** `DraftRepository` et son
-  adaptateur `localStorage` stockent une création par identifiant sous
-  `tinkerbolt:draft:<id>`, avec l’index `tinkerbolt:drafts` ; les enveloppes
+  adaptateur Dexie stockent une création par identifiant dans `creations` ; les enveloppes
   versionnées sont validées, les documents passent par le codec de fichier
   L22, et les valeurs corrompues sont sauvegardées avant remplacement. La
   fonction pure `decideDraftAutosave` limite les essais d’enregistrement à une

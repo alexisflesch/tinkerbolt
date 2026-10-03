@@ -19,11 +19,14 @@ export interface ReceivedLevel {
 export type ReceivedLevelRepositoryErrorCode =
   | 'storage-unavailable'
   | 'quota-exceeded'
-  | 'invalid-received-level';
+  | 'invalid-received-level'
+  | 'unsupported-version'
+  | 'source-changed'
+  | 'identity-collision';
 
 export type ReceivedLevelRepositoryWarning = 'invalid-data-backed-up';
 
-export type ReceivedLevelIndexLoadResult =
+type ReceivedLevelIndexLoadResult =
   | {
       readonly status: 'ok';
       readonly ids: readonly string[];
@@ -43,10 +46,34 @@ export type ReceivedLevelWriteResult =
   | { readonly status: 'ok'; readonly warning?: ReceivedLevelRepositoryWarning }
   | { readonly status: 'error'; readonly code: ReceivedLevelRepositoryErrorCode };
 
+export type ReceivedLevelReceiveResult =
+  | {
+      readonly status: 'ok';
+      readonly level: ReceivedLevel;
+      readonly isNew: boolean;
+      readonly warning?: ReceivedLevelRepositoryWarning;
+    }
+  | { readonly status: 'error'; readonly code: ReceivedLevelRepositoryErrorCode };
+
+export type ReceivedLevelVictoryResult =
+  | {
+      readonly status: 'ok';
+      readonly level: ReceivedLevel | null;
+      readonly warning?: ReceivedLevelRepositoryWarning;
+    }
+  | { readonly status: 'error'; readonly code: ReceivedLevelRepositoryErrorCode };
+
 /** Application port for levels received by link or file, stored locally. */
 export interface ReceivedLevelRepository {
-  list(): ReceivedLevelIndexLoadResult;
-  load(id: string): ReceivedLevelLoadResult;
-  save(level: ReceivedLevel): ReceivedLevelWriteResult;
-  delete(id: string): ReceivedLevelWriteResult;
+  list(): Promise<ReceivedLevelIndexLoadResult>;
+  load(id: string): Promise<ReceivedLevelLoadResult>;
+  save(level: ReceivedLevel): Promise<ReceivedLevelWriteResult>;
+  receive(level: ReceivedLevel): Promise<ReceivedLevelReceiveResult>;
+  recordVictory(
+    id: string,
+    expectedSource: LevelDocument,
+    objectsUsed: number,
+    playerSolution: Solution,
+  ): Promise<ReceivedLevelVictoryResult>;
+  delete(id: string): Promise<ReceivedLevelWriteResult>;
 }

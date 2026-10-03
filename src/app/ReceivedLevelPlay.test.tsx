@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ProgressRepository } from '../application/progression/progress-repository';
@@ -14,8 +14,15 @@ import { levelDocumentSchema, type LevelDocument } from '../domain/level-documen
 import { encodeLevelFile } from '../infrastructure/level-file/level-file-codec';
 import { levelFingerprint } from '../infrastructure/level-file/level-fingerprint';
 import { encodeShareFragment } from '../infrastructure/level-share/level-share-codec';
-import { createLocalStorageReceivedLevelRepository } from '../infrastructure/storage/local-storage-received-level-repository';
 
+import {
+  testReceivedRepository,
+  renderStorageReady,
+  storageAction,
+  activeStoredRowCount,
+} from './storage-test-fixture';
+import type { CampaignProgress } from '../application/progression';
+import { recordSuccess } from '../application/progression';
 import { App } from './App';
 
 const locked = { move: false, rotate: false, remove: false } as const;
@@ -71,19 +78,28 @@ const entry = (document: LevelDocument, extra: Partial<ReceivedLevel> = {}): Rec
   ...extra,
 });
 
-const storage = () => createLocalStorageReceivedLevelRepository(window.localStorage);
+const storage = () => testReceivedRepository();
 
-const storedEntry = (id: string): ReceivedLevel | null => {
-  const loaded = storage().load(id);
+const storedEntry = async (id: string): Promise<ReceivedLevel | null> => {
+  const loaded = await storage().load(id);
   return loaded.status === 'ok' ? loaded.level : null;
 };
 
 const createProgressRepository = () => {
-  const save = vi.fn(() => ({ status: 'ok' as const }));
+  const save = vi.fn((_progress: CampaignProgress) => {
+    void _progress;
+    return Promise.resolve({ status: 'ok' as const });
+  });
   const repository: ProgressRepository = {
-    load: () => ({ status: 'ok', progress: {} }),
+    recordVictory: async (id, count) => {
+      const initial = await repository.load();
+      const updated = recordSuccess(initial.status === 'ok' ? initial.progress : {}, id, count);
+      await save(updated);
+      return { status: 'ok', progress: updated };
+    },
+    load: () => Promise.resolve({ status: 'ok', progress: {} }),
     save,
-    clear: () => ({ status: 'ok' }),
+    clear: () => Promise.resolve({ status: 'ok' }),
   };
   return { repository, save };
 };
@@ -95,13 +111,31 @@ const createReceivedLevelRepository = (
 ) => {
   const saves: ReceivedLevel[] = [];
   const repository: ReceivedLevelRepository = {
-    list: () => ({ status: 'ok', ids: initial.map(({ id }) => id) }),
-    load: (id) => ({ status: 'ok', level: initial.find((level) => level.id === id) ?? null }),
+    receive: async (level) => {
+      const result = await repository.save(level);
+      return result.status === 'error' ? result : { status: 'ok', level, isNew: true };
+    },
+    recordVictory: async (id, _source, count, solution) => {
+      const loaded = await repository.load(id);
+      if (loaded.status === 'error') return loaded;
+      if (loaded.level === null) return { status: 'ok', level: null };
+      const level = {
+        ...loaded.level,
+        solved: true,
+        bestObjectCount: Math.min(loaded.level.bestObjectCount ?? count, count),
+        playerSolution: solution,
+      };
+      const result = await repository.save(level);
+      return result.status === 'error' ? result : { status: 'ok', level };
+    },
+    list: () => Promise.resolve({ status: 'ok', ids: initial.map(({ id }) => id) }),
+    load: (id) =>
+      Promise.resolve({ status: 'ok', level: initial.find((level) => level.id === id) ?? null }),
     save: (level) => {
       saves.push(level);
-      return saveResult;
+      return Promise.resolve(saveResult);
     },
-    delete: () => ({ status: 'ok' }),
+    delete: () => Promise.resolve({ status: 'ok' }),
   };
   return { repository, saves };
 };
@@ -127,8 +161,8 @@ const createAnimationFrameHarness = () => {
 };
 
 /** Launches and runs the simulation until its outcome (B2: 240 spaced frames reach the timeout). */
-const launchToOutcome = (flush: (timestamp: number) => void): HTMLElement => {
-  fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
+const launchToOutcome = async (flush: (timestamp: number) => void): Promise<HTMLElement> => {
+  await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
   act(() => {
     flush(0);
     for (let frame = 1; frame <= 240; frame += 1) flush(frame * 1000);
@@ -138,25 +172,37 @@ const launchToOutcome = (flush: (timestamp: number) => void): HTMLElement => {
 
 /** U24: a received level only ever shows the Resolved tier. */
 const expectResolvedOnly = async (result: HTMLElement): Promise<void> => {
-  expect(within(result).getByText('Victoire')).toBeVisible();
-  expect(result).toHaveAttribute('data-level-tier', 'resolved');
+  await waitFor(() => {
+    expect(within(result).getByText('Victoire')).toBeVisible();
+  });
+  await waitFor(() => {
+    expect(result).toHaveAttribute('data-level-tier', 'resolved');
+  });
   const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
-  fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' }));
-  fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' }));
+  await storageAction(() =>
+    fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' })),
+  );
+  await storageAction(() =>
+    fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' })),
+  );
   const dialog = screen.getByRole('dialog', { name: 'Bravo !' });
   const tiers = within(within(dialog).getByRole('list', { name: 'Paliers' })).getAllByRole(
     'listitem',
   );
-  expect(tiers.map((tier) => tier.textContent)).toEqual(['Résolu obtenu']);
-  expect(within(dialog).queryByRole('button', { name: /Niveau suivant/u })).toBeNull();
+  await waitFor(() => {
+    expect(tiers.map((tier) => tier.textContent)).toEqual(['Résolu obtenu']);
+  });
+  await waitFor(() => {
+    expect(within(dialog).queryByRole('button', { name: /Niveau suivant/u })).toBeNull();
+  });
 };
 
-const chooseFile = (name: string, contents: string): void => {
+const chooseFile = async (name: string, contents: string): Promise<void> => {
   const input = document.querySelector<HTMLInputElement>('input[type="file"]');
   if (input === null) throw new Error('Sélecteur de fichier introuvable.');
   const file = new File([contents], name, { type: 'application/json' });
   Object.defineProperty(file, 'text', { value: () => Promise.resolve(contents) });
-  fireEvent.change(input, { target: { files: [file] } });
+  await storageAction(() => fireEvent.change(input, { target: { files: [file] } }));
 };
 
 /** Outside a secure context (HTTP on a local IP), `crypto.subtle` does not exist. */
@@ -186,7 +232,6 @@ const boardCanvasRect: DOMRect = {
 
 describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)', () => {
   beforeEach(() => {
-    window.localStorage.clear();
     window.history.replaceState(null, '', '/');
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(boardCanvasRect);
   });
@@ -197,38 +242,54 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     vi.restoreAllMocks();
   });
 
-  it('montre l’auteur et la première source dans l’en-tête, en texte brut', () => {
-    expect(storage().save(entry(attributed)).status).toBe('ok');
+  it('montre l’auteur et la première source dans l’en-tête, en texte brut', async () => {
+    await waitFor(async () => {
+      expect((await storage().save(entry(attributed))).status).toBe('ok');
+    });
     window.history.replaceState(null, '', `/my-levels/${entryId}/play`);
 
-    render(<App />);
+    await renderStorageReady(<App />);
 
     const header = screen.getByRole('banner');
-    expect(within(header).getByText('Le saut')).toBeVisible();
-    expect(
-      within(header).getByText('par <i>Lili</i> · d’après <b>La chute</b> (par Max)'),
-    ).toBeVisible();
-    expect(within(header).queryByText(/Plus ancien/u)).toBeNull();
-    expect(header.querySelector('i, b')).toBeNull();
+    await waitFor(() => {
+      expect(within(header).getByText('Le saut')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(
+        within(header).getByText('par <i>Lili</i> · d’après <b>La chute</b> (par Max)'),
+      ).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(within(header).queryByText(/Plus ancien/u)).toBeNull();
+    });
+    await waitFor(() => {
+      expect(header.querySelector('i, b')).toBeNull();
+    });
   });
 
   it('met l’entrée à jour à la victoire, n’affiche que ✅ et ne touche pas la campagne', async () => {
     const flush = createAnimationFrameHarness();
-    expect(storage().save(entry(attributed)).status).toBe('ok');
+    await waitFor(async () => {
+      expect((await storage().save(entry(attributed))).status).toBe('ok');
+    });
     const { repository: progress, save: saveProgress } = createProgressRepository();
     window.history.replaceState(null, '', `/my-levels/${entryId}/play`);
-    render(<App progressRepository={progress} />);
+    await renderStorageReady(<App progressRepository={progress} />);
 
-    const result = launchToOutcome(flush);
+    const result = await launchToOutcome(flush);
 
-    expect(storedEntry(entryId)).toEqual(
-      entry(attributed, { solved: true, bestObjectCount: 0, playerSolution: { placements: [] } }),
-    );
+    await waitFor(async () => {
+      expect(await storedEntry(entryId)).toEqual(
+        entry(attributed, { solved: true, bestObjectCount: 0, playerSolution: { placements: [] } }),
+      );
+    });
     await expectResolvedOnly(result);
-    expect(saveProgress).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(saveProgress).not.toHaveBeenCalled();
+    });
   });
 
-  it('ne change rien à l’entrée après un échec', () => {
+  it('ne change rien à l’entrée après un échec', async () => {
     const flush = createAnimationFrameHarness();
     const losing = receivedDocument({ title: 'Raté' }, 1);
     const before = entry(losing, {
@@ -236,14 +297,20 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
       bestObjectCount: 2,
       playerSolution: { placements: [] },
     });
-    expect(storage().save(before).status).toBe('ok');
+    await waitFor(async () => {
+      expect((await storage().save(before)).status).toBe('ok');
+    });
     window.history.replaceState(null, '', `/my-levels/${entryId}/play`);
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    const result = launchToOutcome(flush);
+    const result = await launchToOutcome(flush);
 
-    expect(within(result).getByText('Échec')).toBeVisible();
-    expect(storedEntry(entryId)).toEqual(before);
+    await waitFor(() => {
+      expect(within(result).getByText('Échec')).toBeVisible();
+    });
+    await waitFor(async () => {
+      expect(await storedEntry(entryId)).toEqual(before);
+    });
   });
 
   it('continue la partie quand la victoire ne peut pas être enregistrée', async () => {
@@ -253,11 +320,13 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
       [entry(attributed)],
     );
     window.history.replaceState(null, '', `/my-levels/${entryId}/play`);
-    render(<App receivedLevelRepository={repository} />);
+    await renderStorageReady(<App receivedLevelRepository={repository} />);
 
-    const result = launchToOutcome(flush);
+    const result = await launchToOutcome(flush);
 
-    expect(saves).toHaveLength(1);
+    await waitFor(() => {
+      expect(saves).toHaveLength(1);
+    });
     await expectResolvedOnly(result);
   });
 
@@ -265,24 +334,32 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     const flush = createAnimationFrameHarness();
     window.history.replaceState(null, '', '/shared' + (await encodeShareFragment(attributed)));
     const { repository: progress, save: saveProgress } = createProgressRepository();
-    render(<App progressRepository={progress} />);
-    expect(await screen.findByText('Partage · Le saut')).toBeVisible();
-    expect(
-      within(screen.getByRole('banner')).getByText(
-        'par <i>Lili</i> · d’après <b>La chute</b> (par Max)',
-      ),
-    ).toBeVisible();
+    await renderStorageReady(<App progressRepository={progress} />);
+    await waitFor(async () => {
+      expect(await screen.findByText('Partage · Le saut')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole('banner')).getByText(
+          'par <i>Lili</i> · d’après <b>La chute</b> (par Max)',
+        ),
+      ).toBeVisible();
+    });
 
-    const result = launchToOutcome(flush);
+    const result = await launchToOutcome(flush);
 
     const id = `recu-${await levelFingerprint(attributed)}`;
-    expect(storedEntry(id)).toMatchObject({
-      solved: true,
-      bestObjectCount: 0,
-      playerSolution: { placements: [] },
+    await waitFor(async () => {
+      expect(await storedEntry(id)).toMatchObject({
+        solved: true,
+        bestObjectCount: 0,
+        playerSolution: { placements: [] },
+      });
     });
     await expectResolvedOnly(result);
-    expect(saveProgress).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(saveProgress).not.toHaveBeenCalled();
+    });
   });
 
   it('n’enregistre rien, victoire comprise, sur un lien partagé non gardé', async () => {
@@ -292,14 +369,20 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
       status: 'error',
       code: 'quota-exceeded',
     });
-    render(<App receivedLevelRepository={repository} />);
-    expect(await screen.findByText('Partage · Le saut')).toBeVisible();
-    expect(saves).toHaveLength(1);
+    await renderStorageReady(<App receivedLevelRepository={repository} />);
+    await waitFor(async () => {
+      expect(await screen.findByText('Partage · Le saut')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(saves).toHaveLength(1);
+    });
 
-    const result = launchToOutcome(flush);
+    const result = await launchToOutcome(flush);
 
     await expectResolvedOnly(result);
-    expect(saves).toHaveLength(1);
+    await waitFor(() => {
+      expect(saves).toHaveLength(1);
+    });
   });
 
   it('propose de jouer quand même un fichier importé qui n’a pas pu être gardé, sans rien enregistrer', async () => {
@@ -309,46 +392,80 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
       code: 'quota-exceeded',
     });
     window.history.replaceState(null, '', '/my-levels');
-    render(<App receivedLevelRepository={repository} />);
+    await renderStorageReady(<App receivedLevelRepository={repository} />);
 
-    chooseFile('le-saut.json', encodeLevelFile(attributed));
+    await chooseFile('le-saut.json', encodeLevelFile(attributed));
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Ce niveau n’a pas été gardé.');
-    fireEvent.click(screen.getByRole('button', { name: 'Jouer quand même' }));
-
-    expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
-    const header = screen.getByRole('banner');
-    expect(within(header).getByText('Le saut')).toBeVisible();
-    expect(
-      within(header).getByText('par <i>Lili</i> · d’après <b>La chute</b> (par Max)'),
-    ).toBeVisible();
-    expect(screen.getByText('Ce niveau n’a pas été gardé sur cet appareil.')).toHaveAttribute(
-      'role',
-      'status',
+    await waitFor(() => {
+      expect(alert).toHaveTextContent('Ce niveau n’a pas été gardé.');
+    });
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Jouer quand même' })),
     );
-    expect(saves).toHaveLength(1);
 
-    const result = launchToOutcome(flush);
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
+    });
+    const header = screen.getByRole('banner');
+    await waitFor(() => {
+      expect(within(header).getByText('Le saut')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(
+        within(header).getByText('par <i>Lili</i> · d’après <b>La chute</b> (par Max)'),
+      ).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Ce niveau n’a pas été gardé sur cet appareil.')).toHaveAttribute(
+        'role',
+        'status',
+      );
+    });
+    await waitFor(() => {
+      expect(saves).toHaveLength(1);
+    });
+
+    const result = await launchToOutcome(flush);
     await expectResolvedOnly(result);
-    expect(saves).toHaveLength(1);
+    await waitFor(() => {
+      expect(saves).toHaveLength(1);
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fermer le résultat' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Retour à Mes niveaux' }));
-    expect(screen.getByRole('region', { name: 'Niveaux reçus' })).toBeVisible();
-    expect(window.location.pathname).toBe('/my-levels');
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Fermer le résultat' })),
+    );
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Retour à Mes niveaux' })),
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Niveaux reçus' })).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/my-levels');
+    });
   });
 
   it('propose de jouer quand même un fichier importé sans `crypto.subtle`', async () => {
     removeSubtleCrypto();
     window.history.replaceState(null, '', '/my-levels');
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    chooseFile('le-saut.json', encodeLevelFile(attributed));
-    expect(await screen.findByRole('alert')).toHaveTextContent('hors connexion sécurisée');
-    fireEvent.click(screen.getByRole('button', { name: 'Jouer quand même' }));
+    await chooseFile('le-saut.json', encodeLevelFile(attributed));
+    await waitFor(async () => {
+      expect(await screen.findByRole('alert')).toHaveTextContent('hors connexion sécurisée');
+    });
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Jouer quand même' })),
+    );
 
-    expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
-    expect(within(screen.getByRole('banner')).getByText('Le saut')).toBeVisible();
-    expect(window.localStorage.length).toBe(0);
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(within(screen.getByRole('banner')).getByText('Le saut')).toBeVisible();
+    });
+    await waitFor(async () => {
+      expect(await activeStoredRowCount()).toBe(0);
+    });
   });
 });

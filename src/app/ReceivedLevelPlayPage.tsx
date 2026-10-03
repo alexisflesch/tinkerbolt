@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import type { ReceivedLevel } from '../application/received/received-level-repository';
 import { AppFrame } from '../ui/AppFrame';
 import { Panel } from '../ui/Panel';
+import { useStorageRead } from './use-storage-read';
+import { StorageLoading } from './StorageLoading';
 import { ReceivedLevelBoard } from './ReceivedLevelBoard';
 import { useReceivedLevelRepository } from './received-level-repository-context';
 
@@ -20,10 +21,9 @@ export function ReceivedLevelPlayPage() {
 function ReceivedLevelPlay({ id }: { readonly id: string }) {
   const repository = useReceivedLevelRepository();
   const navigate = useNavigate();
-  const [level] = useState<ReceivedLevel | null>(() => {
-    const result = repository.load(id);
-    return result.status === 'ok' ? result.level : null;
-  });
+  const result = useStorageRead(useCallback(() => repository.load(id), [repository, id]));
+  if (result === null) return <StorageLoading title="Niveau reçu" />;
+  const level = result.status === 'ok' ? result.level : null;
 
   if (level === null) {
     return (

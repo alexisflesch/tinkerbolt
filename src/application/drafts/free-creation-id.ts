@@ -1,4 +1,8 @@
-import type { DraftRepository, DraftRepositoryErrorCode } from './draft-repository';
+import type {
+  DraftCreationContent,
+  DraftRepository,
+  DraftRepositoryErrorCode,
+} from './draft-repository';
 
 type FreeCreationIdResult =
   | { readonly status: 'ok'; readonly draftId: string }
@@ -6,19 +10,17 @@ type FreeCreationIdResult =
 
 const MAX_ID_ATTEMPTS = 10;
 
-/**
- * ADR 0015 § Identifiants: a `creation-<aléa>` no creation uses yet, the
- * random part injected. A taken identifier draws again, a few times at most.
- */
-export const freeCreationId = (
+/** Exclusive insertion is the identity check, so competing tabs cannot overwrite a creation. */
+export const freeCreationId = async (
   repository: DraftRepository,
   createId: () => string,
-): FreeCreationIdResult => {
+  contentForId: (id: string) => DraftCreationContent,
+): Promise<FreeCreationIdResult> => {
   for (let attempt = 0; attempt < MAX_ID_ATTEMPTS; attempt += 1) {
     const draftId = `creation-${createId()}`;
-    const existing = repository.load(draftId);
-    if (existing.status === 'error') return existing;
-    if (existing.creation === null) return { status: 'ok', draftId };
+    const result = await repository.create(contentForId(draftId));
+    if (result.status === 'ok') return { status: 'ok', draftId };
+    if (result.code !== 'identity-collision') return result;
   }
-  return { status: 'error', code: 'invalid-draft' };
+  return { status: 'error', code: 'identity-collision' };
 };

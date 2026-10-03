@@ -1,27 +1,15 @@
-import type {
-  Preferences,
-  PreferencesRepository,
-  PreferencesSaveResult,
-} from './preferences-repository';
+import type { PreferencesRepository, PreferencesSaveResult } from './preferences-repository';
 
-/**
- * U11 (ADR 0016 § Pseudo): keep `author` as the remembered pseudonym, or forget
- * it when `undefined`, while every other preference (U8's hint, U10's declined
- * install, any later field) is kept as it was read. The caller trims and
- * validates the typed value; the repository revalidates it. Nothing is written
- * when the current preferences cannot be read, so they are never overwritten
- * blindly; a storage failure or exception is a result, never thrown.
- */
-export const rememberAuthor = (
+/** Patch only the pseudonym; the repository reads and merges other preferences atomically. */
+export const rememberAuthor = async (
   repository: PreferencesRepository,
   author: string | undefined,
-): PreferencesSaveResult => {
+): Promise<PreferencesSaveResult> => {
   try {
-    const loaded = repository.load();
-    if (loaded.status === 'error') return loaded;
-    const { author: forgotten, ...others }: Preferences = loaded.preferences;
-    void forgotten;
-    return repository.save(author === undefined ? others : { ...others, author });
+    const patched = await repository.patch({ author: author ?? null });
+    return patched.status === 'error'
+      ? patched
+      : { status: 'ok', ...(patched.warning === undefined ? {} : { warning: patched.warning }) };
   } catch {
     return { status: 'error', code: 'storage-unavailable' };
   }

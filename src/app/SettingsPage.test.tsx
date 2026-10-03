@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type {
@@ -9,10 +9,11 @@ import type {
 } from '../application/preferences/preferences-repository';
 import type { ProgressRepository } from '../application/progression/progress-repository';
 import { campaignChapters } from '../content/embedded-levels';
+import { renderStorageReady, storageAction, testDatabase } from './storage-test-fixture';
 import { App } from './App';
 
-const progressKey = 'tinkerbolt:progress';
-const preferencesKey = 'tinkerbolt:preferences';
+const progressKey = 'progress:campaign';
+const preferencesKey = 'preferences:player';
 
 const [firstLevelId = '', secondLevelId = ''] = campaignChapters.flatMap(({ levels }) =>
   levels.map(({ id }) => id),
@@ -30,244 +31,375 @@ const progressEnvelope = JSON.stringify({
 const preferencesEnvelope = (data: Preferences): string =>
   JSON.stringify({ kind: 'preferences', version: 1, data });
 
-const storedPreferences = (): unknown => JSON.parse(localStorage.getItem(preferencesKey) ?? 'null');
+const storedPreferences = async (): Promise<unknown> => {
+  const row: unknown = await testDatabase().table('preferences').get('player');
+  return typeof row === 'object' && row !== null && 'envelope' in row ? row.envelope : null;
+};
 
-/** Everything a reset must leave alone: creations, received levels, preferences, backups. */
+/** Independent tables and backups are left intact by the campaign transaction. */
 const untouchedEntries = {
-  'tinkerbolt:drafts': `["${secondLevelId}-brouillon","creation-abc"]`,
-  [`tinkerbolt:draft:${secondLevelId}-brouillon`]: 'création du niveau 2',
-  'tinkerbolt:draft:creation-abc': 'création libre',
-  'tinkerbolt:received': '["recu-0123456789abcdef"]',
-  'tinkerbolt:received:recu-0123456789abcdef': 'niveau reçu',
-  'tinkerbolt:backup:progress': 'ancienne sauvegarde',
+  [`creations:${secondLevelId}-brouillon`]: JSON.stringify('création du niveau 2'),
+  'creations:creation-abc': JSON.stringify('création libre'),
+  'receivedLevels:recu-0123456789abcdef': JSON.stringify('niveau reçu'),
+  'backups:1': JSON.stringify('ancienne sauvegarde'),
   [preferencesKey]: preferencesEnvelope({
     author: 'Lili',
     firstLevelHintDone: true,
     installInvitationDeclined: true,
   }),
 } as const;
-
-const seed = (entries: Readonly<Record<string, string>>): void => {
-  for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);
+const seed = async (entries: Readonly<Record<string, string>>): Promise<void> => {
+  const db = testDatabase();
+  for (const [key, value] of Object.entries(entries)) {
+    const [table, id] = key.split(':');
+    if (table === undefined || id === undefined) throw new Error('Clé fixture invalide');
+    const envelope: unknown = JSON.parse(value);
+    await db.table(table).put({ id: table === 'backups' ? Number(id) : id, envelope });
+  }
+};
+const stored = async (key: string): Promise<string | null> => {
+  const [table, id] = key.split(':');
+  if (table === undefined || id === undefined) throw new Error('Clé fixture invalide');
+  const row: unknown = await testDatabase()
+    .table(table)
+    .get(table === 'backups' ? Number(id) : id);
+  return typeof row === 'object' && row !== null && 'envelope' in row
+    ? JSON.stringify(row.envelope)
+    : null;
 };
 
-const renderSettings = (props: Parameters<typeof App>[0] = {}): void => {
+const renderSettings = async (props: Parameters<typeof App>[0] = {}): Promise<void> => {
   window.history.replaceState(null, '', '/settings');
-  render(<App {...props} />);
+  await renderStorageReady(<App {...props} />);
 };
 
 const pseudoField = (): HTMLInputElement => screen.getByRole('textbox', { name: 'Pseudo retenu' });
 
-const openLevelList = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Campagne' }));
+const openLevelList = async (): Promise<void> => {
+  await storageAction(() =>
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' })),
+  );
+  await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Campagne' })));
 };
 
-beforeEach(() => {
-  localStorage.clear();
-});
+beforeEach(() => {});
 
 afterEach(() => {
   cleanup();
-  localStorage.clear();
   window.history.replaceState(null, '', '/');
 });
 
 describe('Paramètres — pseudo retenu (U11, ADR 0016 § Pseudo)', () => {
-  it('affiche le pseudo retenu', () => {
-    seed({ [preferencesKey]: preferencesEnvelope({ author: 'Lili' }) });
-    renderSettings();
+  it('affiche le pseudo retenu', async () => {
+    await seed({ [preferencesKey]: preferencesEnvelope({ author: 'Lili' }) });
+    await renderSettings();
 
-    expect(screen.getByRole('region', { name: 'Pseudo' })).toBeVisible();
-    expect(pseudoField()).toHaveValue('Lili');
-    expect(screen.getByText('Un pseudo, pas ton vrai nom.', { exact: false })).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Pseudo' })).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(pseudoField()).toHaveValue('Lili');
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Un pseudo, pas ton vrai nom.', { exact: false })).toBeVisible();
+    });
   });
 
-  it('montre un champ vide sans pseudo retenu, et « Effacer » désactivé', () => {
-    renderSettings();
+  it('montre un champ vide sans pseudo retenu, et « Effacer » désactivé', async () => {
+    await renderSettings();
 
-    expect(pseudoField()).toHaveValue('');
-    expect(screen.getByRole('button', { name: 'Effacer le pseudo' })).toBeDisabled();
+    await waitFor(() => {
+      expect(pseudoField()).toHaveValue('');
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Effacer le pseudo' })).toBeDisabled();
+    });
   });
 
-  it('modifie le pseudo, rogné, sans perdre les autres préférences', () => {
-    seed({
+  it('modifie le pseudo, rogné, sans perdre les autres préférences', async () => {
+    await seed({
       [preferencesKey]: preferencesEnvelope({
         author: 'Lili',
         firstLevelHintDone: true,
         installInvitationDeclined: true,
       }),
     });
-    renderSettings();
+    await renderSettings();
 
-    fireEvent.change(pseudoField(), { target: { value: '  Noé  ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' }));
+    await storageAction(() => fireEvent.change(pseudoField(), { target: { value: '  Noé  ' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' })),
+    );
 
-    expect(storedPreferences()).toEqual({
-      kind: 'preferences',
-      version: 1,
-      data: { author: 'Noé', firstLevelHintDone: true, installInvitationDeclined: true },
+    await waitFor(async () => {
+      expect(await storedPreferences()).toEqual({
+        kind: 'preferences',
+        version: 1,
+        data: { author: 'Noé', firstLevelHintDone: true, installInvitationDeclined: true },
+      });
     });
-    expect(pseudoField()).toHaveValue('Noé');
-    expect(screen.getByRole('status')).toHaveTextContent('Pseudo enregistré.');
+    await waitFor(() => {
+      expect(pseudoField()).toHaveValue('Noé');
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent('Pseudo enregistré.');
+    });
   });
 
-  it('efface le pseudo seulement', () => {
-    seed({
+  it('efface le pseudo seulement', async () => {
+    await seed({
       [preferencesKey]: preferencesEnvelope({ author: 'Lili', firstLevelHintDone: true }),
     });
-    renderSettings();
+    await renderSettings();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Effacer le pseudo' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Effacer le pseudo' })),
+    );
 
-    expect(storedPreferences()).toEqual({
-      kind: 'preferences',
-      version: 1,
-      data: { firstLevelHintDone: true },
+    await waitFor(async () => {
+      expect(await storedPreferences()).toEqual({
+        kind: 'preferences',
+        version: 1,
+        data: { firstLevelHintDone: true },
+      });
     });
-    expect(pseudoField()).toHaveValue('');
-    expect(screen.getByRole('status')).toHaveTextContent('Pseudo effacé.');
-    expect(screen.getByRole('button', { name: 'Effacer le pseudo' })).toBeDisabled();
+    await waitFor(() => {
+      expect(pseudoField()).toHaveValue('');
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent('Pseudo effacé.');
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Effacer le pseudo' })).toBeDisabled();
+    });
   });
 
-  it('oublie le pseudo quand le champ est vidé puis enregistré, comme à l’export (M14)', () => {
-    seed({ [preferencesKey]: preferencesEnvelope({ author: 'Lili' }) });
-    renderSettings();
+  it('oublie le pseudo quand le champ est vidé puis enregistré, comme à l’export (M14)', async () => {
+    await seed({ [preferencesKey]: preferencesEnvelope({ author: 'Lili' }) });
+    await renderSettings();
 
-    fireEvent.change(pseudoField(), { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' }));
-
-    expect(storedPreferences()).toEqual({ kind: 'preferences', version: 1, data: {} });
-    expect(screen.getByRole('status')).toHaveTextContent('Pseudo effacé.');
-  });
-
-  it('refuse un pseudo invalide sous le champ, sans rien écrire', () => {
-    seed({ [preferencesKey]: preferencesEnvelope({ author: 'Lili' }) });
-    renderSettings();
-    const before = localStorage.getItem(preferencesKey);
-
-    fireEvent.change(pseudoField(), { target: { value: 'Li li' } });
-
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Le pseudo ne doit contenir ni saut de ligne ni caractère de contrôle.',
+    await storageAction(() => fireEvent.change(pseudoField(), { target: { value: '   ' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' })),
     );
-    expect(pseudoField()).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByRole('button', { name: 'Enregistrer le pseudo' })).toBeDisabled();
-    expect(localStorage.getItem(preferencesKey)).toBe(before);
+
+    await waitFor(async () => {
+      expect(await storedPreferences()).toEqual({ kind: 'preferences', version: 1, data: {} });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent('Pseudo effacé.');
+    });
   });
 
-  it('dit qu’un pseudo n’a pas pu être enregistré, sans exception', () => {
+  it('refuse un pseudo invalide sous le champ, sans rien écrire', async () => {
+    await seed({ [preferencesKey]: preferencesEnvelope({ author: 'Lili' }) });
+    await renderSettings();
+    const before = await stored(preferencesKey);
+
+    await storageAction(() => fireEvent.change(pseudoField(), { target: { value: 'Li li' } }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Le pseudo ne doit contenir ni saut de ligne ni caractère de contrôle.',
+      );
+    });
+    await waitFor(() => {
+      expect(pseudoField()).toHaveAttribute('aria-invalid', 'true');
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Enregistrer le pseudo' })).toBeDisabled();
+    });
+    await waitFor(async () => {
+      expect(await stored(preferencesKey)).toBe(before);
+    });
+  });
+
+  it('dit qu’un pseudo n’a pas pu être enregistré, sans exception', async () => {
     const repository: PreferencesRepository = {
-      load: () => ({ status: 'ok', preferences: { author: 'Lili' } }),
-      save: () => ({ status: 'error', code: 'quota-exceeded' }),
+      patch: () => Promise.resolve({ status: 'error', code: 'quota-exceeded' }),
+      load: () => Promise.resolve({ status: 'ok', preferences: { author: 'Lili' } }),
+      save: () => Promise.resolve({ status: 'error', code: 'quota-exceeded' }),
     };
-    renderSettings({ preferencesRepository: repository });
+    await renderSettings({ preferencesRepository: repository });
 
-    fireEvent.change(pseudoField(), { target: { value: 'Noé' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' }));
-
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'L’espace de stockage de cet appareil est plein. Ton pseudo n’a pas été enregistré.',
+    await storageAction(() => fireEvent.change(pseudoField(), { target: { value: 'Noé' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' })),
     );
-    expect(screen.queryByRole('status')).toBeNull();
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'L’espace de stockage de cet appareil est plein. Ton pseudo n’a pas été enregistré.',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).toBeNull();
+    });
   });
 
-  it('reste affichée quand les préférences ne peuvent pas être lues', () => {
+  it('reste affichée quand les préférences ne peuvent pas être lues', async () => {
     const repository: PreferencesRepository = {
+      patch: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
       load: () => {
-        throw new Error('stockage bloqué');
+        return Promise.reject(new Error('stockage bloqué'));
       },
       save: () => {
-        throw new Error('stockage bloqué');
+        return Promise.reject(new Error('stockage bloqué'));
       },
     };
-    renderSettings({ preferencesRepository: repository });
+    await renderSettings({ preferencesRepository: repository });
 
-    expect(pseudoField()).toHaveValue('');
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Le stockage local de cet appareil est indisponible. Ton pseudo ne peut pas être lu.',
-    );
+    await waitFor(() => {
+      expect(pseudoField()).toHaveValue('');
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Le stockage local de cet appareil est indisponible. Ton pseudo ne peut pas être lu.',
+      );
+    });
 
-    fireEvent.change(pseudoField(), { target: { value: 'Noé' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' }));
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Le stockage local de cet appareil est indisponible. Ton pseudo n’a pas été enregistré.',
+    await storageAction(() => fireEvent.change(pseudoField(), { target: { value: 'Noé' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le pseudo' })),
     );
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Le stockage local de cet appareil est indisponible. Ton pseudo n’a pas été enregistré.',
+      );
+    });
   });
 });
 
 describe('Paramètres — remettre la progression à zéro (U11, ADR 0010, ADR 0011)', () => {
-  it('demande confirmation, « Annuler » ciblé, et « Annuler » ne change rien', () => {
-    seed({ ...untouchedEntries, [progressKey]: progressEnvelope });
-    renderSettings();
+  it('demande confirmation, « Annuler » ciblé, et « Annuler » ne change rien', async () => {
+    await seed({ ...untouchedEntries, [progressKey]: progressEnvelope });
+    await renderSettings();
 
-    expect(screen.getByText('Niveaux résolus : 2 sur 5.')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' }));
+    await waitFor(() => {
+      expect(screen.getByText('Niveaux résolus : 2 sur 5.')).toBeVisible();
+    });
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' })),
+    );
 
     const dialog = screen.getByRole('dialog', { name: 'Remettre la progression à zéro ?' });
-    expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
-    expect(dialog).toHaveTextContent(
-      'les niveaux résolus de la campagne et leurs records seront effacés',
-    );
-    expect(dialog).toHaveTextContent('Seul le niveau 1 restera ouvert.');
-    expect(dialog).toHaveTextContent(
-      'Tes créations, tes niveaux reçus et ton pseudo sont conservés.',
+    await waitFor(() => {
+      expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
+    });
+    await waitFor(() => {
+      expect(dialog).toHaveTextContent(
+        'les niveaux résolus de la campagne et leurs records, leurs solutions et toutes les constructions de campagne seront effacés',
+      );
+    });
+    await waitFor(() => {
+      expect(dialog).toHaveTextContent('Seul le niveau 1 restera ouvert.');
+    });
+    await waitFor(() => {
+      expect(dialog).toHaveTextContent(
+        'Tes créations, tes niveaux reçus et ton pseudo sont conservés.',
+      );
+    });
+
+    await storageAction(() =>
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler' })),
     );
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }));
-
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(localStorage.getItem(progressKey)).toBe(progressEnvelope);
-    expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.getByText('Niveaux résolus : 2 sur 5.')).toBeVisible();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    await waitFor(async () => {
+      expect(await stored(progressKey)).toBe(progressEnvelope);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Niveaux résolus : 2 sur 5.')).toBeVisible();
+    });
   });
 
-  it('efface la progression et rien d’autre, le dit, et la campagne est de nouveau verrouillée', () => {
-    seed({ ...untouchedEntries, [progressKey]: progressEnvelope });
-    renderSettings();
+  it('efface la progression et rien d’autre, le dit, et la campagne est de nouveau verrouillée', async () => {
+    await seed({ ...untouchedEntries, [progressKey]: progressEnvelope });
+    await renderSettings();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' }));
-    const dialog = screen.getByRole('dialog', { name: 'Remettre la progression à zéro ?' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Remettre à zéro' }));
-
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Progression remise à zéro : seul le niveau 1 est ouvert.',
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' })),
     );
-    expect(screen.getByText('Niveaux résolus : 0 sur 5.')).toBeVisible();
-    expect(localStorage.getItem(progressKey)).toBeNull();
+    const dialog = screen.getByRole('dialog', { name: 'Remettre la progression à zéro ?' });
+    await storageAction(() =>
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Remettre à zéro' })),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Progression remise à zéro : seul le niveau 1 est ouvert.',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Niveaux résolus : 0 sur 5.')).toBeVisible();
+    });
+    await waitFor(async () => {
+      expect(await stored(progressKey)).toBeNull();
+    });
     for (const [key, value] of Object.entries(untouchedEntries)) {
-      expect(localStorage.getItem(key)).toBe(value);
+      await waitFor(async () => {
+        expect(await stored(key)).toBe(value);
+      });
     }
-    expect(pseudoField()).toHaveValue('Lili');
+    await waitFor(() => {
+      expect(pseudoField()).toHaveValue('Lili');
+    });
 
-    openLevelList();
-    expect(screen.getByRole('button', { name: 'Jouer le niveau 1' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Jouer le niveau 2' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Jouer le niveau 3' })).toBeDisabled();
+    await openLevelList();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Jouer le niveau 1' })).toBeEnabled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Jouer le niveau 2' })).toBeDisabled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Jouer le niveau 3' })).toBeDisabled();
+    });
   });
 
-  it('dit que rien n’a été effacé quand le stockage refuse, sans exception', () => {
+  it('dit que rien n’a été effacé quand le stockage refuse, sans exception', async () => {
     const repository: ProgressRepository = {
-      load: () => ({
-        status: 'ok',
-        progress: { [firstLevelId]: { resolved: true, bestObjectCount: 2 } },
-      }),
-      save: () => ({ status: 'ok' }),
-      clear: () => ({ status: 'error', code: 'storage-unavailable' }),
+      recordVictory: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+      load: () =>
+        Promise.resolve({
+          status: 'ok',
+          progress: { [firstLevelId]: { resolved: true, bestObjectCount: 2 } },
+        }),
+      save: () => Promise.resolve({ status: 'ok' }),
+      clear: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
-    renderSettings({ progressRepository: repository });
+    await renderSettings({ progressRepository: repository });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remettre à zéro' }));
-
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Le stockage local de cet appareil est indisponible. La progression n’a pas été effacée.',
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' })),
     );
-    expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.getByText('Niveaux résolus : 1 sur 5.')).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Remettre à zéro' })),
+    );
 
-    openLevelList();
-    expect(screen.getByRole('button', { name: 'Jouer le niveau 2' })).toBeEnabled();
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Le stockage local de cet appareil est indisponible. La progression n’a pas été effacée.',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Niveaux résolus : 1 sur 5.')).toBeVisible();
+    });
+
+    await openLevelList();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Jouer le niveau 2' })).toBeEnabled();
+    });
   });
 });

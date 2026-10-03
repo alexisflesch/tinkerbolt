@@ -45,33 +45,20 @@ const isWorkshop = (document: LevelDocument): boolean =>
  * player solution. A storage failure is a result,
  * never an exception: the caller still lets the level be played.
  */
-export const receiveLevel = (
+export const receiveLevel = async (
   repository: ReceivedLevelRepository,
   document: LevelDocument,
   origin: ReceivedLevel['origin'],
   fingerprint: LevelFingerprintResult,
   clock: () => Date,
-): ReceiveLevelResult => {
+): Promise<ReceiveLevelResult> => {
   if (isWorkshop(document)) return { status: 'refused', code: 'workshop-document' };
   if (fingerprint.status === 'unavailable') {
     return { status: 'not-kept', code: 'fingerprint-unavailable' };
   }
 
   const id = `recu-${fingerprint.fingerprint}`;
-  const existing = repository.load(id);
-  if (existing.status === 'error') return { status: 'not-kept', code: existing.code };
   const receivedAt = clock().toISOString();
-  if (existing.level !== null) {
-    const refreshed: ReceivedLevel = { ...existing.level, receivedAt };
-    // The level is kept either way: a failed refresh only leaves it lower in the list.
-    const saved = repository.save(refreshed);
-    return {
-      status: 'received',
-      level: saved.status === 'ok' ? refreshed : existing.level,
-      isNew: false,
-    };
-  }
-
   const level: ReceivedLevel = {
     id,
     document,
@@ -79,12 +66,20 @@ export const receiveLevel = (
     receivedAt,
     solved: false,
   };
-  const saved = repository.save(level);
-  if (saved.status === 'error') return { status: 'not-kept', code: saved.code };
+  const saved = await repository.receive(level);
+  if (saved.status === 'error') {
+    if (saved.code === 'quota-exceeded' || saved.code === 'storage-unavailable') {
+      const previous = await repository.load(id);
+      if (previous.status === 'ok' && previous.level !== null) {
+        return { status: 'received', level: previous.level, isNew: false };
+      }
+    }
+    return { status: 'not-kept', code: saved.code };
+  }
   return {
     status: 'received',
-    level,
-    isNew: true,
+    level: saved.level,
+    isNew: saved.isNew,
     ...(saved.warning === undefined ? {} : { warning: saved.warning }),
   };
 };

@@ -12,6 +12,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts', 'test/conformance/**/*.test.ts'],
+    setupFiles: ['src/app/storage-test-setup.ts'],
     clearMocks: true,
     restoreMocks: true,
     css: {

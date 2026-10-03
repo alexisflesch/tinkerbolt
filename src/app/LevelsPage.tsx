@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Play } from 'lucide-react';
 
@@ -8,6 +8,7 @@ import type { LevelDocument } from '../domain/level-document';
 import { AppFrame } from '../ui/AppFrame';
 import { useDevelopmentMode } from './development-mode-context';
 import { useDraftRepository } from './draft-repository-context';
+import { StorageLoading } from './StorageLoading';
 import { LevelCard } from './LevelCard';
 import { LevelSection } from './LevelSection';
 import { useCampaignProgress } from './use-campaign-progress';
@@ -40,14 +41,37 @@ const numberedChapters = campaignChapters.reduce<
  */
 export function LevelsPage() {
   const navigate = useNavigate();
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const drafts = useDraftRepository();
-  const { levels: levelProgress, unlockAllLevels } = useCampaignProgress();
+  const {
+    levels: levelProgress,
+    unlockAllLevels,
+    loading,
+    known,
+    storageError,
+  } = useCampaignProgress();
   const developmentMode = useDevelopmentMode();
+  const [opening, setOpening] = useState(false);
   const [draftErrorLevelId, setDraftErrorLevelId] = useState<string | null>(null);
+
+  if (loading) return <StorageLoading title="Campagne" />;
 
   return (
     <AppFrame title="Campagne" variant="page">
       <div className="page-content page-content-levels">
+        {opening && <p role="status">Chargement du brouillon…</p>}
+        {storageError !== null && (
+          <p role="alert">
+            La progression ne peut pas être lue : le stockage est indisponible. Le niveau 1 reste
+            jouable.
+          </p>
+        )}
         {unlockAllLevels && (
           <p className="panel-note dev-mode-note" role="status">
             Mode développement : niveaux débloqués
@@ -62,7 +86,11 @@ export function LevelsPage() {
               <LevelSection
                 key={chapter.id}
                 title={`Chapitre ${String(chapterIndex + 1)} · ${chapter.title}`}
-                count={`${String(resolvedCount)} / ${String(chapter.levels.length)} résolus`}
+                count={
+                  known
+                    ? `${String(resolvedCount)} / ${String(chapter.levels.length)} résolus`
+                    : 'Progression inconnue'
+                }
               >
                 <div className="level-cards">
                   {chapter.levels.map(({ level, number }) => {
@@ -91,14 +119,21 @@ export function LevelsPage() {
                             name: `Modifier le niveau ${String(number)}`,
                             icon: Pencil,
                             onSelect: () => {
-                              const result = openCampaignDraft(drafts, level, {
-                                revealSolution: developmentMode,
-                              });
-                              if (result.status === 'error') {
-                                setDraftErrorLevelId(level.id);
-                                return;
-                              }
-                              void navigate(`/editor?draft=${encodeURIComponent(result.draftId)}`);
+                              setOpening(true);
+                              void (async () => {
+                                const result = await openCampaignDraft(drafts, level, {
+                                  revealSolution: developmentMode,
+                                });
+                                if (!active.current) return;
+                                if (result.status === 'error') {
+                                  setOpening(false);
+                                  setDraftErrorLevelId(level.id);
+                                  return;
+                                }
+                                void navigate(
+                                  `/editor?draft=${encodeURIComponent(result.draftId)}`,
+                                );
+                              })();
                             },
                           },
                         ]}

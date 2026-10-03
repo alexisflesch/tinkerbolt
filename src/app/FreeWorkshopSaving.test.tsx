@@ -1,17 +1,21 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DraftCreation, DraftRepository } from '../application/drafts/draft-repository';
-import { createLocalStorageDraftRepository } from '../infrastructure/storage/local-storage-draft-repository';
 
+import {
+  testDraftRepository,
+  renderStorageReady,
+  storageAction,
+  activeStoredRowCount,
+} from './storage-test-fixture';
 import { App } from './App';
 
 const testClock = (): Date => new Date('2026-10-01T12:00:00.000Z');
-const draftStorage = (): DraftRepository =>
-  createLocalStorageDraftRepository(window.localStorage, testClock);
+const draftStorage = (): DraftRepository => testDraftRepository(testClock);
 
 const boardCanvasRect: DOMRect = {
   x: 0,
@@ -27,7 +31,7 @@ const boardCanvasRect: DOMRect = {
   },
 };
 
-const tapWorldPoint = (x: number, y: number): void => {
+const tapWorldPoint = async (x: number, y: number): Promise<void> => {
   const board = screen.getByRole('region', { name: 'Plateau de jeu' });
   const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
   const [originX, originY] = (canvas.getAttribute('data-camera-origin') ?? '')
@@ -47,14 +51,15 @@ const tapWorldPoint = (x: number, y: number): void => {
     });
     fireEvent(board, event);
   }
+  await storageAction();
 };
 
 /** The workshop's one blue ball, posed from the catalogue: a committed change. */
-const placeBall = (): void => {
+const placeBall = async (): Promise<void> => {
   const toggle = screen.queryByRole('button', { name: 'Ouvrir le catalogue' });
-  if (toggle !== null) fireEvent.click(toggle);
-  fireEvent.click(screen.getByRole('button', { name: /^Balle/u }));
-  tapWorldPoint(8, 3);
+  if (toggle !== null) await storageAction(() => fireEvent.click(toggle));
+  await storageAction(() => fireEvent.click(screen.getByRole('button', { name: /^Balle/u })));
+  await tapWorldPoint(8, 3);
 };
 
 const blueBalls = (): string | null =>
@@ -66,21 +71,20 @@ const draftIdInUrl = (): string => {
   return id;
 };
 
-const storedCreation = (id: string): DraftCreation => {
-  const loaded = draftStorage().load(id);
+const storedCreation = async (id: string): Promise<DraftCreation> => {
+  const loaded = await draftStorage().load(id);
   if (loaded.status !== 'ok' || loaded.creation === null) throw new Error('Création introuvable.');
   return loaded.creation;
 };
 
-const storedIds = (): readonly string[] => {
-  const listed = draftStorage().list();
+const storedIds = async (): Promise<readonly string[]> => {
+  const listed = await draftStorage().list();
   if (listed.status !== 'ok') throw new Error('Dépôt illisible.');
   return listed.ids;
 };
 
 describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
   beforeEach(() => {
-    window.localStorage.clear();
     window.history.replaceState(null, '', '/editor');
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(boardCanvasRect);
   });
@@ -90,188 +94,295 @@ describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
     vi.restoreAllMocks();
   });
 
-  it('ouvrir l’atelier sans rien faire ne crée aucune création et laisse l’URL', () => {
-    render(<App />);
+  it('ouvrir l’atelier sans rien faire ne crée aucune création et laisse l’URL', async () => {
+    await renderStorageReady(<App />);
 
-    expect(screen.getByText('Atelier')).toBeVisible();
-    expect(storedIds()).toEqual([]);
-    expect(window.localStorage.length).toBe(0);
-    expect(window.location.pathname).toBe('/editor');
-    expect(window.location.search).toBe('');
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toEqual([]);
+    });
+    await waitFor(async () => {
+      expect(await activeStoredRowCount()).toBe(0);
+    });
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/editor');
+    });
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
   });
 
-  it('affiche dans l’en-tête « Nouveau niveau · Atelier » pour un atelier neuf (V3, V7)', () => {
-    render(<App draftRepository={draftStorage()} />);
+  it('affiche dans l’en-tête « Nouveau niveau · Atelier » pour un atelier neuf (V3, V7)', async () => {
+    await renderStorageReady(<App draftRepository={draftStorage()} />);
 
     const header = screen.getByRole('banner');
-    expect(within(header).getByText('Nouveau niveau')).toBeVisible();
-    expect(within(header).getByText('Atelier')).toBeVisible();
-    expect(header).not.toHaveTextContent('Atelier de niveau');
-    expect(header).not.toHaveTextContent('Mode éditeur');
+    await waitFor(() => {
+      expect(within(header).getByText('Nouveau niveau')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(within(header).getByText('Atelier')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(header).not.toHaveTextContent('Atelier de niveau');
+    });
+    await waitFor(() => {
+      expect(header).not.toHaveTextContent('Mode éditeur');
+    });
   });
 
-  it('garde à une création enregistrée le titre de son document, même l’ancien titre de l’atelier (V7)', () => {
-    render(<App draftRepository={draftStorage()} />);
-    placeBall();
+  it('garde à une création enregistrée le titre de son document, même l’ancien titre de l’atelier (V7)', async () => {
+    await renderStorageReady(<App draftRepository={draftStorage()} />);
+    await placeBall();
     const id = draftIdInUrl();
-    const creation = storedCreation(id);
+    const creation = await storedCreation(id);
     // Un brouillon enregistré avant V7 porte l'ancien titre de `workshop.json`.
-    const saved = draftStorage().save({
+    const saved = await draftStorage().save({
       document: { ...creation.document, metadata: { title: 'Atelier de niveau' } },
     });
-    expect(saved.status).toBe('ok');
+    await waitFor(() => {
+      expect(saved.status).toBe('ok');
+    });
     cleanup();
 
     window.history.replaceState(null, '', `/editor?draft=${id}`);
-    render(<App draftRepository={draftStorage()} />);
+    await renderStorageReady(<App draftRepository={draftStorage()} />);
 
     const header = screen.getByRole('banner');
-    expect(within(header).getByText('Atelier de niveau')).toBeVisible();
-    expect(header).not.toHaveTextContent('Nouveau niveau');
-    expect(storedCreation(id).document.metadata.title).toBe('Atelier de niveau');
+    await waitFor(() => {
+      expect(within(header).getByText('Atelier de niveau')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(header).not.toHaveTextContent('Nouveau niveau');
+    });
+    await waitFor(async () => {
+      expect((await storedCreation(id)).document.metadata.title).toBe('Atelier de niveau');
+    });
   });
 
-  it('poser un objet enregistre une création `creation-<aléa>` et met son identifiant dans l’URL', () => {
-    render(<App draftRepository={draftStorage()} />);
+  it('poser un objet enregistre une création `creation-<aléa>` et met son identifiant dans l’URL', async () => {
+    await renderStorageReady(<App draftRepository={draftStorage()} />);
 
-    placeBall();
+    await placeBall();
 
-    expect(window.location.pathname).toBe('/editor');
-    expect(draftIdInUrl()).toMatch(/^creation-[0-9a-f]{32}$/u);
-    expect(storedIds()).toEqual([draftIdInUrl()]);
-    const creation = storedCreation(draftIdInUrl());
-    expect(creation.document.id).toBe(draftIdInUrl());
-    expect(creation.document.objects.filter(({ type }) => type === 'ball')).toHaveLength(2);
-    expect(creation.source).toBeUndefined();
-    expect(creation.updatedAt).toBe(testClock().toISOString());
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/editor');
+    });
+    await waitFor(() => {
+      expect(draftIdInUrl()).toMatch(/^creation-[0-9a-f]{32}$/u);
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toEqual([draftIdInUrl()]);
+    });
+    const creation = await storedCreation(draftIdInUrl());
+    await waitFor(() => {
+      expect(creation.document.id).toBe(draftIdInUrl());
+    });
+    await waitFor(() => {
+      expect(creation.document.objects.filter(({ type }) => type === 'ball')).toHaveLength(2);
+    });
+    await waitFor(() => {
+      expect(creation.source).toBeUndefined();
+    });
+    await waitFor(() => {
+      expect(creation.updatedAt).toBe(testClock().toISOString());
+    });
   });
 
-  it('une création partie de zéro n’a pas de description (M14b)', () => {
-    render(<App draftRepository={draftStorage()} />);
+  it('une création partie de zéro n’a pas de description (M14b)', async () => {
+    await renderStorageReady(<App draftRepository={draftStorage()} />);
 
-    placeBall();
+    await placeBall();
 
-    const { metadata } = storedCreation(draftIdInUrl()).document;
-    expect(metadata).toEqual({ title: 'Nouveau niveau' });
-    expect('description' in metadata).toBe(false);
+    const { metadata } = (await storedCreation(draftIdInUrl())).document;
+    await waitFor(() => {
+      expect(metadata).toEqual({ title: 'Nouveau niveau' });
+    });
+    await waitFor(() => {
+      expect('description' in metadata).toBe(false);
+    });
   });
 
-  it('remplace l’entrée d’historique du navigateur au lieu d’en ajouter une', () => {
-    render(<App />);
+  it('remplace l’entrée d’historique du navigateur au lieu d’en ajouter une', async () => {
+    await renderStorageReady(<App />);
     const entriesBefore = window.history.length;
 
-    placeBall();
+    await placeBall();
 
-    expect(draftIdInUrl()).toMatch(/^creation-/u);
-    expect(window.history.length).toBe(entriesBefore);
+    await waitFor(() => {
+      expect(draftIdInUrl()).toMatch(/^creation-/u);
+    });
+    await waitFor(() => {
+      expect(window.history.length).toBe(entriesBefore);
+    });
   });
 
-  it('recharger l’adresse retrouve l’objet posé', () => {
-    render(<App />);
-    placeBall();
+  it('recharger l’adresse retrouve l’objet posé', async () => {
+    await renderStorageReady(<App />);
+    await placeBall();
     const posed = blueBalls();
-    expect(posed).not.toBe('');
+    await waitFor(() => {
+      expect(posed).not.toBe('');
+    });
     cleanup();
 
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    expect(screen.getByText('Atelier')).toBeVisible();
-    expect(blueBalls()).toBe(posed);
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(blueBalls()).toBe(posed);
+    });
   });
 
-  it('garde l’historique et le même enregistrement après le changement d’URL : « Annuler » retire l’objet', () => {
-    render(<App />);
-    placeBall();
+  it('garde l’historique et le même enregistrement après le changement d’URL : « Annuler » retire l’objet', async () => {
+    await renderStorageReady(<App />);
+    await placeBall();
     const id = draftIdInUrl();
-    expect(blueBalls()).not.toBe('');
+    await waitFor(() => {
+      expect(blueBalls()).not.toBe('');
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
 
-    expect(blueBalls()).toBe('');
-    expect(draftIdInUrl()).toBe(id);
-    expect(storedIds()).toEqual([id]);
-    expect(storedCreation(id).document.objects.filter(({ type }) => type === 'ball')).toHaveLength(
-      1,
-    );
+    await waitFor(() => {
+      expect(blueBalls()).toBe('');
+    });
+    await waitFor(() => {
+      expect(draftIdInUrl()).toBe(id);
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toEqual([id]);
+    });
+    await waitFor(async () => {
+      expect(
+        (await storedCreation(id)).document.objects.filter(({ type }) => type === 'ball'),
+      ).toHaveLength(1);
+    });
   });
 
-  it('enregistre les modifications suivantes dans la même création', () => {
-    render(<App />);
-    placeBall();
+  it('enregistre les modifications suivantes dans la même création', async () => {
+    await renderStorageReady(<App />);
+    await placeBall();
     const id = draftIdInUrl();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Rétablir' }));
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Rétablir' })));
 
-    expect(draftIdInUrl()).toBe(id);
-    expect(storedIds()).toEqual([id]);
-    expect(storedCreation(id).document.objects.filter(({ type }) => type === 'ball')).toHaveLength(
-      2,
-    );
+    await waitFor(() => {
+      expect(draftIdInUrl()).toBe(id);
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toEqual([id]);
+    });
+    await waitFor(async () => {
+      expect(
+        (await storedCreation(id)).document.objects.filter(({ type }) => type === 'ball'),
+      ).toHaveLength(2);
+    });
   });
 
-  it('« Atelier de construction » depuis une création enregistrée ouvre un atelier neuf, sans la modifier', () => {
-    render(<App />);
-    placeBall();
+  it('« Atelier de construction » depuis une création enregistrée ouvre un atelier neuf, sans la modifier', async () => {
+    await renderStorageReady(<App />);
+    await placeBall();
     const id = draftIdInUrl();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
-    fireEvent.click(
-      within(screen.getByRole('navigation', { name: 'Menu principal' })).getByRole('button', {
-        name: 'Atelier',
-      }),
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' })),
+    );
+    await storageAction(() =>
+      fireEvent.click(
+        within(screen.getByRole('navigation', { name: 'Menu principal' })).getByRole('button', {
+          name: 'Atelier',
+        }),
+      ),
     );
 
-    expect(window.location.search).toBe('');
-    expect(blueBalls()).toBe('');
-    expect(storedIds()).toEqual([id]);
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+    await waitFor(() => {
+      expect(blueBalls()).toBe('');
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toEqual([id]);
+    });
 
-    placeBall();
+    await placeBall();
 
-    expect(draftIdInUrl()).not.toBe(id);
-    expect(storedIds()).toHaveLength(2);
-    expect(storedCreation(id).document.objects.filter(({ type }) => type === 'ball')).toHaveLength(
-      2,
-    );
+    await waitFor(() => {
+      expect(draftIdInUrl()).not.toBe(id);
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toHaveLength(2);
+    });
+    await waitFor(async () => {
+      expect(
+        (await storedCreation(id)).document.objects.filter(({ type }) => type === 'ball'),
+      ).toHaveLength(2);
+    });
   });
 
-  it('continue sans changer d’URL quand l’enregistrement échoue, et réessaie à la modification suivante', () => {
+  it('continue sans changer d’URL quand l’enregistrement échoue, et réessaie à la modification suivante', async () => {
     const real = draftStorage();
     let failing = true;
     const repository: DraftRepository = {
       ...real,
-      save: (creation) =>
-        failing ? { status: 'error', code: 'quota-exceeded' } : real.save(creation),
+      create: (creation) =>
+        Promise.resolve(
+          failing ? { status: 'error', code: 'quota-exceeded' } : real.create(creation),
+        ),
     };
-    render(<App draftRepository={repository} />);
+    await renderStorageReady(<App draftRepository={repository} />);
 
-    placeBall();
+    await placeBall();
 
-    expect(window.location.search).toBe('');
-    expect(blueBalls()).not.toBe('');
-    expect(storedIds()).toEqual([]);
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+    await waitFor(() => {
+      expect(blueBalls()).not.toBe('');
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toEqual([]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
 
     failing = false;
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
 
-    expect(draftIdInUrl()).toMatch(/^creation-/u);
-    expect(storedIds()).toEqual([draftIdInUrl()]);
-    expect(blueBalls()).toBe('');
+    await waitFor(() => {
+      expect(draftIdInUrl()).toMatch(/^creation-/u);
+    });
+    await waitFor(async () => {
+      expect(await storedIds()).toEqual([draftIdInUrl()]);
+    });
+    await waitFor(() => {
+      expect(blueBalls()).toBe('');
+    });
   });
 
-  it('ne crée rien quand le stockage est indisponible, sans quitter l’atelier', () => {
+  it('ne crée rien quand le stockage est indisponible, sans quitter l’atelier', async () => {
     const repository: DraftRepository = {
-      list: () => ({ status: 'error', code: 'storage-unavailable' }),
-      load: () => ({ status: 'error', code: 'storage-unavailable' }),
-      save: () => ({ status: 'error', code: 'storage-unavailable' }),
-      delete: () => ({ status: 'error', code: 'storage-unavailable' }),
+      create: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+      list: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+      load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+      save: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+      delete: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
-    render(<App draftRepository={repository} />);
+    await renderStorageReady(<App draftRepository={repository} />);
 
-    placeBall();
+    await placeBall();
 
-    expect(window.location.search).toBe('');
-    expect(blueBalls()).not.toBe('');
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+    await waitFor(() => {
+      expect(blueBalls()).not.toBe('');
+    });
   });
 });

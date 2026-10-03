@@ -1,17 +1,18 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { renderStorageReady, storageAction } from './storage-test-fixture';
 import { App } from './App';
 import { BenchPage } from './BenchPage';
 
 afterEach(cleanup);
 
 describe('page de mesure de performance (/bench, ADR 0002)', () => {
-  it('mesure chaque pas de physique avec l’horloge injectée et rend un verdict lisible', () => {
+  it('mesure chaque pas de physique avec l’horloge injectée et rend un verdict lisible', async () => {
     let clock = 0;
     const now = (): number => {
       clock += 0.5;
@@ -32,33 +33,51 @@ describe('page de mesure de performance (/bench, ADR 0002)', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mesurer la physique' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Mesurer la physique' })),
+    );
 
-    expect(advanced).toBe(1200);
+    await waitFor(() => {
+      expect(advanced).toBe(1200);
+    });
     const result = screen.getByRole('region', { name: 'Résultat de la mesure' });
-    expect(within(result).getByText(/1200 pas/)).toBeVisible();
-    expect(within(result).getByText(/95e centile : 0,50 ms/)).toBeVisible();
-    expect(within(result).getByText('Physique : OK')).toBeVisible();
+    await waitFor(() => {
+      expect(within(result).getByText(/1200 pas/)).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(within(result).getByText(/95e centile : 0,50 ms/)).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(within(result).getByText('Physique : OK')).toBeVisible();
+    });
   });
 
-  it('propose de jouer la scène dense sur le vrai plateau', () => {
+  it('propose de jouer la scène dense sur le vrai plateau', async () => {
     render(
       <MemoryRouter initialEntries={['/bench']}>
         <BenchPage />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('button', { name: 'Jouer la scène sur le plateau' })).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Jouer la scène sur le plateau' })).toBeVisible();
+    });
   });
 
-  it('joue la scène dense sur le plateau partagé avec un compteur d’images par seconde', () => {
+  it('joue la scène dense sur le plateau partagé avec un compteur d’images par seconde', async () => {
     window.history.replaceState(null, '', '/bench/play');
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
-    expect(screen.getByRole('status', { name: 'Images par seconde' })).toHaveTextContent(
-      /Images\/s/,
-    );
-    expect(screen.getByRole('button', { name: 'Lancer' })).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status', { name: 'Images par seconde' })).toHaveTextContent(
+        /Images\/s/,
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Lancer' })).toBeVisible();
+    });
   });
 });

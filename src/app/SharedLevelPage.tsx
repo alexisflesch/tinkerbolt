@@ -32,6 +32,10 @@ const systemClock = (): Date => new Date();
  */
 export function SharedLevelPage() {
   const { hash } = useLocation();
+  return <SharedLevel key={hash} hash={hash} />;
+}
+
+function SharedLevel({ hash }: { readonly hash: string }) {
   const repository = useReceivedLevelRepository();
   const [state, setState] = useState<SharedLevelState>({ status: 'loading' });
 
@@ -44,7 +48,13 @@ export function SharedLevelPage() {
       if (decoded.status !== 'ok') return { status: 'invalid' };
       const fingerprint = await fingerprintOf(decoded.document);
       if (!active) return { status: 'loading' };
-      const received = receiveLevel(repository, decoded.document, 'link', fingerprint, systemClock);
+      const received = await receiveLevel(
+        repository,
+        decoded.document,
+        'link',
+        fingerprint,
+        systemClock,
+      );
       if (received.status === 'refused') return { status: 'workshop' };
       return {
         status: 'loaded',

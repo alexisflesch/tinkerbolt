@@ -1,3 +1,4 @@
+import { progressFixture, seedIndexedDB, storedDraft } from './indexed-db-fixture';
 import { expect, test, type Page } from '@playwright/test';
 
 const tapWorldPoint = async (page: Page, x: number, y: number): Promise<void> => {
@@ -15,33 +16,19 @@ const tapWorldPoint = async (page: Page, x: number, y: number): Promise<void> =>
 
 /** M11: level 2 can only be modified once level 1 is resolved (ADR 0015, ADR 0010). */
 const resolveLevelOne = async (page: Page): Promise<void> => {
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'tinkerbolt:progress',
-      JSON.stringify({
-        kind: 'progress',
-        version: 1,
-        data: { 'tuto-1': { resolved: true, bestObjectCount: 1 } },
-      }),
-    );
-  });
+  await page.goto('/');
+  await seedIndexedDB(page, [
+    await progressFixture({ 'tuto-1': { resolved: true, bestObjectCount: 1 } }),
+  ]);
 };
 
-const storedFloorX = (page: Page): Promise<number | null> =>
-  page.evaluate(() => {
-    const raw = localStorage.getItem('tinkerbolt:draft:tuto-2-brouillon');
-    if (raw === null) return null;
-    const envelope = JSON.parse(raw) as {
-      data?: {
-        document?: {
-          objects?: Array<{ id?: string; transform?: { position?: { x?: number } } }>;
-        };
-      };
-    };
-    const document = envelope.data?.document ?? null;
-    const floor = document?.objects?.find((object) => object.id === 'workshop-floor');
-    return floor?.transform?.position?.x ?? null;
-  });
+const storedFloorX = async (page: Page): Promise<number | null> => {
+  const draft = await storedDraft(page, 'tuto-2-brouillon');
+  return (
+    draft?.document.objects.find((object) => object.id === 'workshop-floor')?.transform.position
+      .x ?? null
+  );
+};
 
 test('édite un tutoriel de campagne au toucher et conserve le brouillon', async ({
   page,

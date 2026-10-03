@@ -5,6 +5,7 @@ import { Menu, Plus } from 'lucide-react';
 import { Button } from './Button';
 
 interface AppHeaderProps {
+  readonly beforeNavigate?: (() => Promise<void>) | undefined;
   /** The page's title, centred; none on the home page (V7). */
   readonly title?: string | undefined;
   /** The context after the title (« Atelier », « Campagne »…), if the title needs one. */
@@ -43,6 +44,7 @@ export function AppHeader({
   attribution,
   action,
   menuActions = [],
+  beforeNavigate,
 }: AppHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -55,7 +57,16 @@ export function AppHeader({
 
   return (
     <header className="app-header">
-      <Link className="brand-lockup" to="/" aria-label="TinkerBolt, accueil">
+      <Link
+        className="brand-lockup"
+        to="/"
+        aria-label="TinkerBolt, accueil"
+        onClick={(event) => {
+          if (beforeNavigate === undefined) return;
+          event.preventDefault();
+          void beforeNavigate().then(() => navigate('/'));
+        }}
+      >
         <span className="brand-mark" aria-hidden="true">
           <Plus size={18} strokeWidth={3.5} />
         </span>
@@ -107,35 +118,40 @@ export function AppHeader({
           ))}
           <Button
             onClick={() => {
-              void navigate('/');
+              if (beforeNavigate === undefined) void navigate('/');
+              else void beforeNavigate().then(() => navigate('/'));
             }}
           >
             Accueil
           </Button>
           <Button
             onClick={() => {
-              void navigate('/levels');
+              if (beforeNavigate === undefined) void navigate('/levels');
+              else void beforeNavigate().then(() => navigate('/levels'));
             }}
           >
             Campagne
           </Button>
           <Button
             onClick={() => {
-              void navigate('/editor');
+              if (beforeNavigate === undefined) void navigate('/editor');
+              else void beforeNavigate().then(() => navigate('/editor'));
             }}
           >
             Atelier
           </Button>
           <Button
             onClick={() => {
-              void navigate('/my-levels');
+              if (beforeNavigate === undefined) void navigate('/my-levels');
+              else void beforeNavigate().then(() => navigate('/my-levels'));
             }}
           >
             Mes niveaux
           </Button>
           <Button
             onClick={() => {
-              void navigate('/settings');
+              if (beforeNavigate === undefined) void navigate('/settings');
+              else void beforeNavigate().then(() => navigate('/settings'));
             }}
           >
             Paramètres

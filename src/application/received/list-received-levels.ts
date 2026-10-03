@@ -18,16 +18,16 @@ type ListReceivedLevelsResult =
  * recently received first. An unreadable entry is left out (the repository
  * has backed it up) and reported once as a warning.
  */
-export const listReceivedLevels = (
+export const listReceivedLevels = async (
   repository: ReceivedLevelRepository,
-): ListReceivedLevelsResult => {
-  const index = repository.list();
+): Promise<ListReceivedLevelsResult> => {
+  const index = await repository.list();
   if (index.status === 'error') return index;
 
   let warning = index.warning;
   const levels: ReceivedLevel[] = [];
   for (const id of index.ids) {
-    const loaded = repository.load(id);
+    const loaded = await repository.load(id);
     if (loaded.status === 'error' || loaded.warning !== undefined)
       warning = 'invalid-data-backed-up';
     if (loaded.status === 'ok' && loaded.level !== null) levels.push(loaded.level);

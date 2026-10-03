@@ -1,3 +1,4 @@
+import { storedEnvelope } from './indexed-db-fixture';
 import { mkdir } from 'node:fs/promises';
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -46,9 +47,7 @@ const expectBesideTheBoard = async (page: Page, hint: Locator): Promise<void> =>
 };
 
 const storedPreferences = async (page: Page): Promise<unknown> => {
-  const raw = await page.evaluate(() => window.localStorage.getItem('tinkerbolt:preferences'));
-  const parsed: unknown = JSON.parse(raw ?? 'null');
-  return parsed;
+  return storedEnvelope(page, 'preferences', 'player');
 };
 
 test('U8 — sur le niveau 1 neuf, l’aide montre « Lancer » puis le tiroir, se ferme d’un toucher et ne revient plus', async ({

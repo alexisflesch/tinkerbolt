@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { creationFromLevel } from '../application/drafts/creation-from-level';
 import type { DraftCreation } from '../application/drafts/draft-repository';
 import type { CampaignProgress } from '../application/progression';
+import { recordSuccess } from '../application/progression';
 import type { ProgressRepository } from '../application/progression/progress-repository';
 import type {
   ReceivedLevel,
@@ -15,9 +16,13 @@ import type {
 import { embeddedLevels } from '../content/embedded-levels';
 import type * as EmbeddedLevels from '../content/embedded-levels';
 import { levelDocumentSchema, type LevelDocument } from '../domain/level-document';
-import { createLocalStorageDraftRepository } from '../infrastructure/storage/local-storage-draft-repository';
-import { createLocalStorageReceivedLevelRepository } from '../infrastructure/storage/local-storage-received-level-repository';
 
+import {
+  testDraftRepository,
+  testReceivedRepository,
+  renderStorageReady,
+  storageAction,
+} from './storage-test-fixture';
 import { App } from './App';
 
 /** Gesture fixtures stay stable when the published campaign changes (N2). */
@@ -91,12 +96,12 @@ const levelTwo = embeddedLevels.find(({ id }) => id === 'campaign-02-par-dessus-
 if (levelTwo === undefined) throw new Error('Niveau 2 embarqué introuvable.');
 const levelTwoDraftId = 'campaign-02-par-dessus-le-mur-brouillon';
 
-const receivedStorage = () => createLocalStorageReceivedLevelRepository(window.localStorage);
-const draftStorage = () => createLocalStorageDraftRepository(window.localStorage, testClock);
+const receivedStorage = () => testReceivedRepository();
+const draftStorage = () => testDraftRepository(testClock);
 
-const storedCreation = (id: string | null): DraftCreation => {
+const storedCreation = async (id: string | null): Promise<DraftCreation> => {
   if (id === null) throw new Error('Aucune création dans l’URL.');
-  const loaded = draftStorage().load(id);
+  const loaded = await draftStorage().load(id);
   if (loaded.status !== 'ok' || loaded.creation === null) throw new Error('Création introuvable.');
   return loaded.creation;
 };
@@ -107,11 +112,20 @@ const toPlaceObjects = (document: LevelDocument) =>
   document.objects.filter(({ toPlace }) => toPlace === true);
 
 const createProgressRepository = (progress: CampaignProgress = {}) => {
-  const save = vi.fn(() => ({ status: 'ok' as const }));
+  const save = vi.fn((_progress: CampaignProgress) => {
+    void _progress;
+    return Promise.resolve({ status: 'ok' as const });
+  });
   const repository: ProgressRepository = {
-    load: () => ({ status: 'ok', progress }),
+    recordVictory: async (id, count) => {
+      const initial = await repository.load();
+      const updated = recordSuccess(initial.status === 'ok' ? initial.progress : {}, id, count);
+      await save(updated);
+      return { status: 'ok', progress: updated };
+    },
+    load: () => Promise.resolve({ status: 'ok', progress }),
     save,
-    clear: () => ({ status: 'ok' }),
+    clear: () => Promise.resolve({ status: 'ok' }),
   };
   return { repository, save };
 };
@@ -140,8 +154,8 @@ const createAnimationFrameHarness = () => {
   };
 };
 
-const launchToOutcome = (flush: (timestamp: number) => void): HTMLElement => {
-  fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
+const launchToOutcome = async (flush: (timestamp: number) => void): Promise<HTMLElement> => {
+  await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
   act(() => {
     flush(0);
     for (let frame = 1; frame <= 240; frame += 1) flush(frame * 1000);
@@ -163,7 +177,7 @@ const boardCanvasRect: DOMRect = {
   },
 };
 
-const tapWorldPoint = (x: number, y: number): void => {
+const tapWorldPoint = async (x: number, y: number): Promise<void> => {
   const board = screen.getByRole('region', { name: 'Plateau de jeu' });
   const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
   const [originX, originY] = (canvas.getAttribute('data-camera-origin') ?? '')
@@ -183,19 +197,21 @@ const tapWorldPoint = (x: number, y: number): void => {
     });
     fireEvent(board, event);
   }
+  await storageAction();
 };
 
 /** Places the received level's short beam at `playerPose`, as a player. */
-const placeBeam = (): void => {
+const placeBeam = async (): Promise<void> => {
   const toggle = screen.queryByRole('button', { name: 'Ouvrir le catalogue' });
-  if (toggle !== null) fireEvent.click(toggle);
-  fireEvent.click(screen.getByRole('button', { name: 'Poutre courte, quantité : 1' }));
-  tapWorldPoint(playerPose.position.x, playerPose.position.y);
+  if (toggle !== null) await storageAction(() => fireEvent.click(toggle));
+  await storageAction(() =>
+    fireEvent.click(screen.getByRole('button', { name: 'Poutre courte, quantité : 1' })),
+  );
+  await tapWorldPoint(playerPose.position.x, playerPose.position.y);
 };
 
 describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
   beforeEach(() => {
-    window.localStorage.clear();
     window.history.replaceState(null, '', '/');
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(boardCanvasRect);
   });
@@ -211,164 +227,295 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
       name: 'Le saut',
     });
 
-  it('« Modifier » un niveau reçu non résolu ouvre une création sans objet à placer', () => {
-    expect(receivedStorage().save(entry()).status).toBe('ok');
+  it('« Modifier » un niveau reçu non résolu ouvre une création sans objet à placer', async () => {
+    await waitFor(async () => {
+      expect((await receivedStorage().save(entry())).status).toBe('ok');
+    });
     window.history.replaceState(null, '', '/my-levels');
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    fireEvent.click(within(receivedCard()).getByRole('button', { name: 'Modifier' }));
+    await storageAction(() =>
+      fireEvent.click(within(receivedCard()).getByRole('button', { name: 'Modifier' })),
+    );
 
-    expect(window.location.pathname).toBe('/editor');
-    expect(openedDraftId()).toMatch(/^creation-[0-9a-f]+$/u);
-    expect(screen.getByText('Atelier')).toBeVisible();
-    const creation = storedCreation(openedDraftId());
-    expect(toPlaceObjects(creation.document)).toEqual([]);
-    expect(creation.document.metadata.title).toBe('Le saut (remix)');
-    expect(creation.source).toEqual(receivedDocument);
-    expect(receivedStorage().load(entryId)).toEqual({ status: 'ok', level: entry() });
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/editor');
+    });
+    await waitFor(() => {
+      expect(openedDraftId()).toMatch(/^creation-[0-9a-f]+$/u);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    const creation = await storedCreation(openedDraftId());
+    await waitFor(() => {
+      expect(toPlaceObjects(creation.document)).toEqual([]);
+    });
+    await waitFor(() => {
+      expect(creation.document.metadata.title).toBe('Le saut (remix)');
+    });
+    await waitFor(() => {
+      expect(creation.source).toEqual(receivedDocument);
+    });
+    await waitFor(async () => {
+      expect(await receivedStorage().load(entryId)).toEqual({ status: 'ok', level: entry() });
+    });
   });
 
-  it('« Modifier » un niveau reçu résolu pose la solution du joueur', () => {
+  it('« Modifier » un niveau reçu résolu pose la solution du joueur', async () => {
     const solved = entry({
       solved: true,
       bestObjectCount: 1,
       playerSolution: { placements: [{ inventoryId: 'inventory-beam', transform: playerPose }] },
     });
-    expect(receivedStorage().save(solved).status).toBe('ok');
+    await waitFor(async () => {
+      expect((await receivedStorage().save(solved)).status).toBe('ok');
+    });
     window.history.replaceState(null, '', '/my-levels');
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    fireEvent.click(within(receivedCard()).getByRole('button', { name: 'Modifier' }));
+    await storageAction(() =>
+      fireEvent.click(within(receivedCard()).getByRole('button', { name: 'Modifier' })),
+    );
 
-    const creation = storedCreation(openedDraftId());
-    expect(
-      toPlaceObjects(creation.document).map(({ type, transform }) => ({ type, transform })),
-    ).toEqual([{ type: 'beam', transform: playerPose }]);
-    expect(receivedStorage().load(entryId)).toEqual({ status: 'ok', level: solved });
+    const creation = await storedCreation(openedDraftId());
+    await waitFor(() => {
+      expect(
+        toPlaceObjects(creation.document).map(({ type, transform }) => ({ type, transform })),
+      ).toEqual([{ type: 'beam', transform: playerPose }]);
+    });
+    await waitFor(async () => {
+      expect(await receivedStorage().load(entryId)).toEqual({ status: 'ok', level: solved });
+    });
   });
 
   it('« Remixer » après la victoire d’un niveau reçu pose la tentative gagnante, sans changer le niveau', async () => {
     const flush = createAnimationFrameHarness();
-    expect(receivedStorage().save(entry()).status).toBe('ok');
+    await waitFor(async () => {
+      expect((await receivedStorage().save(entry())).status).toBe('ok');
+    });
     window.history.replaceState(null, '', `/my-levels/${entryId}/play`);
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    placeBeam();
-    const result = launchToOutcome(flush);
-    expect(within(result).getByText('Victoire')).toBeVisible();
+    await placeBeam();
+    const result = await launchToOutcome(flush);
+    await waitFor(() => {
+      expect(within(result).getByText('Victoire')).toBeVisible();
+    });
     const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
-    fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' }));
-    fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' }));
+    await storageAction(() =>
+      fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' })),
+    );
+    await storageAction(() =>
+      fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' })),
+    );
     const dialog = screen.getByRole('dialog', { name: 'Bravo !' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Remixer' }));
+    await storageAction(() =>
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Remixer' })),
+    );
 
-    expect(window.location.pathname).toBe('/editor');
-    expect(screen.getByText('Atelier')).toBeVisible();
-    const creation = storedCreation(openedDraftId());
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/editor');
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    const creation = await storedCreation(openedDraftId());
     const posed = toPlaceObjects(creation.document);
-    expect(posed.map(({ type }) => type)).toEqual(['beam']);
-    expect(posed[0]?.transform.position.x).toBeCloseTo(playerPose.position.x, 1);
-    expect(posed[0]?.transform.position.y).toBeCloseTo(playerPose.position.y, 1);
-    expect(creation.source).toEqual(receivedDocument);
-    const stored = receivedStorage().load(entryId);
-    expect(stored.status === 'ok' ? stored.level?.document : null).toEqual(receivedDocument);
-    expect(stored.status === 'ok' ? stored.level?.solved : null).toBe(true);
+    await waitFor(() => {
+      expect(posed.map(({ type }) => type)).toEqual(['beam']);
+    });
+    await waitFor(() => {
+      expect(posed[0]?.transform.position.x).toBeCloseTo(playerPose.position.x, 1);
+    });
+    await waitFor(() => {
+      expect(posed[0]?.transform.position.y).toBeCloseTo(playerPose.position.y, 1);
+    });
+    await waitFor(() => {
+      expect(creation.source).toEqual(receivedDocument);
+    });
+    const stored = await receivedStorage().load(entryId);
+    await waitFor(() => {
+      expect(stored.status === 'ok' ? stored.level?.document : null).toEqual(receivedDocument);
+    });
+    await waitFor(() => {
+      expect(stored.status === 'ok' ? stored.level?.solved : null).toBe(true);
+    });
   });
 
-  it('dit discrètement qu’une victoire sur un niveau reçu n’a pas pu être enregistrée', () => {
+  it('dit discrètement qu’une victoire sur un niveau reçu n’a pas pu être enregistrée', async () => {
     const flush = createAnimationFrameHarness();
     const repository: ReceivedLevelRepository = {
-      list: () => ({ status: 'ok', ids: [entryId] }),
-      load: () => ({ status: 'ok', level: entry() }),
-      save: () => ({ status: 'error', code: 'quota-exceeded' }),
-      delete: () => ({ status: 'ok' }),
+      receive: async (level) => {
+        const result = await repository.save(level);
+        return result.status === 'error' ? result : { status: 'ok', level, isNew: true };
+      },
+      recordVictory: async (id, _source, count, solution) => {
+        const loaded = await repository.load(id);
+        if (loaded.status === 'error') return loaded;
+        if (loaded.level === null) return { status: 'ok', level: null };
+        const level = {
+          ...loaded.level,
+          solved: true,
+          bestObjectCount: Math.min(loaded.level.bestObjectCount ?? count, count),
+          playerSolution: solution,
+        };
+        const result = await repository.save(level);
+        return result.status === 'error' ? result : { status: 'ok', level };
+      },
+      list: () => Promise.resolve({ status: 'ok', ids: [entryId] }),
+      load: () => Promise.resolve({ status: 'ok', level: entry() }),
+      save: () => Promise.resolve({ status: 'error', code: 'quota-exceeded' }),
+      delete: () => Promise.resolve({ status: 'ok' }),
     };
     window.history.replaceState(null, '', `/my-levels/${entryId}/play`);
-    render(<App receivedLevelRepository={repository} />);
-    expect(screen.queryByRole('status')).toBeNull();
+    await renderStorageReady(<App receivedLevelRepository={repository} />);
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).toBeNull();
+    });
 
-    launchToOutcome(flush);
+    await launchToOutcome(flush);
 
-    expect(
-      screen.getByText('Ta victoire n’a pas pu être enregistrée sur cet appareil.'),
-    ).toHaveAttribute('role', 'status');
+    await waitFor(() => {
+      expect(
+        screen.getByText('Ta victoire n’a pas pu être enregistrée sur cet appareil.'),
+      ).toHaveAttribute('role', 'status');
+    });
   });
 
-  it('ouvre hors développement la création d’un niveau de campagne déverrouillé sans solution ni fiche', () => {
+  it('ouvre hors développement la création d’un niveau de campagne déverrouillé sans solution ni fiche', async () => {
     const { repository } = createProgressRepository(levelOneResolved);
     window.history.replaceState(null, '', '/levels');
-    render(<App progressRepository={repository} />);
+    await renderStorageReady(<App progressRepository={repository} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' }));
-
-    expect(openedDraftId()).toBe(levelTwoDraftId);
-    expect(screen.getByText('Atelier')).toBeVisible();
-    expect(screen.queryByRole('dialog', { name: 'Fiche de calibrage' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Ouvrir la fiche de calibrage' })).toBeNull();
-    expect(toPlaceObjects(storedCreation(levelTwoDraftId).document)).toEqual([]);
-  });
-
-  it('en développement, ouvre une nouvelle création de campagne avec la solution révélée, sans fiche de calibrage (V7b)', () => {
-    const { repository } = createProgressRepository(levelOneResolved);
-    window.history.replaceState(null, '', '/levels');
-    render(<App progressRepository={repository} developmentMode />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' }));
-
-    expect(screen.queryByRole('dialog', { name: 'Fiche de calibrage' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Ouvrir la fiche de calibrage' })).toBeNull();
-    expect(toPlaceObjects(storedCreation(levelTwoDraftId).document)).toHaveLength(
-      levelTwo.solution?.placements.length ?? -1,
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
     );
+
+    await waitFor(() => {
+      expect(openedDraftId()).toBe(levelTwoDraftId);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Fiche de calibrage' })).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Ouvrir la fiche de calibrage' })).toBeNull();
+    });
+    await waitFor(async () => {
+      expect(toPlaceObjects((await storedCreation(levelTwoDraftId)).document)).toEqual([]);
+    });
   });
 
-  it('en développement, rouvre une création de campagne existante sans y révéler la solution', () => {
-    expect(
-      draftStorage().save(creationFromLevel(levelTwo, { createId: () => levelTwoDraftId })).status,
-    ).toBe('ok');
+  it('en développement, ouvre une nouvelle création de campagne avec la solution révélée, sans fiche de calibrage (V7b)', async () => {
     const { repository } = createProgressRepository(levelOneResolved);
     window.history.replaceState(null, '', '/levels');
-    render(<App progressRepository={repository} developmentMode />);
+    await renderStorageReady(<App progressRepository={repository} developmentMode />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+    );
 
-    expect(screen.getByText('Atelier')).toBeVisible();
-    expect(toPlaceObjects(storedCreation(levelTwoDraftId).document)).toEqual([]);
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Fiche de calibrage' })).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Ouvrir la fiche de calibrage' })).toBeNull();
+    });
+    await waitFor(async () => {
+      expect(toPlaceObjects((await storedCreation(levelTwoDraftId)).document)).toHaveLength(
+        levelTwo.solution?.placements.length ?? -1,
+      );
+    });
   });
 
-  it('désactive « Modifier » d’un niveau verrouillé', () => {
+  it('en développement, rouvre une création de campagne existante sans y révéler la solution', async () => {
+    await waitFor(async () => {
+      expect(
+        (
+          await draftStorage().save(
+            creationFromLevel(levelTwo, { createId: () => levelTwoDraftId }),
+          )
+        ).status,
+      ).toBe('ok');
+    });
+    const { repository } = createProgressRepository(levelOneResolved);
+    window.history.replaceState(null, '', '/levels');
+    await renderStorageReady(<App progressRepository={repository} developmentMode />);
+
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    await waitFor(async () => {
+      expect(toPlaceObjects((await storedCreation(levelTwoDraftId)).document)).toEqual([]);
+    });
+  });
+
+  it('désactive « Modifier » d’un niveau verrouillé', async () => {
     const { repository } = createProgressRepository();
     window.history.replaceState(null, '', '/levels');
-    render(<App progressRepository={repository} />);
+    await renderStorageReady(<App progressRepository={repository} />);
 
-    expect(screen.getByRole('button', { name: 'Modifier le niveau 1' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Modifier le niveau 2' })).toBeDisabled();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Modifier le niveau 1' })).toBeEnabled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Modifier le niveau 2' })).toBeDisabled();
+    });
   });
 
-  it('refuse l’URL directe de la création d’un niveau verrouillé, même enregistrée, sans la modifier', () => {
-    expect(
-      draftStorage().save(creationFromLevel(levelTwo, { createId: () => levelTwoDraftId })).status,
-    ).toBe('ok');
-    const before = window.localStorage.getItem(`tinkerbolt:draft:${levelTwoDraftId}`);
+  it('refuse l’URL directe de la création d’un niveau verrouillé, même enregistrée, sans la modifier', async () => {
+    await waitFor(async () => {
+      expect(
+        (
+          await draftStorage().save(
+            creationFromLevel(levelTwo, { createId: () => levelTwoDraftId }),
+          )
+        ).status,
+      ).toBe('ok');
+    });
+    const before = await draftStorage().load(levelTwoDraftId);
     const { repository } = createProgressRepository();
     window.history.replaceState(null, '', `/editor?draft=${levelTwoDraftId}`);
-    render(<App progressRepository={repository} />);
+    await renderStorageReady(<App progressRepository={repository} />);
 
-    expect(screen.getByText('Ce niveau est encore verrouillé.')).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Campagne' })).toHaveAttribute('href', '/levels');
-    expect(screen.queryByRole('region', { name: 'Plateau de jeu' })).toBeNull();
-    expect(window.localStorage.getItem(`tinkerbolt:draft:${levelTwoDraftId}`)).toBe(before);
+    await waitFor(() => {
+      expect(screen.getByText('Ce niveau est encore verrouillé.')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Campagne' })).toHaveAttribute('href', '/levels');
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: 'Plateau de jeu' })).toBeNull();
+    });
+    await waitFor(async () => {
+      expect(await draftStorage().load(levelTwoDraftId)).toEqual(before);
+    });
   });
 
-  it('ouvre la création d’un niveau verrouillé sous `unlockAllLevels`', () => {
+  it('ouvre la création d’un niveau verrouillé sous `unlockAllLevels`', async () => {
     const { repository } = createProgressRepository();
     window.history.replaceState(null, '', '/levels');
-    render(<App progressRepository={repository} unlockAllLevels />);
+    await renderStorageReady(<App progressRepository={repository} unlockAllLevels />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+    );
 
-    expect(openedDraftId()).toBe(levelTwoDraftId);
-    expect(screen.getByText('Atelier')).toBeVisible();
-    expect(screen.queryByText('Ce niveau est encore verrouillé.')).toBeNull();
+    await waitFor(() => {
+      expect(openedDraftId()).toBe(levelTwoDraftId);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Ce niveau est encore verrouillé.')).toBeNull();
+    });
   });
 });

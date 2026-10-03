@@ -81,8 +81,9 @@ export function ReceivedLevelBoard({
         launchedAttemptRef.current = null;
         if (outcome.outcome !== 'won' || attempt === null) return;
         if (entryId !== null) {
-          const recorded = recordReceivedVictory(repository, entryId, attempt);
-          setIsVictoryNotKept(recorded.status === 'not-kept');
+          void recordReceivedVictory(repository, entryId, document, attempt).then((recorded) => {
+            setIsVictoryNotKept(recorded.status === 'not-kept');
+          });
         }
         setWonAttempt(attempt);
       }}

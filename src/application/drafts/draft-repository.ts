@@ -15,11 +15,16 @@ export interface DraftCreation {
 /** What a caller saves; the repository dates it with its injected clock. */
 export type DraftCreationContent = Omit<DraftCreation, 'updatedAt'>;
 
-export type DraftRepositoryErrorCode = 'storage-unavailable' | 'quota-exceeded' | 'invalid-draft';
+export type DraftRepositoryErrorCode =
+  | 'storage-unavailable'
+  | 'quota-exceeded'
+  | 'invalid-draft'
+  | 'identity-collision'
+  | 'unsupported-version';
 
 export type DraftRepositoryWarning = 'invalid-data-backed-up';
 
-export type DraftIndexLoadResult =
+type DraftIndexLoadResult =
   | {
       readonly status: 'ok';
       readonly ids: readonly string[];
@@ -41,8 +46,9 @@ export type DraftWriteResult =
 
 /** Application port for author-created levels stored locally. */
 export interface DraftRepository {
-  list(): DraftIndexLoadResult;
-  load(id: string): DraftLoadResult;
-  save(creation: DraftCreationContent): DraftWriteResult;
-  delete(id: string): DraftWriteResult;
+  list(): Promise<DraftIndexLoadResult>;
+  load(id: string): Promise<DraftLoadResult>;
+  save(creation: DraftCreationContent): Promise<DraftWriteResult>;
+  create(creation: DraftCreationContent): Promise<DraftWriteResult>;
+  delete(id: string): Promise<DraftWriteResult>;
 }

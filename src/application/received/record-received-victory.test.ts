@@ -78,15 +78,36 @@ const createMemoryRepository = (
   const entries = new Map(initial.map((received) => [received.id, received]));
   const saves: ReceivedLevel[] = [];
   const repository: ReceivedLevelRepository = {
-    list: () => ({ status: 'ok', ids: [...entries.keys()] }),
-    load: (loadedId) => ({ status: 'ok', level: entries.get(loadedId) ?? null }),
-    save: (received) => {
+    list: () => Promise.resolve({ status: 'ok', ids: [...entries.keys()] }),
+    load: (loadedId) => Promise.resolve({ status: 'ok', level: entries.get(loadedId) ?? null }),
+    save: async (received) => {
+      await Promise.resolve();
       saves.push(received);
       if (saveResult !== undefined) return saveResult;
       entries.set(received.id, received);
       return { status: 'ok' };
     },
-    delete: (deletedId) => {
+    receive: (received) => Promise.resolve({ status: 'ok', level: received, isNew: true }),
+    recordVictory: async (victoryId, _source, objectsUsed, playerSolution) => {
+      await Promise.resolve();
+      const existing = entries.get(victoryId);
+      if (existing === undefined) return { status: 'ok', level: null };
+      if (saveResult?.status === 'error') return saveResult;
+      const next: ReceivedLevel = {
+        ...existing,
+        solved: true,
+        bestObjectCount:
+          existing.bestObjectCount === undefined
+            ? objectsUsed
+            : Math.min(existing.bestObjectCount, objectsUsed),
+        playerSolution,
+      };
+      saves.push(next);
+      entries.set(victoryId, next);
+      return { status: 'ok', level: next };
+    },
+    delete: async (deletedId) => {
+      await Promise.resolve();
       entries.delete(deletedId);
       return { status: 'ok' };
     },
@@ -95,10 +116,10 @@ const createMemoryRepository = (
 };
 
 describe('victoire sur un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)', () => {
-  it('marque l’entrée résolue avec le nombre d’objets et la solution du lancement', () => {
+  it('marque l’entrée résolue avec le nombre d’objets et la solution du lancement', async () => {
     const { repository, entries } = createMemoryRepository([entry()]);
 
-    const result = recordReceivedVictory(repository, id, attemptWithBeams(3));
+    const result = await recordReceivedVictory(repository, id, level, attemptWithBeams(3));
 
     const expected = entry({
       solved: true,
@@ -113,11 +134,11 @@ describe('victoire sur un niveau reçu (M10, ADR 0015 § Victoire sur un niveau 
     expect(entries.get(id)).toEqual(expected);
   });
 
-  it('garde le meilleur record mais remplace la solution par la dernière victoire', () => {
+  it('garde le meilleur record mais remplace la solution par la dernière victoire', async () => {
     const { repository, entries } = createMemoryRepository([entry()]);
 
-    recordReceivedVictory(repository, id, attemptWithBeams(3));
-    recordReceivedVictory(repository, id, attemptWithBeams(2, 5));
+    await recordReceivedVictory(repository, id, level, attemptWithBeams(3));
+    await recordReceivedVictory(repository, id, level, attemptWithBeams(2, 5));
 
     expect(entries.get(id)).toEqual(
       entry({
@@ -133,20 +154,20 @@ describe('victoire sur un niveau reçu (M10, ADR 0015 § Victoire sur un niveau 
     );
   });
 
-  it('abaisse le record quand la victoire utilise moins d’objets', () => {
+  it('abaisse le record quand la victoire utilise moins d’objets', async () => {
     const { repository, entries } = createMemoryRepository([
       entry({ solved: true, bestObjectCount: 2, playerSolution: { placements: [] } }),
     ]);
 
-    recordReceivedVictory(repository, id, attemptWithBeams(3));
+    await recordReceivedVictory(repository, id, level, attemptWithBeams(3));
 
     expect(entries.get(id)?.bestObjectCount).toBe(1);
   });
 
-  it('ne garde que l’entrée : le niveau reçu et sa date ne changent pas', () => {
+  it('ne garde que l’entrée : le niveau reçu et sa date ne changent pas', async () => {
     const { repository, entries } = createMemoryRepository([entry({ origin: 'file' })]);
 
-    recordReceivedVictory(repository, id, attemptWithBeams());
+    await recordReceivedVictory(repository, id, level, attemptWithBeams());
 
     expect(entries.get(id)).toMatchObject({
       document: level,
@@ -157,30 +178,30 @@ describe('victoire sur un niveau reçu (M10, ADR 0015 § Victoire sur un niveau 
     });
   });
 
-  it('n’écrit rien pour une entrée absente', () => {
+  it('n’écrit rien pour une entrée absente', async () => {
     const { repository, saves } = createMemoryRepository([]);
 
-    expect(recordReceivedVictory(repository, id, attemptWithBeams(3))).toEqual({
+    expect(await recordReceivedVictory(repository, id, level, attemptWithBeams(3))).toEqual({
       status: 'not-found',
     });
     expect(saves).toEqual([]);
   });
 
-  it('rend une erreur de stockage comme un résultat, sans lever', () => {
+  it('rend une erreur de stockage comme un résultat, sans lever', async () => {
     const { repository } = createMemoryRepository([entry()], {
       status: 'error',
       code: 'quota-exceeded',
     });
     const unreadable: ReceivedLevelRepository = {
       ...repository,
-      load: () => ({ status: 'error', code: 'storage-unavailable' }),
+      recordVictory: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
 
-    expect(recordReceivedVictory(repository, id, attemptWithBeams(3))).toEqual({
+    expect(await recordReceivedVictory(repository, id, level, attemptWithBeams(3))).toEqual({
       status: 'not-kept',
       code: 'quota-exceeded',
     });
-    expect(recordReceivedVictory(unreadable, id, attemptWithBeams(3))).toEqual({
+    expect(await recordReceivedVictory(unreadable, id, level, attemptWithBeams(3))).toEqual({
       status: 'not-kept',
       code: 'storage-unavailable',
     });

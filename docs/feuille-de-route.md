@@ -16,15 +16,15 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 
 **C0 et C1 terminés, gate globale verte.** C1 est corrigé dans le commit
 `6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
-C2 : [ADR 0017 proposée](decisions/0017-player-construction-and-async-storage.md),
-trois arbitrages soumis à l’auteur. Les maquettes C4/C4a sont préparées,
-captures desktop inspectées, validation attendue. C5 est implémenté
-et vérifié (1206 tests Vitest, 89 E2E), validation visuelle attendue aux deux
-formats desktop. L’audit C8 est préparé, Q6 et la décision de version restent
-ouverts. Les contrats de reprise ne sont pas encore acceptés ;
-l’amendement accepté des ADR 0011/0015 fixe seulement les
-décisions de stockage et de reprise confirmées. Dexie et la reprise des
-constructions ne sont pas encore livrés.
+C2 : [ADR 0017 acceptée](decisions/0017-player-construction-and-async-storage.md),
+avec les arbitrages de l’auteur intégrés. **C2a livré ; suite : C3.** Les maquettes
+C4/C4a ont été examinées par l’auteur : rotation au coin haut gauche et taille
+au milieu du bord droit, puis poursuite autorisée. C5 est implémenté
+et vérifié lors de T2 (1206 tests Vitest, 89 E2E) ; recette visuelle différée
+sur instruction de l’auteur. La gate C2a passe avec 1164 Vitest et 89 E2E. L’audit C8 est préparé, Q6 et la décision de version restent
+ouverts. Les ADR 0011/0015 et 0017 fixent désormais les
+contrats de stockage et de reprise. Les quatre stockages utilisent Dexie avec
+ports asynchrones ; la reprise des constructions de joueur reste C3.
 
 ## Règles de la reprise active
 
@@ -46,6 +46,9 @@ constructions ne sont pas encore livrés.
   les captures : 1440 × 900 et 1280 × 720 pour les compléments desktop ; formats
   portrait et paysage concernés pour v2. Garder « validation visuelle attendue »
   tant que l’auteur n’a pas validé un nouveau changement visible.
+  **Instruction ultérieure de l’auteur pour la session en cours : priorité à
+  l’implémentation, sans captures ni vérification d’images.** La recette visuelle
+  est différée ; elle ne bloque pas le code déjà autorisé.
 - Les compléments restent desktop d’abord. M0 ouvre l’étape téléphone ; les
   objectifs nouveaux restent en v4. Les versions produit ne désignent pas
   `LevelDocument.schemaVersion`.
@@ -61,7 +64,8 @@ constructions ne sont pas encore livrés.
 ## Décisions confirmées pour cette reprise
 
 - Trois tailles de poutre conservées, choisies par une icône sur le plateau ;
-  pas de longueur libre. Maquette encore à valider (C4).
+  pas de longueur libre. L’auteur a demandé la rotation au coin haut gauche
+  et l’icône de taille au milieu du bord droit, puis autorisé la suite (C4).
 - Propriétés fermées par défaut sur ordinateur et téléphone, ouvertes par
   clic/toucher simple ; poser ou déplacer ne les ouvre pas. Contrat commun
   et maquettes à formaliser avant code dans C4a puis M0/M1.
@@ -71,7 +75,12 @@ constructions ne sont pas encore livrés.
   et leurs migrations restent présents. Propriétaire : ADR 0011.
 - Reprise automatique de la construction engagée avant simulation, avec
   « Recommencer » pour repartir de zéro ; ni simulation ni historique restaurés.
-  Propriétaires : ADR 0011/0015 ; contrats détaillés à arrêter dans C2.
+  Propriétaires : ADR 0011/0015 ; contrats détaillés acceptés dans C2.
+- Contrat C2 accepté : construction conservée après victoire ; remise à zéro
+  qui efface progression et toutes les constructions de campagne ; source
+  exceptionnellement modifiée qui fait supprimer la construction incompatible
+  sans secours, puis repartir du niveau courant avec avertissement. Les secours
+  de données corrompues restent distincts. Propriétaire : ADR 0017.
 - Boutons de résultat et modale apparaissent ensemble, au délai actuel (C5).
 - Splash une seule fois au démarrage de l’application, y compris par lien
   direct, avec barre de chargement et minimum de 1,2 s. « Créé par Alexis
@@ -88,11 +97,8 @@ constructions ne sont pas encore livrés.
 | Q6  | Contrat de chaque famille nouvelle et ordre confirmé après audit.                                         | C8, puis chaque C9a–d pour son contrat. |
 | Q8  | Mécanisme de soumission disponible sur l’instance Grist de la Forge ; éventuel relais et son hébergement. | F1, puis F2.                            |
 
-C2 doit également fixer l’identité et la compatibilité d’une construction
-sauvegardée, son enveloppe, les états d’erreur et les opérations atomiques,
-ainsi que le devenir des sauvegardes lors d’une source modifiée, suppression,
-remise à zéro ou victoire. C0 ne tranche aucun de ces contrats. Les conseils
-du plan préparatoire ne sont pas des décisions acceptées.
+C2 a fixé ces contrats dans l’ADR 0017 acceptée. Les conseils du plan
+préparatoire ne remplacent pas cette décision.
 
 ## Séquence active — compléments desktop
 
@@ -475,25 +481,73 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   89 E2E v1. Fichier d’essai auteur et configuration Playwright restaurés
   identiques. Aucun restylage ni changement de contenu des niveaux.
 
-### C2 — Contrat de reprise — proposé, validation de l’auteur attendue
+### C2 — Contrat de reprise — accepté — 3 octobre 2026
 
 - Sol 6.1 `high` a préparé le contrat, relu puis intégré par l’orchestrateur :
   [ADR 0017](decisions/0017-player-construction-and-async-storage.md), statut
-  **proposé**, avec renvois ADR 0005/0011/0015 et index. Aucun code, dépendance
+  d’abord **proposé**, avec renvois ADR 0005/0011/0015 et index. Aucun code, dépendance
   ou changement du stockage livré.
 - La construction reprend document **et provenance**, avec validation stricte
   des relations source/stock/décor et un codec de tentative distinct du codec
   de niveau. Identité/empreinte, files d’écriture et méthodes atomiques restent
   décrites dans cette proposition ; aucune nouvelle API Dexie n’est livrée.
-- Trois propositions soumises à l’auteur : conserver après victoire ; garder
-  les constructions sous les nouveaux verrous après remise à zéro de progression ;
-  sauvegarder en secours une construction incompatible puis ouvrir la nouvelle
-  source avec avertissement. Aucune acceptation déduite du silence.
-- Format Markdown, neuf liens locaux et diff vérifiés. C2 reste partiel :
-  **C2a et C3 attendent l’acceptation du contrat**. L’exception au codec normal
-  et la provenance persistable sont documentées avant toute implémentation.
+- L’auteur accepte la conservation après victoire et précise que la remise à
+  zéro supprime aussi les solutions. Il écarte le secours d’une construction
+  devenue inutile si son niveau change. Luna `xhigh` a formalisé ces décisions,
+  puis l’orchestrateur a relu et intégré les cinq documents : reset atomique de
+  progression et de toutes les constructions `campaign` après barrière ; source
+  modifiée supprimée sans secours, source neuve et `source-changed` ; échec de
+  suppression renvoyé sans fausse réussite. Créations et reçus indépendants.
+- Les backups transactionnels de données corrompues restent distincts. Aucun
+  ancien maintien sous verrou ni proposition de secours de source changée dans
+  les renvois ciblés. Format Markdown, liens locaux et diff vérifiés.
+- **C2a et C3 sont débloqués**. L’exception au codec normal et la provenance
+  persistable sont documentées avant toute implémentation.
 
-### C4 / C4a — Maquettes desktop — proposées, validation visuelle attendue
+### C2a — Stockage Dexie — fait — commit C2a (3 octobre 2026)
+
+- Tests de stockage confiés à Sol 6 `medium`, implémentation infrastructure et
+  cas d’usage à un autre agent Sol 6 `high`, un seul sous-agent actif à la fois.
+  Dexie 4.4.6 et fake-indexeddb 6.2.5 épinglés ; décision et conséquences
+  consignées dans l’ADR 0003 avant installation. Aucun autre paquet modifié.
+- Quatre repositories et six tables écrits dans le worktree de travail,
+  avec ports Promise, opérations atomiques et secours transactionnels. Les
+  cas d’usage sont asynchrones. 94 tests ciblés passent, ESLint et Prettier
+  ciblés passent. Les assertions historiques sont portées vers les rows IDB ;
+  les seules règles sans objet sont les clés/indexes et migration de l’ancien
+  stockage que l’auteur a explicitement abandonné.
+- Le raccord des écrans est confié à Sol 6.1 `high`, après huit tests rouges
+  observables sur chargement, navigation, pseudonyme, reset et insertion libre,
+  plus cinq régressions de validation IDB issues de la revue root. L’interruption
+  de quota n’a pas perdu le code ; la reprise poursuit ce raccord.
+- Raccord achevé : 296 tests ciblés distincts passent, ainsi que TypeScript,
+  ESLint et Prettier ciblés. Lectures attendues avant verrous/plateau/pseudo ;
+  écritures des créations ordonnées, première insertion unique, navigation et
+  lancement attendent la file ; erreurs visibles sans empêcher le jeu en mémoire.
+  Les fixtures Vitest/E2E utilisent IndexedDB et les quatre modules de production
+  legacy sont retirés. Les notices rejoignent l’emplacement de statut existant.
+- Premier arrêt de gate : cinq exports de types inutilisés retirés par Luna
+  `xhigh`, sans changement de comportement. Le passage suivant valide 1164 tests
+  Vitest et 88 E2E, avec un seul échec de fixture quota : elle interceptait
+  `add`, alors que la réception emploie `put`. Sol 6.1 complète le mock avec
+  les deux méthodes, sans changer les assertions ni la production.
+- Le passage suivant confirme le test quota mais révèle une course préexistante
+  du helper d’export : sondage du bouton des propriétés puis clic pendant son
+  retrait par l’auto-ouverture. Luna `xhigh` remplace ce sondage par l’attente
+  de la région des propriétés visible ; mêmes gestes et assertions.
+- Revue croisée par Sol 6 `medium` : aucun P1, un P2 corrigé. Retour navigateur
+  pendant autosave pouvait lire une liste ancienne ; test rouge par le reviewer,
+  correction minimale par Sol 6.1, 36 tests ciblés verts. `Mes niveaux` attend
+  désormais les écritures avant de lire ses listes, même hors `beforeLeave`.
+- Gate globale `pnpm check` verte : TypeScript, lint, formatage, Knip,
+  contenu (6 documents), 1164 tests Vitest, build et 89 E2E desktop v1.
+  Port isolé 4319 ; configuration Playwright et fichier d’essai auteur restaurés
+  identiques. Aucun test ignoré, transfert de données localStorage ou recette
+  d’image. Le todo auteur est préservé. Suite : C3.
+- Arrêt de session demandé par l’auteur après clôture et commit de C2a.
+  Aucun travail C3 commencé ; la prochaine reprise commence par C3.
+
+### C4 / C4a — Maquettes desktop — direction validée, positions corrigées
 
 - Sol 6.1 `medium` a préparé la [maquette interactive](maquettes/complements-desktop/c4-c4a.html)
   et son CSS : sélection après pose, menu de taille en résolution, propriétés
@@ -511,7 +565,14 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   octets locaux chargés par `FontFace` dans le script de recette ; maquette
   inchangée. Les textes sont visibles dans les huit captures finales.
 - Huit captures dans `tmp/c4/captures/`, aux formats 1440 × 900 et 1280 × 720,
-  inspectées par l’orchestrateur. **Validation de l’auteur attendue avant C4/C4a**.
+  inspectées par l’orchestrateur. L’auteur a examiné les captures et demandé
+  la rotation au coin haut gauche et la taille au milieu du bord droit, puis
+  « ensuite on enchaîne ». Sol 6.1 `medium` a déplacé les deux ancrages dans le
+  repère local de la poutre ; ils suivent sa longueur et sa rotation, avec
+  pictogrammes droits et cibles de 44 px. Le menu passe devant les sprites.
+  Sur instruction ultérieure de l’auteur, aucun nouveau contrôle d’image ni
+  capture n’est réalisé pendant cette session ; priorité au code. Cette
+  instruction remplace l’exigence de recette visuelle pour la session en cours.
   Le contrat normatif de séparation sélection/ouverture doit aussi être amendé
   avant le code ; aucun geste téléphone nouveau n’est livré.
 

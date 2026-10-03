@@ -8,27 +8,16 @@ type DuplicateCreationResult =
 
 const COPY_SUFFIX = ' (copie)';
 
-/**
- * ADR 0015 § Page « Mes niveaux »: « Dupliquer » saves a copy of a creation
- * as a new `creation-<aléa>` (random part injected), titled « (copie) », with
- * the same source. The original is left untouched; the repository dates the
- * copy with its own clock.
- */
-export const duplicateCreation = (
+export const duplicateCreation = async (
   repository: DraftRepository,
   id: string,
   createId: () => string,
-): DuplicateCreationResult => {
-  const original = repository.load(id);
+): Promise<DuplicateCreationResult> => {
+  const original = await repository.load(id);
   if (original.status === 'error') return original;
   if (original.creation === null) return { status: 'error', code: 'invalid-draft' };
   const { document, source } = original.creation;
-
-  const free = freeCreationId(repository, createId);
-  if (free.status === 'error') return free;
-  const { draftId } = free;
-
-  const saved = repository.save({
+  return freeCreationId(repository, createId, (draftId) => ({
     document: {
       ...document,
       id: draftId,
@@ -38,6 +27,5 @@ export const duplicateCreation = (
       },
     },
     ...(source === undefined ? {} : { source }),
-  });
-  return saved.status === 'ok' ? { status: 'ok', draftId } : saved;
+  }));
 };

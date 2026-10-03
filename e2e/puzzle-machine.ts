@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 import type { LevelDocument } from '../src/domain/level-document';
-import { createLocalStorageDraftRepository } from '../src/infrastructure/storage/local-storage-draft-repository';
+import { creationFixture, seedIndexedDB } from './indexed-db-fixture';
 import { levelDocumentSchema } from '../src/domain/level-document';
 
 // Playwright's loader does not import JSON modules: read level 1 through the L22 codec.
@@ -70,34 +70,9 @@ export const machineBeam = { x: 5, y: 2.15 } as const;
 
 /** Stores the machine as a draft through the app's own repository, then opens it. */
 export const openMachineDraft = async (page: Page): Promise<void> => {
-  const entries = new Map<string, string>();
-  const storage: Storage = {
-    get length() {
-      return entries.size;
-    },
-    clear: () => {
-      entries.clear();
-    },
-    getItem: (key) => entries.get(key) ?? null,
-    key: (index) => [...entries.keys()][index] ?? null,
-    removeItem: (key) => {
-      entries.delete(key);
-    },
-    setItem: (key, value) => {
-      entries.set(key, value);
-    },
-  };
-  createLocalStorageDraftRepository(storage, () => new Date('2026-10-01T12:00:00.000Z')).save({
-    document: machine,
-  });
-
+  const row = await creationFixture({ document: machine });
   await page.goto('/');
-  await page.evaluate(
-    (stored) => {
-      for (const [key, value] of stored) localStorage.setItem(key, value);
-    },
-    [...entries],
-  );
+  await seedIndexedDB(page, [row]);
   await page.goto('/editor?draft=machine-u22');
 };
 
@@ -117,8 +92,9 @@ export const tapWorldPoint = async (page: Page, x: number, y: number): Promise<v
 /** Selects the machine's beam and marks it « À placer » in the inspector, by touch. */
 export const markBeamToPlace = async (page: Page): Promise<void> => {
   await tapWorldPoint(page, machineBeam.x, machineBeam.y);
-  const openProperties = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  if (await openProperties.isVisible()) await openProperties.tap();
+  await expect(
+    page.getByRole('region', { name: 'Propriétés de Poutre', exact: true }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'À placer' }).tap();
   await expect(page.getByRole('button', { name: 'À placer' })).toHaveAttribute(
     'aria-pressed',

@@ -18,7 +18,9 @@ Chaque tranche est verticale, commence par ses tests observables et se termine p
 | v4 réserve          | Objectifs nouveaux | Décision et contrat séparés ; aucune implémentation anticipée en C/M/F.                                                                                                                                                                                                    |
 
 Les dépendances de chaque tâche sont dans la feuille de route. Les contrats
-des nouvelles familles et la soumission Grist restent ouverts ; les maquettes
+des nouvelles familles et la soumission Grist restent ouverts. C2 est accepté,
+C2a est livré ; C3 est la tâche courante ; les maquettes C4/C4a ont été examinées
+et leurs positions corrigées sur instruction de l’auteur. Les autres maquettes
 restent à valider. C0 ne constate ni remplacement du stockage ni livraison UI.
 
 ## Tranches fondatrices — état livré à la clôture v1
@@ -31,7 +33,7 @@ restent à valider. C0 ne constate ni remplacement du stockage ni livraison UI.
 | T4a     | ✅                                                                                                    |
 | T4b     | ✅ sélection, déplacement direct, poignée de rotation, propriétés                                     |
 | T5      | ✅ cinq tutoriels livrés et vérifiés en V1/N2 ; recette v1 clôturée (V9)                              |
-| T6      | ✅ progression, stockage `localStorage`, partage et PWA livrés ; cible Dexie asynchrone prévue en C2a |
+| T6      | ✅ progression, partage et PWA livrés ; stockage remplacé par Dexie asynchrone en C2a |
 
 Les descriptions T1 à T6 ci-dessous sont l’historique du découpage initial,
 pas des tâches actives. La v1 V0–V9 est clôturée. L’ordre courant C/M/F est
@@ -144,8 +146,8 @@ codec URL borné avec checksum ; service worker et stratégie de mise à jour
 protégeant les brouillons.
 
 La mention IndexedDB du découpage initial était une intention, pas l’adaptateur
-livré. La nouvelle décision IndexedDB/Dexie asynchrone, sans reprise des anciennes
-données locales, relève des amendements du 3 octobre des ADR 0011/0015 et de C2a.
+livré. Le remplacement livré en C2a utilise IndexedDB/Dexie asynchrone, sans reprise
+des anciennes données locales (amendements du 3 octobre des ADR 0011/0015).
 
 ---
 

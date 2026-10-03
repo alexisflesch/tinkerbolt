@@ -53,14 +53,23 @@ const createMemoryRepository = (initial: Readonly<Record<string, DraftCreation>>
   const entries = new Map(Object.entries(initial));
   const saves: DraftCreationContent[] = [];
   const repository: DraftRepository = {
-    list: () => ({ status: 'ok', ids: [...entries.keys()] }),
-    load: (id) => ({ status: 'ok', creation: entries.get(id) ?? null }),
-    save: (creation) => {
+    list: () => Promise.resolve({ status: 'ok', ids: [...entries.keys()] }),
+    load: (id) => Promise.resolve({ status: 'ok', creation: entries.get(id) ?? null }),
+    save: async (creation) => {
+      await Promise.resolve();
       saves.push(creation);
       entries.set(creation.document.id, { ...creation, updatedAt: '2026-10-01T12:00:00.000Z' });
       return { status: 'ok' };
     },
-    delete: (id) => {
+    create: async (creation) => {
+      await Promise.resolve();
+      if (entries.has(creation.document.id)) return { status: 'error', code: 'identity-collision' };
+      saves.push(creation);
+      entries.set(creation.document.id, { ...creation, updatedAt: '2026-10-01T12:00:00.000Z' });
+      return { status: 'ok' };
+    },
+    delete: async (id) => {
+      await Promise.resolve();
       entries.delete(id);
       return { status: 'ok' };
     },
@@ -69,11 +78,11 @@ const createMemoryRepository = (initial: Readonly<Record<string, DraftCreation>>
 };
 
 describe('enregistrer une création depuis un niveau (M11, ADR 0015 § Points d’entrée)', () => {
-  it('enregistre sous `creation-<aléa>` la création du niveau avec la solution du joueur', () => {
+  it('enregistre sous `creation-<aléa>` la création du niveau avec la solution du joueur', async () => {
     const { repository, saves } = createMemoryRepository();
     const pristine = structuredClone(level);
 
-    const result = saveCreationFromLevel(repository, level, {
+    const result = await saveCreationFromLevel(repository, level, {
       playerSolution,
       createId: () => 'abc',
     });
@@ -89,23 +98,23 @@ describe('enregistrer une création depuis un niveau (M11, ADR 0015 § Points d�
     expect(level).toEqual(pristine);
   });
 
-  it('ne pose aucun objet sans solution du joueur', () => {
+  it('ne pose aucun objet sans solution du joueur', async () => {
     const { repository, saves } = createMemoryRepository();
 
-    saveCreationFromLevel(repository, level, { createId: () => 'abc' });
+    await saveCreationFromLevel(repository, level, { createId: () => 'abc' });
 
     expect(saves[0]?.document.objects.some(({ toPlace }) => toPlace === true)).toBe(false);
     expect(saves[0]?.source).toEqual(level);
   });
 
-  it('tire un nouvel aléa quand l’identifiant est déjà pris', () => {
+  it('tire un nouvel aléa quand l’identifiant est déjà pris', async () => {
     const taken = creationFromLevel(level, { createId: () => 'creation-pris' });
     const { repository, saves } = createMemoryRepository({
       'creation-pris': { ...taken, updatedAt: '2026-09-01T00:00:00.000Z' },
     });
     const parts = ['pris', 'libre'];
 
-    const result = saveCreationFromLevel(repository, level, {
+    const result = await saveCreationFromLevel(repository, level, {
       createId: () => parts.shift() ?? 'fin',
     });
 
@@ -113,22 +122,22 @@ describe('enregistrer une création depuis un niveau (M11, ADR 0015 § Points d�
     expect(saves.map(({ document }) => document.id)).toEqual(['creation-libre']);
   });
 
-  it('rend une erreur du dépôt en résultat, sans exception', () => {
+  it('rend une erreur du dépôt en résultat, sans exception', async () => {
     const { repository } = createMemoryRepository();
     const full: DraftRepository = {
       ...repository,
-      save: () => ({ status: 'error', code: 'quota-exceeded' }),
+      create: () => Promise.resolve({ status: 'error', code: 'quota-exceeded' }),
     };
     const unreadable: DraftRepository = {
       ...repository,
-      load: () => ({ status: 'error', code: 'storage-unavailable' }),
+      create: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
 
-    expect(saveCreationFromLevel(full, level, { createId: () => 'abc' })).toEqual({
+    expect(await saveCreationFromLevel(full, level, { createId: () => 'abc' })).toEqual({
       status: 'error',
       code: 'quota-exceeded',
     });
-    expect(saveCreationFromLevel(unreadable, level, { createId: () => 'abc' })).toEqual({
+    expect(await saveCreationFromLevel(unreadable, level, { createId: () => 'abc' })).toEqual({
       status: 'error',
       code: 'storage-unavailable',
     });

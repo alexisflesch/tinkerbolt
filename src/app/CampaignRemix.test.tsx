@@ -1,15 +1,17 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ProgressRepository } from '../application/progression/progress-repository';
 import { levelDocumentSchema, type LevelDocument } from '../domain/level-document';
-import { createLocalStorageDraftRepository } from '../infrastructure/storage/local-storage-draft-repository';
 
 import type * as EmbeddedLevels from '../content/embedded-levels';
 
+import { testDraftRepository, renderStorageReady, storageAction } from './storage-test-fixture';
+import type { CampaignProgress } from '../application/progression';
+import { recordSuccess } from '../application/progression';
 import { App } from './App';
 
 /**
@@ -113,7 +115,7 @@ const boardCanvasRect: DOMRect = {
   },
 };
 
-const tapWorldPoint = (x: number, y: number): void => {
+const tapWorldPoint = async (x: number, y: number): Promise<void> => {
   const board = screen.getByRole('region', { name: 'Plateau de jeu' });
   const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
   const [originX, originY] = (canvas.getAttribute('data-camera-origin') ?? '')
@@ -133,11 +135,11 @@ const tapWorldPoint = (x: number, y: number): void => {
     });
     fireEvent(board, event);
   }
+  await storageAction();
 };
 
 describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entrée)', () => {
   beforeEach(() => {
-    window.localStorage.clear();
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(boardCanvasRect);
   });
 
@@ -149,47 +151,82 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
 
   it('pose la tentative gagnante dans une nouvelle création, la victoire comptée', async () => {
     const flush = createAnimationFrameHarness();
-    const save = vi.fn(() => ({ status: 'ok' as const }));
+    const save = vi.fn((_progress: CampaignProgress) => {
+      void _progress;
+      return Promise.resolve({ status: 'ok' as const });
+    });
     const progress: ProgressRepository = {
-      load: () => ({ status: 'ok', progress: {} }),
+      recordVictory: async (id, count) => {
+        const initial = await progress.load();
+        const updated = recordSuccess(initial.status === 'ok' ? initial.progress : {}, id, count);
+        await save(updated);
+        return { status: 'ok', progress: updated };
+      },
+      load: () => Promise.resolve({ status: 'ok', progress: {} }),
       save,
-      clear: () => ({ status: 'ok' }),
+      clear: () => Promise.resolve({ status: 'ok' }),
     };
     window.history.replaceState(null, '', `/levels/${levelOneId}/play`);
-    render(<App progressRepository={progress} />);
+    await renderStorageReady(<App progressRepository={progress} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Poutre courte, quantité : 1' }));
-    tapWorldPoint(2, 3);
-    fireEvent.click(screen.getByRole('button', { name: 'Lancer' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    );
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Poutre courte, quantité : 1' })),
+    );
+    await tapWorldPoint(2, 3);
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
     act(() => {
       flush(0);
       for (let frame = 1; frame <= 240; frame += 1) flush(frame * 1000);
     });
     const result = screen.getByRole('region', { name: 'Résultat du niveau' });
     const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
-    fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' }));
-    fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' }));
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Bravo !' })).getByRole('button', {
-        name: 'Remixer',
-      }),
+    await storageAction(() =>
+      fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' })),
+    );
+    await storageAction(() =>
+      fireEvent.click(within(result).getByRole('button', { name: 'Voir le résultat' })),
+    );
+    await storageAction(() =>
+      fireEvent.click(
+        within(screen.getByRole('dialog', { name: 'Bravo !' })).getByRole('button', {
+          name: 'Remixer',
+        }),
+      ),
     );
 
-    expect(save).toHaveBeenCalledTimes(1);
-    expect(window.location.pathname).toBe('/editor');
+    await waitFor(() => {
+      expect(save).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/editor');
+    });
     const draftId = new URLSearchParams(window.location.search).get('draft') ?? '';
-    expect(draftId).toMatch(/^creation-[0-9a-f]+$/u);
-    expect(screen.getByText('Atelier')).toBeVisible();
-    const loaded = createLocalStorageDraftRepository(window.localStorage, () => new Date()).load(
-      draftId,
-    );
+    await waitFor(() => {
+      expect(draftId).toMatch(/^creation-[0-9a-f]+$/u);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Atelier')).toBeVisible();
+    });
+    const loaded = await testDraftRepository(() => new Date()).load(draftId);
     const creation = loaded.status === 'ok' ? loaded.creation : null;
-    expect(creation?.source).toEqual(winnableLevelOne);
-    expect(creation?.document.metadata.title).toBe('La bille de service (remix)');
+    await waitFor(() => {
+      expect(creation?.source).toEqual(winnableLevelOne);
+    });
+    await waitFor(() => {
+      expect(creation?.document.metadata.title).toBe('La bille de service (remix)');
+    });
     const posed = creation?.document.objects.filter(({ toPlace }) => toPlace === true) ?? [];
-    expect(posed.map(({ type }) => type)).toEqual(['beam']);
-    expect(posed[0]?.transform.position.x).toBeCloseTo(2, 1);
-    expect(posed[0]?.transform.position.y).toBeCloseTo(3, 1);
+    await waitFor(() => {
+      expect(posed.map(({ type }) => type)).toEqual(['beam']);
+    });
+    await waitFor(() => {
+      expect(posed[0]?.transform.position.x).toBeCloseTo(2, 1);
+    });
+    await waitFor(() => {
+      expect(posed[0]?.transform.position.y).toBeCloseTo(3, 1);
+    });
   });
 });

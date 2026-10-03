@@ -14,7 +14,8 @@ export interface Preferences {
 export type PreferencesRepositoryErrorCode =
   | 'storage-unavailable'
   | 'quota-exceeded'
-  | 'invalid-preferences';
+  | 'invalid-preferences'
+  | 'unsupported-version';
 
 export type PreferencesLoadResult =
   | {
@@ -25,11 +26,26 @@ export type PreferencesLoadResult =
   | { readonly status: 'error'; readonly code: PreferencesRepositoryErrorCode };
 
 export type PreferencesSaveResult =
-  | { readonly status: 'ok' }
+  | { readonly status: 'ok'; readonly warning?: 'invalid-data-backed-up' }
+  | { readonly status: 'error'; readonly code: PreferencesRepositoryErrorCode };
+
+export type PreferencesPatch = {
+  readonly author?: string | null;
+  readonly firstLevelHintDone?: true;
+  readonly installInvitationDeclined?: true;
+};
+
+export type PreferencesPatchResult =
+  | {
+      readonly status: 'ok';
+      readonly preferences: Preferences;
+      readonly warning?: 'invalid-data-backed-up';
+    }
   | { readonly status: 'error'; readonly code: PreferencesRepositoryErrorCode };
 
 /** Application port for the player's local preferences (ADR 0011, `tinkerbolt:preferences`). */
 export interface PreferencesRepository {
-  load(): PreferencesLoadResult;
-  save(preferences: Preferences): PreferencesSaveResult;
+  load(): Promise<PreferencesLoadResult>;
+  save(preferences: Preferences): Promise<PreferencesSaveResult>;
+  patch(changes: PreferencesPatch): Promise<PreferencesPatchResult>;
 }

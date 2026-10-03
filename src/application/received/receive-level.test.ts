@@ -69,15 +69,28 @@ const createMemoryRepository = (
   const entries = new Map(initial.map((level) => [level.id, level]));
   const saves: ReceivedLevel[] = [];
   const repository: ReceivedLevelRepository = {
-    list: () => ({ status: 'ok', ids: [...entries.keys()] }),
-    load: (id) => ({ status: 'ok', level: entries.get(id) ?? null }),
-    save: (level) => {
+    list: () => Promise.resolve({ status: 'ok', ids: [...entries.keys()] }),
+    load: (id) => Promise.resolve({ status: 'ok', level: entries.get(id) ?? null }),
+    save: async (level) => {
+      await Promise.resolve();
       saves.push(level);
       if (saveResult !== undefined) return saveResult;
       entries.set(level.id, level);
       return { status: 'ok' };
     },
-    delete: (id) => {
+    receive: async (incoming) => {
+      await Promise.resolve();
+      const existing = entries.get(incoming.id);
+      const next =
+        existing === undefined ? incoming : { ...existing, receivedAt: incoming.receivedAt };
+      if (saveResult?.status === 'error') return saveResult;
+      saves.push(next);
+      entries.set(next.id, next);
+      return { status: 'ok', level: next, isNew: existing === undefined };
+    },
+    recordVictory: () => Promise.resolve({ status: 'ok', level: null }),
+    delete: async (id) => {
+      await Promise.resolve();
       entries.delete(id);
       return { status: 'ok' };
     },
@@ -86,10 +99,10 @@ const createMemoryRepository = (
 };
 
 describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
-  it('enregistre un nouveau document sous `recu-<empreinte>`, non résolu, daté par l’horloge', () => {
+  it('enregistre un nouveau document sous `recu-<empreinte>`, non résolu, daté par l’horloge', async () => {
     const { repository, entries } = createMemoryRepository();
 
-    const result = receiveLevel(repository, puzzle, 'link', fingerprint, clock);
+    const result = await receiveLevel(repository, puzzle, 'link', fingerprint, clock);
 
     const expected: ReceivedLevel = {
       id: 'recu-0123456789abcdef',
@@ -102,7 +115,7 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
     expect([...entries.values()]).toEqual([expected]);
   });
 
-  it('ne crée qu’une entrée pour le même document reçu deux fois, sans rien réinitialiser', () => {
+  it('ne crée qu’une entrée pour le même document reçu deux fois, sans rien réinitialiser', async () => {
     const solved: ReceivedLevel = {
       id: 'recu-0123456789abcdef',
       document: puzzle,
@@ -118,8 +131,8 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
     };
     const { repository, entries } = createMemoryRepository([solved]);
 
-    const first = receiveLevel(repository, puzzle, 'file', fingerprint, clock);
-    const second = receiveLevel(repository, puzzle, 'link', fingerprint, clock);
+    const first = await receiveLevel(repository, puzzle, 'file', fingerprint, clock);
+    const second = await receiveLevel(repository, puzzle, 'link', fingerprint, clock);
 
     // M9: receiving it again only brings it back to the top (`receivedAt`).
     const refreshed: ReceivedLevel = { ...solved, receivedAt: '2026-10-01T12:00:00.000Z' };
@@ -128,7 +141,7 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
     expect([...entries.values()]).toEqual([refreshed]);
   });
 
-  it('remet en tête un niveau déjà gardé en ne changeant que `receivedAt` (M9)', () => {
+  it('remet en tête un niveau déjà gardé en ne changeant que `receivedAt` (M9)', async () => {
     const kept: ReceivedLevel = {
       id: 'recu-0123456789abcdef',
       document: puzzle,
@@ -138,7 +151,7 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
     };
     const { repository, saves } = createMemoryRepository([kept]);
 
-    const result = receiveLevel(repository, puzzle, 'file', fingerprint, clock);
+    const result = await receiveLevel(repository, puzzle, 'file', fingerprint, clock);
 
     const refreshed: ReceivedLevel = { ...kept, receivedAt: '2026-10-01T12:00:00.000Z' };
     expect(result).toEqual({ status: 'received', level: refreshed, isNew: false });
@@ -146,7 +159,7 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
     expect(saves).toEqual([refreshed]);
   });
 
-  it('garde l’entrée telle quelle quand la remise en tête ne peut pas être écrite (M9)', () => {
+  it('garde l’entrée telle quelle quand la remise en tête ne peut pas être écrite (M9)', async () => {
     const kept: ReceivedLevel = {
       id: 'recu-0123456789abcdef',
       document: puzzle,
@@ -159,7 +172,7 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
       code: 'quota-exceeded',
     });
 
-    expect(receiveLevel(repository, puzzle, 'link', fingerprint, clock)).toEqual({
+    expect(await receiveLevel(repository, puzzle, 'link', fingerprint, clock)).toEqual({
       status: 'received',
       level: kept,
       isNew: false,
@@ -167,7 +180,7 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
     expect([...entries.values()]).toEqual([kept]);
   });
 
-  it('refuse un document qui porte un objet ou un fil « à placer », avec un code stable', () => {
+  it('refuse un document qui porte un objet ou un fil « à placer », avec un code stable', async () => {
     const { repository, saves } = createMemoryRepository();
     const withObjectToPlace: LevelDocument = {
       ...puzzle,
@@ -188,47 +201,49 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
       wires: [{ id: 'fil', sourceId: 'lever', targetId: 'fan', toPlace: true }],
     };
 
-    expect(receiveLevel(repository, withObjectToPlace, 'file', fingerprint, clock)).toEqual({
+    expect(await receiveLevel(repository, withObjectToPlace, 'file', fingerprint, clock)).toEqual({
       status: 'refused',
       code: 'workshop-document',
     });
-    expect(receiveLevel(repository, withWireToPlace, 'link', fingerprint, clock)).toEqual({
+    expect(await receiveLevel(repository, withWireToPlace, 'link', fingerprint, clock)).toEqual({
       status: 'refused',
       code: 'workshop-document',
     });
     expect(saves).toEqual([]);
   });
 
-  it('rend une erreur de quota comme un résultat', () => {
+  it('rend une erreur de quota comme un résultat', async () => {
     const { repository } = createMemoryRepository([], {
       status: 'error',
       code: 'quota-exceeded',
     });
 
-    expect(receiveLevel(repository, puzzle, 'link', fingerprint, clock)).toEqual({
+    expect(await receiveLevel(repository, puzzle, 'link', fingerprint, clock)).toEqual({
       status: 'not-kept',
       code: 'quota-exceeded',
     });
   });
 
-  it('rend une lecture impossible du dépôt comme un résultat, sans écrire', () => {
+  it('rend une lecture impossible du dépôt comme un résultat, sans écrire', async () => {
     const { repository, saves } = createMemoryRepository();
     const unavailable: ReceivedLevelRepository = {
       ...repository,
-      load: () => ({ status: 'error', code: 'storage-unavailable' }),
+      receive: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
 
-    expect(receiveLevel(unavailable, puzzle, 'link', fingerprint, clock)).toEqual({
+    expect(await receiveLevel(unavailable, puzzle, 'link', fingerprint, clock)).toEqual({
       status: 'not-kept',
       code: 'storage-unavailable',
     });
     expect(saves).toEqual([]);
   });
 
-  it('ne garde rien quand l’empreinte n’a pas pu être calculée', () => {
+  it('ne garde rien quand l’empreinte n’a pas pu être calculée', async () => {
     const { repository, saves } = createMemoryRepository();
 
-    expect(receiveLevel(repository, puzzle, 'link', { status: 'unavailable' }, clock)).toEqual({
+    expect(
+      await receiveLevel(repository, puzzle, 'link', { status: 'unavailable' }, clock),
+    ).toEqual({
       status: 'not-kept',
       code: 'fingerprint-unavailable',
     });

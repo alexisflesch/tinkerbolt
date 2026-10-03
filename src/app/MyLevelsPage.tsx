@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy, FilePlus2, FileUp, Pencil, Play, Share2, Trash2 } from 'lucide-react';
 
@@ -19,6 +19,7 @@ import { AppFrame } from '../ui/AppFrame';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { useDraftRepository } from './draft-repository-context';
+import { awaitDraftWrites } from './draft-writes';
 import { fingerprintOf } from './fingerprint-of';
 import { LevelCard } from './LevelCard';
 import { LevelExportDialog } from './LevelExportDialog';
@@ -63,9 +64,13 @@ export function MyLevelsPage() {
   const navigate = useNavigate();
   const drafts = useDraftRepository();
   const received = useReceivedLevelRepository();
-  const { levels: campaignProgress } = useCampaignProgress();
-  const [creations, setCreations] = useState(() => listCreations(drafts));
-  const [receivedLevels, setReceivedLevels] = useState(() => listReceivedLevels(received));
+  const { levels: campaignProgress, loading: campaignLoading } = useCampaignProgress();
+  const [creations, setCreations] = useState<Awaited<ReturnType<typeof listCreations>> | null>(
+    null,
+  );
+  const [receivedLevels, setReceivedLevels] = useState<Awaited<
+    ReturnType<typeof listReceivedLevels>
+  > | null>(null);
   const [pendingDeletion, setPendingDeletion] = useState<PendingDeletion | null>(null);
   const [sharing, setSharing] = useState<Sharing | null>(null);
   const [creationNotice, setCreationNotice] = useState<Notice>(null);
@@ -76,22 +81,40 @@ export function MyLevelsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cancelDeletionRef = useRef<HTMLButtonElement>(null);
 
-  const refresh = (): void => {
-    setCreations(listCreations(drafts));
-    setReceivedLevels(listReceivedLevels(received));
-  };
+  const active = useRef(true);
+  const revision = useRef(0);
+  const refresh = useCallback(async (): Promise<void> => {
+    const current = ++revision.current;
+    await awaitDraftWrites(drafts);
+    if (current !== revision.current) return;
+    const [nextCreations, nextReceived] = await Promise.all([
+      listCreations(drafts),
+      listReceivedLevels(received),
+    ]);
+    if (!active.current || current !== revision.current) return;
+    setCreations(nextCreations);
+    setReceivedLevels(nextReceived);
+  }, [drafts, received]);
+  useEffect(() => {
+    active.current = true;
+    void refresh();
+    return () => {
+      active.current = false;
+      revision.current += 1;
+    };
+  }, [refresh]);
 
   const isLocked = (creationId: string): boolean => {
     const level = campaignLevelOf(creationId);
     return level !== undefined && campaignProgress[level.id]?.unlocked !== true;
   };
 
-  const confirmDeletion = (): void => {
+  const confirmDeletion = async (): Promise<void> => {
     if (pendingDeletion === null) return;
     const result =
       pendingDeletion.kind === 'creation'
-        ? drafts.delete(pendingDeletion.id)
-        : received.delete(pendingDeletion.id);
+        ? await drafts.delete(pendingDeletion.id)
+        : await received.delete(pendingDeletion.id);
     const setNotice = pendingDeletion.kind === 'creation' ? setCreationNotice : setImportNotice;
     if (pendingDeletion.kind === 'received') setUnkeptImport(null);
     setNotice(
@@ -100,17 +123,17 @@ export function MyLevelsPage() {
         : { tone: 'alert', message: `${storageMessage(result.code)} Rien n’a été supprimé.` },
     );
     setPendingDeletion(null);
-    refresh();
+    await refresh();
   };
 
   /**
    * M14: « Partager » outside the workshop records the exported title and
    * pseudonym in the creation, as the workshop would, with its source kept.
    */
-  const applyToCreation = (
+  const applyToCreation = async (
     creation: DraftCreation,
     commands: readonly Command<ConstructionAttempt>[],
-  ): void => {
+  ): Promise<void> => {
     let attempt = createConstructionAttempt(creation.document);
     let changed = false;
     for (const command of commands) {
@@ -120,7 +143,7 @@ export function MyLevelsPage() {
       changed = true;
     }
     if (!changed) return;
-    const result = drafts.save({
+    const result = await drafts.save({
       document: attempt.document,
       ...(creation.source === undefined ? {} : { source: creation.source }),
     });
@@ -132,22 +155,22 @@ export function MyLevelsPage() {
             message: `${storageMessage(result.code)} Le titre, la description et le pseudo n’ont pas été enregistrés.`,
           },
     );
-    refresh();
+    await refresh();
   };
 
-  const duplicate = (id: string): void => {
-    const result = duplicateCreation(drafts, id, randomIdPart);
+  const duplicate = async (id: string): Promise<void> => {
+    const result = await duplicateCreation(drafts, id, randomIdPart);
     setCreationNotice(
       result.status === 'ok'
         ? null
         : { tone: 'alert', message: `${storageMessage(result.code)} La copie n’a pas été créée.` },
     );
-    refresh();
+    await refresh();
   };
 
   /** M11: « Modifier » a received level opens a new creation, its winning solution posed if solved. */
-  const editReceived = (level: ReceivedLevel): void => {
-    const result = saveCreationFromLevel(drafts, level.document, {
+  const editReceived = async (level: ReceivedLevel): Promise<void> => {
+    const result = await saveCreationFromLevel(drafts, level.document, {
       ...(level.solved && level.playerSolution !== undefined
         ? { playerSolution: level.playerSolution }
         : {}),
@@ -160,7 +183,7 @@ export function MyLevelsPage() {
       });
       return;
     }
-    void navigate(`/editor?draft=${encodeURIComponent(result.draftId)}`);
+    if (active.current) void navigate(`/editor?draft=${encodeURIComponent(result.draftId)}`);
   };
 
   const importFile = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
@@ -177,7 +200,7 @@ export function MyLevelsPage() {
       return;
     }
     const fingerprint = await fingerprintOf(read.document);
-    const result = receiveLevel(received, read.document, 'file', fingerprint, systemClock);
+    const result = await receiveLevel(received, read.document, 'file', fingerprint, systemClock);
     switch (result.status) {
       case 'received':
         setImportNotice({
@@ -203,7 +226,7 @@ export function MyLevelsPage() {
         setUnkeptImport(read.document);
         break;
     }
-    refresh();
+    await refresh();
   };
 
   const today = systemClock();
@@ -265,7 +288,7 @@ export function MyLevelsPage() {
                   label: 'Dupliquer',
                   icon: Copy,
                   onSelect: () => {
-                    duplicate(id);
+                    void duplicate(id);
                   },
                 },
                 deleteAction,
@@ -302,7 +325,7 @@ export function MyLevelsPage() {
             label: 'Modifier',
             icon: Pencil,
             onSelect: () => {
-              editReceived(level);
+              void editReceived(level);
             },
           },
           {
@@ -385,14 +408,18 @@ export function MyLevelsPage() {
       <div className="page-content page-content-levels my-levels">
         <LevelSection
           title="Mes créations"
-          count={String(creations.status === 'ok' ? creations.creations.length : 0)}
+          count={String(
+            !campaignLoading && creations?.status === 'ok' ? creations.creations.length : '…',
+          )}
         >
           {creationNotice !== null && (
             <p className="panel-note my-levels-notice" role={creationNotice.tone}>
               {creationNotice.message}
             </p>
           )}
-          {creations.status === 'error' ? (
+          {creations === null || campaignLoading ? (
+            <p role="status">Chargement des créations…</p>
+          ) : creations.status === 'error' ? (
             <p className="panel-note my-levels-notice" role="alert">
               {storageMessage(creations.code)} Tes créations ne peuvent pas être lues.
             </p>
@@ -416,7 +443,7 @@ export function MyLevelsPage() {
 
         <LevelSection
           title="Niveaux reçus"
-          count={String(receivedLevels.status === 'ok' ? receivedLevels.levels.length : 0)}
+          count={String(receivedLevels?.status === 'ok' ? receivedLevels.levels.length : '…')}
         >
           {importNotice !== null && (
             <p className="panel-note my-levels-notice" role={importNotice.tone}>
@@ -435,7 +462,9 @@ export function MyLevelsPage() {
               Jouer quand même
             </Button>
           )}
-          {receivedLevels.status === 'error' ? (
+          {receivedLevels === null ? (
+            <p role="status">Chargement des niveaux reçus…</p>
+          ) : receivedLevels.status === 'error' ? (
             <p className="panel-note my-levels-notice" role="alert">
               {storageMessage(receivedLevels.code)} Les niveaux reçus ne peuvent pas être lus.
             </p>
@@ -481,7 +510,12 @@ export function MyLevelsPage() {
             >
               Annuler
             </Button>
-            <Button tone="reset" onClick={confirmDeletion}>
+            <Button
+              tone="reset"
+              onClick={() => {
+                void confirmDeletion();
+              }}
+            >
               <Trash2 size={18} aria-hidden="true" />
               Supprimer
             </Button>
@@ -495,7 +529,7 @@ export function MyLevelsPage() {
             setSharing(null);
           }}
           onApplyAttribution={(commands) => {
-            applyToCreation(sharing.creation, commands);
+            void applyToCreation(sharing.creation, commands);
           }}
         />
       )}

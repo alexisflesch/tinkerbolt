@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createConstructionAttempt, type ConstructionAttempt } from '../application/construction';
@@ -15,6 +15,7 @@ import type { LevelDocument } from '../domain/level-document';
 import { decodeLevelFile } from '../infrastructure/level-file/level-file-codec';
 import { decodeShareFragment } from '../infrastructure/level-share/level-share-codec';
 
+import { renderStorageReady, storageAction } from './storage-test-fixture';
 import { App } from './App';
 import { LevelExportDialog } from './LevelExportDialog';
 import { nameExportedLevel, prepareLevelExport } from './level-export';
@@ -75,17 +76,36 @@ const memoryPreferences = (initial: Preferences = {}) => {
   let stored = initial;
   const saved: Preferences[] = [];
   const repository: PreferencesRepository = {
-    load: () => ({ status: 'ok', preferences: stored }),
+    patch: (changes) => {
+      const { author: previousAuthor, ...rest } = stored;
+      stored = {
+        ...rest,
+        ...(changes.author === undefined
+          ? previousAuthor === undefined
+            ? {}
+            : { author: previousAuthor }
+          : changes.author === null
+            ? {}
+            : { author: changes.author }),
+        ...(changes.firstLevelHintDone === undefined ? {} : { firstLevelHintDone: true }),
+        ...(changes.installInvitationDeclined === undefined
+          ? {}
+          : { installInvitationDeclined: true }),
+      };
+      saved.push(stored);
+      return Promise.resolve({ status: 'ok', preferences: stored });
+    },
+    load: () => Promise.resolve({ status: 'ok', preferences: stored }),
     save: (preferences) => {
       saved.push(preferences);
       stored = preferences;
-      return { status: 'ok' };
+      return Promise.resolve({ status: 'ok' });
     },
   };
   return { repository, saved };
 };
 
-const renderDialog = (
+const renderDialog = async (
   document: LevelDocument,
   overrides: Partial<Parameters<typeof LevelExportDialog>[0]> = {},
   preferences: PreferencesRepository = memoryPreferences().repository,
@@ -93,7 +113,7 @@ const renderDialog = (
   const onClose = vi.fn();
   const downloadFile = vi.fn<(fileName: string, mimeType: string, fileText: string) => void>();
   const writeClipboard = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
-  render(
+  await renderStorageReady(
     <PreferencesRepositoryContext value={preferences}>
       <LevelExportDialog
         document={document}
@@ -111,7 +131,7 @@ const renderDialog = (
 };
 
 const downloadedDocument = (
-  downloadFile: ReturnType<typeof renderDialog>['downloadFile'],
+  downloadFile: Awaited<ReturnType<typeof renderDialog>>['downloadFile'],
 ): LevelDocument => {
   const fileText = downloadFile.mock.calls.at(-1)?.[2];
   const decoded = decodeLevelFile(String(fileText));
@@ -125,7 +145,6 @@ const licenceNotice =
 describe('boîte « Exporter » de l’atelier (U16, U22)', () => {
   beforeEach(() => {
     window.history.replaceState(null, '', '/');
-    window.localStorage.clear();
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(boardCanvasRect);
   });
 
@@ -135,79 +154,121 @@ describe('boîte « Exporter » de l’atelier (U16, U22)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('explique qu’un niveau invalide ne peut pas être exporté, sans proposer d’export', () => {
-    renderDialog({
+  it('explique qu’un niveau invalide ne peut pas être exporté, sans proposer d’export', async () => {
+    await renderDialog({
       ...levelFour,
       inventory: levelFour.inventory.map((entry) => ({ ...entry, quantity: 0 })),
     });
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Ce niveau ne peut pas encore être exporté',
-    );
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'La solution pose plus d’objets « inventory-short-beam » que l’inventaire n’en contient.',
-    );
-    expect(screen.queryByRole('button', { name: 'Télécharger le fichier' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Copier le lien de partage' })).toBeNull();
-  });
-
-  it('télécharge le fichier du codec L22 et le confirme', () => {
-    const { downloadFile } = renderDialog(levelOneWorkshop);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-
-    expect(downloadFile).toHaveBeenCalledTimes(1);
-    const [fileName, mimeType, fileText] = downloadFile.mock.calls[0] ?? [];
-    expect(fileName).toBe('la-bille-de-service.json');
-    expect(mimeType).toBe('application/json');
-    expect(decodeLevelFile(String(fileText))).toEqual({
-      status: 'ok',
-      document: levelOnePuzzle(),
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Ce niveau ne peut pas encore être exporté',
+      );
     });
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Fichier la-bille-de-service.json téléchargé.',
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'La solution pose plus d’objets « inventory-short-beam » que l’inventaire n’en contient.',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Télécharger le fichier' })).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Copier le lien de partage' })).toBeNull();
+    });
+  });
+
+  it('télécharge le fichier du codec L22 et le confirme', async () => {
+    const { downloadFile } = await renderDialog(levelOneWorkshop);
+
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
     );
+
+    await waitFor(() => {
+      expect(downloadFile).toHaveBeenCalledTimes(1);
+    });
+    const [fileName, mimeType, fileText] = downloadFile.mock.calls[0] ?? [];
+    await waitFor(() => {
+      expect(fileName).toBe('la-bille-de-service.json');
+    });
+    await waitFor(() => {
+      expect(mimeType).toBe('application/json');
+    });
+    await waitFor(() => {
+      expect(decodeLevelFile(String(fileText))).toEqual({
+        status: 'ok',
+        document: levelOnePuzzle(),
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Fichier la-bille-de-service.json téléchargé.',
+      );
+    });
   });
 
-  it('s’adresse au joueur au tutoiement (V7)', () => {
-    renderDialog(levelOneWorkshop);
+  it('s’adresse au joueur au tutoiement (V7)', async () => {
+    await renderDialog(levelOneWorkshop);
 
-    expect(
-      screen.getByText(
-        'Puzzle vérifié. Envoie le fichier ou le lien : il ouvre le niveau avec les objets à placer dans le tiroir du joueur.',
-      ),
-    ).toBeVisible();
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Puzzle vérifié. Envoie le fichier ou le lien : il ouvre le niveau avec les objets à placer dans le tiroir du joueur.',
+        ),
+      ).toBeVisible();
+    });
   });
 
-  it('nomme le niveau avant de télécharger, et refuse un nom vide', () => {
-    const { downloadFile } = renderDialog(levelOneWorkshop);
+  it('nomme le niveau avant de télécharger, et refuse un nom vide', async () => {
+    const { downloadFile } = await renderDialog(levelOneWorkshop);
     const name = screen.getByRole('textbox', { name: 'Nom du niveau' });
-    expect(name).toHaveValue('La bille de service');
+    await waitFor(() => {
+      expect(name).toHaveValue('La bille de service');
+    });
 
-    fireEvent.change(name, { target: { value: '   ' } });
-    expect(screen.getByRole('button', { name: 'Télécharger le fichier' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Copier le lien de partage' })).toBeDisabled();
+    await storageAction(() => fireEvent.change(name, { target: { value: '   ' } }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Télécharger le fichier' })).toBeDisabled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copier le lien de partage' })).toBeDisabled();
+    });
 
-    fireEvent.change(name, { target: { value: 'Ma machine' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() => fireEvent.change(name, { target: { value: 'Ma machine' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
     const [fileName, , fileText] = downloadFile.mock.calls[0] ?? [];
-    expect(fileName).toBe('ma-machine.json');
-    expect(decodeLevelFile(String(fileText))).toEqual({
-      status: 'ok',
-      document: levelOnePuzzle('Ma machine'),
+    await waitFor(() => {
+      expect(fileName).toBe('ma-machine.json');
+    });
+    await waitFor(() => {
+      expect(decodeLevelFile(String(fileText))).toEqual({
+        status: 'ok',
+        document: levelOnePuzzle('Ma machine'),
+      });
     });
   });
 
   it('copie le lien de partage et affiche « Lien copié »', async () => {
-    const { writeClipboard } = renderDialog(levelOneWorkshop);
+    const { writeClipboard } = await renderDialog(levelOneWorkshop);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' })),
+    );
 
-    expect(await screen.findByText('Lien copié')).toBeVisible();
-    expect(writeClipboard).toHaveBeenCalledTimes(1);
+    await waitFor(async () => {
+      expect(await screen.findByText('Lien copié')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(writeClipboard).toHaveBeenCalledTimes(1);
+    });
     const link = String(writeClipboard.mock.calls[0]?.[0]);
-    expect(link.startsWith('https://exemple.test/shared#level=1.')).toBe(true);
+    await waitFor(() => {
+      expect(link.startsWith('https://exemple.test/shared#level=1.')).toBe(true);
+    });
     await expect(decodeShareFragment(new URL(link).hash)).resolves.toEqual({
       status: 'ok',
       document: levelOnePuzzle(),
@@ -215,54 +276,79 @@ describe('boîte « Exporter » de l’atelier (U16, U22)', () => {
   });
 
   it('affiche le lien sélectionnable quand le presse-papiers refuse la copie', async () => {
-    renderDialog(levelOneWorkshop, {
+    await renderDialog(levelOneWorkshop, {
       writeClipboard: () => Promise.reject(new Error('refusé')),
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' })),
+    );
 
     const field = await screen.findByRole('textbox', { name: 'Lien de partage' });
-    expect(field).toHaveAttribute('readonly');
-    expect(field).toHaveDisplayValue(/^https:\/\/exemple\.test\/shared#level=1\./);
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Copie impossible : sélectionne le lien ci-dessous pour le copier.',
-    );
-    expect(screen.queryByText('Lien copié')).toBeNull();
+    await waitFor(() => {
+      expect(field).toHaveAttribute('readonly');
+    });
+    await waitFor(() => {
+      expect(field).toHaveDisplayValue(/^https:\/\/exemple\.test\/shared#level=1\./);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Copie impossible : sélectionne le lien ci-dessous pour le copier.',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Lien copié')).toBeNull();
+    });
   });
 
   it('se replie sur le lien affiché quand le presse-papiers est indisponible', async () => {
     // jsdom, like an insecure context, exposes no asynchronous clipboard.
-    expect('clipboard' in navigator).toBe(false);
-    renderDialog(levelOneWorkshop, { writeClipboard: undefined });
+    await waitFor(() => {
+      expect('clipboard' in navigator).toBe(false);
+    });
+    await renderDialog(levelOneWorkshop, { writeClipboard: undefined });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' })),
+    );
 
-    expect(await screen.findByRole('textbox', { name: 'Lien de partage' })).toBeVisible();
+    await waitFor(async () => {
+      expect(await screen.findByRole('textbox', { name: 'Lien de partage' })).toBeVisible();
+    });
   });
 
-  it('offre « Exporter » dans l’atelier seulement, et refuse un atelier sans objet à placer', () => {
+  it('offre « Exporter » dans l’atelier seulement, et refuse un atelier sans objet à placer', async () => {
     // Le niveau 2 est verrouillé sans progression (U5b) ; `unlockAllLevels`
     // ouvre son mode joueur directement pour ce test, qui ne porte pas sur le
     // déblocage mais sur la présence d’« Exporter » selon le mode.
     window.history.replaceState(null, '', '/levels/campaign-02-par-dessus-le-mur/play');
-    const { unmount } = render(<App unlockAllLevels />);
-    expect(screen.queryByRole('button', { name: 'Exporter le niveau' })).toBeNull();
+    const { unmount } = await renderStorageReady(<App unlockAllLevels />);
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Exporter le niveau' })).toBeNull();
+    });
     unmount();
 
     window.history.replaceState(null, '', '/editor');
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Exporter le niveau' }));
+    await renderStorageReady(<App />);
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Exporter le niveau' })),
+    );
 
-    expect(screen.getByRole('dialog', { name: 'Exporter le niveau' })).toBeVisible();
-    expect(screen.getByRole('alert')).toHaveTextContent('Aucun objet n’est à placer');
-    expect(screen.queryByRole('button', { name: 'Télécharger le fichier' })).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Exporter le niveau' })).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Aucun objet n’est à placer');
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Télécharger le fichier' })).toBeNull();
+    });
   });
 });
 
 describe('titre, pseudo et licence dans la boîte d’export (M14, ADR 0016)', () => {
   beforeEach(() => {
     window.history.replaceState(null, '', '/');
-    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -270,173 +356,259 @@ describe('titre, pseudo et licence dans la boîte d’export (M14, ADR 0016)', (
     vi.restoreAllMocks();
   });
 
-  it('propose un pseudo facultatif avec son aide, et rappelle la licence CC BY 4.0', () => {
-    renderDialog(levelOneWorkshop);
+  it('propose un pseudo facultatif avec son aide, et rappelle la licence CC BY 4.0', async () => {
+    await renderDialog(levelOneWorkshop);
 
     const pseudo = screen.getByRole('textbox', { name: 'Pseudo (facultatif)' });
-    expect(pseudo).toHaveValue('');
-    expect(pseudo).toHaveAccessibleDescription('Un pseudo, pas ton vrai nom');
-    expect(screen.getByText(licenceNotice)).toBeVisible();
+    await waitFor(() => {
+      expect(pseudo).toHaveValue('');
+    });
+    await waitFor(() => {
+      expect(pseudo).toHaveAccessibleDescription('Un pseudo, pas ton vrai nom');
+    });
+    await waitFor(() => {
+      expect(screen.getByText(licenceNotice)).toBeVisible();
+    });
   });
 
   it('met le pseudo saisi, sans ses espaces de bord, dans le fichier et dans le lien', async () => {
-    const { downloadFile, writeClipboard } = renderDialog(levelOneWorkshop);
+    const { downloadFile, writeClipboard } = await renderDialog(levelOneWorkshop);
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Pseudo (facultatif)' }), {
-      target: { value: '  Lili  ' },
+    await storageAction(() =>
+      fireEvent.change(screen.getByRole('textbox', { name: 'Pseudo (facultatif)' }), {
+        target: { value: '  Lili  ' },
+      }),
+    );
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await waitFor(() => {
+      expect(downloadedDocument(downloadFile).metadata.author).toBe('Lili');
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-    expect(downloadedDocument(downloadFile).metadata.author).toBe('Lili');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' }));
-    expect(await screen.findByText('Lien copié')).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' })),
+    );
+    await waitFor(async () => {
+      expect(await screen.findByText('Lien copié')).toBeVisible();
+    });
     const link = new URL(String(writeClipboard.mock.calls[0]?.[0]));
     const decoded = await decodeShareFragment(link.hash);
-    expect(decoded.status === 'ok' && decoded.document.metadata.author).toBe('Lili');
+    await waitFor(() => {
+      expect(decoded.status === 'ok' && decoded.document.metadata.author).toBe('Lili');
+    });
   });
 
-  it('refuse un pseudo invalide avec un message, sans rien exporter', () => {
-    const { downloadFile } = renderDialog(levelOneWorkshop);
+  it('refuse un pseudo invalide avec un message, sans rien exporter', async () => {
+    const { downloadFile } = await renderDialog(levelOneWorkshop);
     const pseudo = screen.getByRole('textbox', { name: 'Pseudo (facultatif)' });
 
-    fireEvent.change(pseudo, { target: { value: 'Li\tli' } });
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: 'Li\tli' } }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Le pseudo ne doit contenir ni saut de ligne ni caractère de contrôle.',
-    );
-    expect(pseudo).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByRole('button', { name: 'Télécharger le fichier' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Copier le lien de partage' })).toBeDisabled();
-    expect(downloadFile).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Le pseudo ne doit contenir ni saut de ligne ni caractère de contrôle.',
+      );
+    });
+    await waitFor(() => {
+      expect(pseudo).toHaveAttribute('aria-invalid', 'true');
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Télécharger le fichier' })).toBeDisabled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copier le lien de partage' })).toBeDisabled();
+    });
+    await waitFor(() => {
+      expect(downloadFile).not.toHaveBeenCalled();
+    });
 
-    fireEvent.change(pseudo, { target: { value: 'Lili' } });
-    expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Télécharger le fichier' })).toBeEnabled();
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: 'Lili' } }));
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Télécharger le fichier' })).toBeEnabled();
+    });
   });
 
-  it('garde le pseudo du niveau plutôt que celui retenu, et un champ vidé retire l’auteur', () => {
-    const { downloadFile } = renderDialog(
+  it('garde le pseudo du niveau plutôt que celui retenu, et un champ vidé retire l’auteur', async () => {
+    const { downloadFile } = await renderDialog(
       { ...levelOneWorkshop, metadata: { ...levelOneWorkshop.metadata, author: 'Max' } },
       {},
       memoryPreferences({ author: 'Lili' }).repository,
     );
     const pseudo = screen.getByRole('textbox', { name: 'Pseudo (facultatif)' });
-    expect(pseudo).toHaveValue('Max');
+    await waitFor(() => {
+      expect(pseudo).toHaveValue('Max');
+    });
 
-    fireEvent.change(pseudo, { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: '   ' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
-    expect(downloadedDocument(downloadFile).metadata).not.toHaveProperty('author');
+    await waitFor(() => {
+      expect(downloadedDocument(downloadFile).metadata).not.toHaveProperty('author');
+    });
   });
 
-  it('préremplit le dernier pseudo retenu quand le niveau n’a pas d’auteur, et retient celui exporté', () => {
+  it('préremplit le dernier pseudo retenu quand le niveau n’a pas d’auteur, et retient celui exporté', async () => {
     const preferences = memoryPreferences({ author: 'Lili' });
-    const { downloadFile } = renderDialog(levelOneWorkshop, {}, preferences.repository);
+    const { downloadFile } = await renderDialog(levelOneWorkshop, {}, preferences.repository);
     const pseudo = screen.getByRole('textbox', { name: 'Pseudo (facultatif)' });
-    expect(pseudo).toHaveValue('Lili');
+    await waitFor(() => {
+      expect(pseudo).toHaveValue('Lili');
+    });
 
-    fireEvent.change(pseudo, { target: { value: ' Noé ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-    expect(downloadedDocument(downloadFile).metadata.author).toBe('Noé');
-    expect(preferences.saved).toEqual([{ author: 'Noé' }]);
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: ' Noé ' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await waitFor(() => {
+      expect(downloadedDocument(downloadFile).metadata.author).toBe('Noé');
+    });
+    await waitFor(() => {
+      expect(preferences.saved).toEqual([{ author: 'Noé' }]);
+    });
 
-    fireEvent.change(pseudo, { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-    expect(preferences.saved).toEqual([{ author: 'Noé' }, {}]);
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: '' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await waitFor(() => {
+      expect(preferences.saved).toEqual([{ author: 'Noé' }, {}]);
+    });
   });
 
-  it('retient le pseudo sans oublier que l’aide du niveau 1 est terminée (U8)', () => {
+  it('retient le pseudo sans oublier que l’aide du niveau 1 est terminée (U8)', async () => {
     const preferences = memoryPreferences({ author: 'Lili', firstLevelHintDone: true });
-    renderDialog(levelOneWorkshop, {}, preferences.repository);
+    await renderDialog(levelOneWorkshop, {}, preferences.repository);
     const pseudo = screen.getByRole('textbox', { name: 'Pseudo (facultatif)' });
 
-    fireEvent.change(pseudo, { target: { value: 'Noé' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-    fireEvent.change(pseudo, { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: 'Noé' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: '' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
-    expect(preferences.saved).toEqual([
-      { author: 'Noé', firstLevelHintDone: true },
-      { firstLevelHintDone: true },
-    ]);
+    await waitFor(() => {
+      expect(preferences.saved).toEqual([
+        { author: 'Noé', firstLevelHintDone: true },
+        { firstLevelHintDone: true },
+      ]);
+    });
   });
 
-  it('retient le pseudo sans oublier le refus de l’invitation d’installation (U10)', () => {
+  it('retient le pseudo sans oublier le refus de l’invitation d’installation (U10)', async () => {
     const preferences = memoryPreferences({
       firstLevelHintDone: true,
       installInvitationDeclined: true,
     });
-    renderDialog(levelOneWorkshop, {}, preferences.repository);
+    await renderDialog(levelOneWorkshop, {}, preferences.repository);
     const pseudo = screen.getByRole('textbox', { name: 'Pseudo (facultatif)' });
 
-    fireEvent.change(pseudo, { target: { value: 'Noé' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: 'Noé' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
-    expect(preferences.saved).toEqual([
-      { author: 'Noé', firstLevelHintDone: true, installInvitationDeclined: true },
-    ]);
+    await waitFor(() => {
+      expect(preferences.saved).toEqual([
+        { author: 'Noé', firstLevelHintDone: true, installInvitationDeclined: true },
+      ]);
+    });
   });
 
   it.each<[string, PreferencesRepository]>([
     [
       'renvoie une erreur',
       {
-        load: () => ({ status: 'error', code: 'storage-unavailable' }),
-        save: () => ({ status: 'error', code: 'quota-exceeded' }),
+        patch: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+        load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+        save: () => Promise.resolve({ status: 'error', code: 'quota-exceeded' }),
       },
     ],
     [
       'lève une exception',
       {
+        patch: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
         load: () => {
-          throw new Error('stockage bloqué');
+          return Promise.reject(new Error('stockage bloqué'));
         },
         save: () => {
-          throw new Error('stockage bloqué');
+          return Promise.reject(new Error('stockage bloqué'));
         },
       },
     ],
   ])('exporte quand le stockage des préférences %s', async (_description, preferences) => {
-    const { downloadFile, writeClipboard } = renderDialog(levelOneWorkshop, {}, preferences);
+    const { downloadFile, writeClipboard } = await renderDialog(levelOneWorkshop, {}, preferences);
     const pseudo = screen.getByRole('textbox', { name: 'Pseudo (facultatif)' });
-    expect(pseudo).toHaveValue('');
+    await waitFor(() => {
+      expect(pseudo).toHaveValue('');
+    });
 
-    fireEvent.change(pseudo, { target: { value: 'Lili' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-    expect(downloadedDocument(downloadFile).metadata.author).toBe('Lili');
+    await storageAction(() => fireEvent.change(pseudo, { target: { value: 'Lili' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await waitFor(() => {
+      expect(downloadedDocument(downloadFile).metadata.author).toBe('Lili');
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' }));
-    expect(await screen.findByText('Lien copié')).toBeVisible();
-    expect(writeClipboard).toHaveBeenCalledTimes(1);
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' })),
+    );
+    await waitFor(async () => {
+      expect(await screen.findByText('Lien copié')).toBeVisible();
+    });
+    await waitFor(() => {
+      expect(writeClipboard).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('applique à l’export le titre et le pseudo saisis par des commandes d’auteur', () => {
+  it('applique à l’export le titre et le pseudo saisis par des commandes d’auteur', async () => {
     const applied: (readonly Command<ConstructionAttempt>[])[] = [];
-    renderDialog(levelOneWorkshop, {
+    await renderDialog(levelOneWorkshop, {
       onApplyAttribution: (commands) => {
         applied.push(commands);
       },
     });
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Nom du niveau' }), {
-      target: { value: '  Ma machine ' },
+    await storageAction(() =>
+      fireEvent.change(screen.getByRole('textbox', { name: 'Nom du niveau' }), {
+        target: { value: '  Ma machine ' },
+      }),
+    );
+    await storageAction(() =>
+      fireEvent.change(screen.getByRole('textbox', { name: 'Pseudo (facultatif)' }), {
+        target: { value: ' Lili ' },
+      }),
+    );
+    await waitFor(() => {
+      expect(applied).toEqual([]);
     });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Pseudo (facultatif)' }), {
-      target: { value: ' Lili ' },
-    });
-    expect(applied).toEqual([]);
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
-    expect(applied).toHaveLength(1);
+    await waitFor(() => {
+      expect(applied).toHaveLength(1);
+    });
     const document = (applied[0] ?? []).reduce<ConstructionAttempt>((attempt, command) => {
       const outcome = command.execute(attempt);
       if (outcome.status !== 'accepted') throw new Error(`refusé : ${outcome.reason}`);
       return outcome.state;
     }, createConstructionAttempt(levelOneWorkshop)).document;
     // The workshop keeps its identifier: only the exported puzzle is renamed.
-    expect(document).toEqual({
-      ...levelOneWorkshop,
-      metadata: { ...levelOneWorkshop.metadata, title: 'Ma machine', author: 'Lili' },
+    await waitFor(() => {
+      expect(document).toEqual({
+        ...levelOneWorkshop,
+        metadata: { ...levelOneWorkshop.metadata, title: 'Ma machine', author: 'Lili' },
+      });
     });
   });
 });
@@ -475,7 +647,6 @@ describe('description dans la boîte d’export (M14b, ADR 0016)', () => {
 
   beforeEach(() => {
     window.history.replaceState(null, '', '/');
-    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -483,110 +654,162 @@ describe('description dans la boîte d’export (M14b, ADR 0016)', () => {
     vi.restoreAllMocks();
   });
 
-  it('propose une description facultative, préremplie avec celle du niveau', () => {
-    renderDialog(attributedWorkshop);
+  it('propose une description facultative, préremplie avec celle du niveau', async () => {
+    await renderDialog(attributedWorkshop);
 
     const description = descriptionField();
-    expect(description.tagName).toBe('TEXTAREA');
-    expect(description).toHaveValue('Une rampe et un panier.');
-    expect(description).toHaveAttribute('maxlength', '2000');
+    await waitFor(() => {
+      expect(description.tagName).toBe('TEXTAREA');
+    });
+    await waitFor(() => {
+      expect(description).toHaveValue('Une rampe et un panier.');
+    });
+    await waitFor(() => {
+      expect(description).toHaveAttribute('maxlength', '2000');
+    });
   });
 
   it('met la description saisie, sans ses espaces de bord, dans le fichier et dans le lien', async () => {
-    const { downloadFile, writeClipboard } = renderDialog(attributedWorkshop);
+    const { downloadFile, writeClipboard } = await renderDialog(attributedWorkshop);
 
-    fireEvent.change(descriptionField(), { target: { value: '  Fais rouler la bille.\n ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-    expect(downloadedDocument(downloadFile).metadata.description).toBe('Fais rouler la bille.');
+    await storageAction(() =>
+      fireEvent.change(descriptionField(), { target: { value: '  Fais rouler la bille.\n ' } }),
+    );
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await waitFor(() => {
+      expect(downloadedDocument(downloadFile).metadata.description).toBe('Fais rouler la bille.');
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' }));
-    expect(await screen.findByText('Lien copié')).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' })),
+    );
+    await waitFor(async () => {
+      expect(await screen.findByText('Lien copié')).toBeVisible();
+    });
     const decoded = await decodeShareFragment(
       new URL(String(writeClipboard.mock.calls[0]?.[0])).hash,
     );
-    expect(decoded.status === 'ok' && decoded.document.metadata.description).toBe(
-      'Fais rouler la bille.',
-    );
-  });
-
-  it('retire la description vidée, en gardant titre, pseudo et sources', () => {
-    const { downloadFile } = renderDialog(attributedWorkshop);
-
-    fireEvent.change(descriptionField(), { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
-
-    expect(downloadedDocument(downloadFile).metadata).toEqual({
-      title: 'La bille de service',
-      author: 'Max',
-      basedOn: [{ title: 'Origine', author: 'Zoé' }],
+    await waitFor(() => {
+      expect(decoded.status === 'ok' && decoded.document.metadata.description).toBe(
+        'Fais rouler la bille.',
+      );
     });
   });
 
-  it('accepte une description de 2000 caractères', () => {
-    const { downloadFile } = renderDialog(attributedWorkshop);
+  it('retire la description vidée, en gardant titre, pseudo et sources', async () => {
+    const { downloadFile } = await renderDialog(attributedWorkshop);
+
+    await storageAction(() => fireEvent.change(descriptionField(), { target: { value: '   ' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+
+    await waitFor(() => {
+      expect(downloadedDocument(downloadFile).metadata).toEqual({
+        title: 'La bille de service',
+        author: 'Max',
+        basedOn: [{ title: 'Origine', author: 'Zoé' }],
+      });
+    });
+  });
+
+  it('accepte une description de 2000 caractères', async () => {
+    const { downloadFile } = await renderDialog(attributedWorkshop);
     const longest = 'a'.repeat(2000);
 
-    fireEvent.change(descriptionField(), { target: { value: longest } });
+    await storageAction(() => fireEvent.change(descriptionField(), { target: { value: longest } }));
     const download = screen.getByRole('button', { name: 'Télécharger le fichier' });
-    expect(download).toBeEnabled();
-    fireEvent.click(download);
+    await waitFor(() => {
+      expect(download).toBeEnabled();
+    });
+    await storageAction(() => fireEvent.click(download));
 
-    expect(downloadedDocument(downloadFile).metadata.description).toBe(longest);
+    await waitFor(() => {
+      expect(downloadedDocument(downloadFile).metadata.description).toBe(longest);
+    });
   });
 
-  it('applique à l’export la description saisie par une commande d’auteur', () => {
+  it('applique à l’export la description saisie par une commande d’auteur', async () => {
     const applied: (readonly Command<ConstructionAttempt>[])[] = [];
-    renderDialog(attributedWorkshop, {
+    await renderDialog(attributedWorkshop, {
       onApplyAttribution: (commands) => {
         applied.push(commands);
       },
     });
 
-    fireEvent.change(descriptionField(), { target: { value: ' Fais rouler la bille. ' } });
-    expect(applied).toEqual([]);
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() =>
+      fireEvent.change(descriptionField(), { target: { value: ' Fais rouler la bille. ' } }),
+    );
+    await waitFor(() => {
+      expect(applied).toEqual([]);
+    });
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
-    expect(applied).toHaveLength(1);
+    await waitFor(() => {
+      expect(applied).toHaveLength(1);
+    });
     const { attempt, changes } = applyAll(attributedWorkshop, applied[0] ?? []);
-    expect(changes).toBe(1);
-    expect(attempt.document.metadata).toEqual({
-      ...attributedWorkshop.metadata,
-      description: 'Fais rouler la bille.',
+    await waitFor(() => {
+      expect(changes).toBe(1);
+    });
+    await waitFor(() => {
+      expect(attempt.document.metadata).toEqual({
+        ...attributedWorkshop.metadata,
+        description: 'Fais rouler la bille.',
+      });
     });
   });
 
-  it('retire la description de la création par une commande quand le champ est vidé', () => {
+  it('retire la description de la création par une commande quand le champ est vidé', async () => {
     const applied: (readonly Command<ConstructionAttempt>[])[] = [];
-    renderDialog(attributedWorkshop, {
+    await renderDialog(attributedWorkshop, {
       onApplyAttribution: (commands) => {
         applied.push(commands);
       },
     });
 
-    fireEvent.change(descriptionField(), { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() => fireEvent.change(descriptionField(), { target: { value: '' } }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
     const { attempt, changes } = applyAll(attributedWorkshop, applied[0] ?? []);
-    expect(changes).toBe(1);
-    expect(attempt.document.metadata).not.toHaveProperty('description');
-    expect(attempt.document.metadata).toEqual({
-      title: 'La bille de service',
-      author: 'Max',
-      basedOn: [{ title: 'Origine', author: 'Zoé' }],
+    await waitFor(() => {
+      expect(changes).toBe(1);
+    });
+    await waitFor(() => {
+      expect(attempt.document.metadata).not.toHaveProperty('description');
+    });
+    await waitFor(() => {
+      expect(attempt.document.metadata).toEqual({
+        title: 'La bille de service',
+        author: 'Max',
+        basedOn: [{ title: 'Origine', author: 'Zoé' }],
+      });
     });
   });
 
-  it('ne change rien à la création quand titre, pseudo et description sont inchangés', () => {
+  it('ne change rien à la création quand titre, pseudo et description sont inchangés', async () => {
     const applied: (readonly Command<ConstructionAttempt>[])[] = [];
-    renderDialog(attributedWorkshop, {
+    await renderDialog(attributedWorkshop, {
       onApplyAttribution: (commands) => {
         applied.push(commands);
       },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
 
-    expect(applied[0]).toHaveLength(3);
-    expect(applyAll(attributedWorkshop, applied[0] ?? []).changes).toBe(0);
+    await waitFor(() => {
+      expect(applied[0]).toHaveLength(3);
+    });
+    await waitFor(() => {
+      expect(applyAll(attributedWorkshop, applied[0] ?? []).changes).toBe(0);
+    });
   });
 });

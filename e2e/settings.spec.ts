@@ -1,3 +1,4 @@
+import { seedIndexedDB, browserRows } from './indexed-db-fixture';
 import { mkdir } from 'node:fs/promises';
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -19,9 +20,8 @@ const progressEnvelope = {
 
 /** What a reset must leave alone (creations, received levels, preferences). */
 const untouched = {
-  'tinkerbolt:drafts': '["tuto-2-brouillon"]',
-  'tinkerbolt:draft:tuto-2-brouillon': 'création du niveau 2',
-  'tinkerbolt:received': '[]',
+  'creations:tuto-2-brouillon': JSON.stringify('création du niveau 2'),
+  'receivedLevels:recu-0123456789abcdef': JSON.stringify('niveau reçu'),
 } as const;
 
 const preferences = (data: Record<string, unknown>) => ({ kind: 'preferences', version: 1, data });
@@ -29,22 +29,48 @@ const preferences = (data: Record<string, unknown>) => ({ kind: 'preferences', v
 /** Seeds once (not an init script, which would seed again on every navigation). */
 const seed = async (page: Page, entries: Readonly<Record<string, string>>): Promise<void> => {
   await page.goto('/');
-  await page.evaluate((values) => {
-    window.localStorage.clear();
-    for (const [key, value] of Object.entries(values)) window.localStorage.setItem(key, value);
-  }, entries);
+  await seedIndexedDB(
+    page,
+    Object.entries(entries).map(([key, value]) => {
+      const [table, id] = key.split(':');
+      if (
+        table !== 'creations' &&
+        table !== 'receivedLevels' &&
+        table !== 'progress' &&
+        table !== 'preferences'
+      )
+        throw new Error('Table fixture invalide');
+      const envelope: unknown = JSON.parse(value);
+      return { table, value: { id, envelope } };
+    }),
+  );
 };
 
 const seededState = (): Record<string, string> => ({
   ...untouched,
-  'tinkerbolt:progress': JSON.stringify(progressEnvelope),
-  'tinkerbolt:preferences': JSON.stringify(
+  'progress:campaign': JSON.stringify(progressEnvelope),
+  'preferences:player': JSON.stringify(
     preferences({ author: 'Lili', firstLevelHintDone: true, installInvitationDeclined: true }),
   ),
 });
 
-const stored = async (page: Page, key: string): Promise<string | null> =>
-  page.evaluate((storageKey) => window.localStorage.getItem(storageKey), key);
+const stored = async (page: Page, key: string): Promise<string | null> => {
+  const [table, id] = key.split(':');
+  if (
+    table !== 'creations' &&
+    table !== 'receivedLevels' &&
+    table !== 'progress' &&
+    table !== 'preferences'
+  )
+    throw new Error('Table fixture invalide');
+  const rows = await browserRows(page, table);
+  const row = rows.find(
+    (value) => typeof value === 'object' && value !== null && 'id' in value && value.id === id,
+  );
+  return typeof row === 'object' && row !== null && 'envelope' in row
+    ? JSON.stringify(row.envelope)
+    : null;
+};
 
 const storedJson = async (page: Page, key: string): Promise<unknown> => {
   const parsed: unknown = JSON.parse((await stored(page, key)) ?? 'null');
@@ -99,7 +125,7 @@ test('U11 — au toucher, le pseudo retenu se modifie et s’efface, et la progr
   await pseudoField(page).fill('  Noé  ');
   await page.getByRole('button', { name: 'Enregistrer le pseudo' }).tap();
   await expect(pseudoPanel(page).getByRole('status')).toHaveText('Pseudo enregistré.');
-  expect(await storedJson(page, 'tinkerbolt:preferences')).toEqual(
+  expect(await storedJson(page, 'preferences:player')).toEqual(
     preferences({ author: 'Noé', firstLevelHintDone: true, installInvitationDeclined: true }),
   );
 
@@ -107,7 +133,7 @@ test('U11 — au toucher, le pseudo retenu se modifie et s’efface, et la progr
   await page.getByRole('button', { name: 'Effacer le pseudo' }).tap();
   await expect(pseudoPanel(page).getByRole('status')).toHaveText('Pseudo effacé.');
   await expect(pseudoField(page)).toHaveValue('');
-  expect(await storedJson(page, 'tinkerbolt:preferences')).toEqual(
+  expect(await storedJson(page, 'preferences:player')).toEqual(
     preferences({ firstLevelHintDone: true, installInvitationDeclined: true }),
   );
 
@@ -119,7 +145,7 @@ test('U11 — au toucher, le pseudo retenu se modifie et s’efface, et la progr
   await expect(dialog.getByRole('button', { name: 'Annuler' })).toBeFocused();
   await dialog.getByRole('button', { name: 'Annuler' }).tap();
   await expect(dialog).toBeHidden();
-  expect(await storedJson(page, 'tinkerbolt:progress')).toEqual(progressEnvelope);
+  expect(await storedJson(page, 'progress:campaign')).toEqual(progressEnvelope);
 
   // Confirmer efface la progression, et elle seule.
   await resetButton.tap();
@@ -129,11 +155,11 @@ test('U11 — au toucher, le pseudo retenu se modifie et s’efface, et la progr
     'Progression remise à zéro : seul le niveau 1 est ouvert.',
   );
   await expect(progressPanel(page)).toContainText('Niveaux résolus : 0 sur 5.');
-  expect(await stored(page, 'tinkerbolt:progress')).toBeNull();
+  expect(await stored(page, 'progress:campaign')).toBeNull();
   for (const [key, value] of Object.entries(untouched)) {
     expect(await stored(page, key)).toBe(value);
   }
-  expect(await storedJson(page, 'tinkerbolt:preferences')).toEqual(
+  expect(await storedJson(page, 'preferences:player')).toEqual(
     preferences({ firstLevelHintDone: true, installInvitationDeclined: true }),
   );
 

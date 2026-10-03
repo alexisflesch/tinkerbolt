@@ -42,16 +42,17 @@ const withAuthorSolution = (creation: DraftCreationContent): DraftCreationConten
  * the level (ADR 0015, no solution posed unless revealed) and saved with the
  * level as source.
  */
-export const openCampaignDraft = (
+export const openCampaignDraft = async (
   repository: DraftRepository,
   level: LevelDocument,
   { revealSolution = false }: OpenCampaignDraftOptions = {},
-): OpenCampaignDraftResult => {
+): Promise<OpenCampaignDraftResult> => {
   const draftId = campaignDraftId(level);
-  const existing = repository.load(draftId);
-  if (existing.status === 'ok' && existing.creation !== null) return { status: 'ok', draftId };
+  const existing = await repository.load(draftId);
+  if (existing.status === 'error') return existing;
+  if (existing.creation !== null) return { status: 'ok', draftId };
 
   const creation = creationFromLevel(level, { createId: () => draftId });
-  const saved = repository.save(revealSolution ? withAuthorSolution(creation) : creation);
+  const saved = await repository.save(revealSolution ? withAuthorSolution(creation) : creation);
   return saved.status === 'ok' ? { status: 'ok', draftId } : saved;
 };

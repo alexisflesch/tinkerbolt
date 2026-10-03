@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { creationFromLevel } from '../application/drafts/creation-from-level';
 import type { DraftCreation } from '../application/drafts/draft-repository';
 import { levelDocumentSchema, type LevelDocument } from '../domain/level-document';
-import { createLocalStorageDraftRepository } from '../infrastructure/storage/local-storage-draft-repository';
 
+import { testDraftRepository, renderStorageReady, storageAction } from './storage-test-fixture';
 import { App } from './App';
 
 const testClock = (): Date => new Date('2026-10-01T12:00:00.000Z');
@@ -104,14 +104,19 @@ const source: LevelDocument = levelDocumentSchema.parse({
 });
 
 const creationId = 'creation-m12';
-const draftStorage = () => createLocalStorageDraftRepository(window.localStorage, testClock);
+const draftStorage = () => testDraftRepository(testClock);
 
-const saveCreation = (creation: { document: LevelDocument; source?: LevelDocument }): void => {
-  expect(draftStorage().save(creation).status).toBe('ok');
+const saveCreation = async (creation: {
+  document: LevelDocument;
+  source?: LevelDocument;
+}): Promise<void> => {
+  await waitFor(async () => {
+    expect((await draftStorage().save(creation)).status).toBe('ok');
+  });
 };
 
-const storedCreation = (): DraftCreation => {
-  const loaded = draftStorage().load(creationId);
+const storedCreation = async (): Promise<DraftCreation> => {
+  const loaded = await draftStorage().load(creationId);
   if (loaded.status !== 'ok' || loaded.creation === null) throw new Error('Création introuvable.');
   return loaded.creation;
 };
@@ -121,14 +126,18 @@ const toPlaceTypes = (document: LevelDocument): string[] =>
 
 const intactCreation = creationFromLevel(source, { createId: () => creationId });
 
-const openCreation = (): void => {
+const openCreation = async (): Promise<void> => {
   window.history.replaceState(null, '', `/editor?draft=${creationId}`);
-  render(<App />);
-  expect(screen.getByText('Atelier')).toBeVisible();
+  await renderStorageReady(<App />);
+  await waitFor(() => {
+    expect(screen.getByText('Atelier')).toBeVisible();
+  });
 };
 
-const openMenu = (): HTMLElement => {
-  fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
+const openMenu = async (): Promise<HTMLElement> => {
+  await storageAction(() =>
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' })),
+  );
   return screen.getByRole('navigation', { name: 'Menu principal' });
 };
 
@@ -137,19 +146,26 @@ const revealEntryName = 'Révéler la solution de l’auteur';
 const boardWires = (): string | null =>
   screen.getByRole('img', { name: 'Rendu du plateau' }).getAttribute('data-wires');
 
-const revealAndConfirm = (): void => {
-  fireEvent.click(within(openMenu()).getByRole('button', { name: revealEntryName }));
+const revealAndConfirm = async (): Promise<void> => {
+  await storageAction(async () =>
+    fireEvent.click(within(await openMenu()).getByRole('button', { name: revealEntryName })),
+  );
   const dialog = screen.getByRole('dialog', { name: revealEntryName });
-  expect(
-    within(dialog).getByText(/La solution de l’auteur sera posée sur le plateau/u),
-  ).toBeVisible();
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Révéler la solution' }));
-  expect(screen.queryByRole('dialog', { name: revealEntryName })).toBeNull();
+  await waitFor(() => {
+    expect(
+      within(dialog).getByText(/La solution de l’auteur sera posée sur le plateau/u),
+    ).toBeVisible();
+  });
+  await storageAction(() =>
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Révéler la solution' })),
+  );
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog', { name: revealEntryName })).toBeNull();
+  });
 };
 
 describe('révéler la solution de l’auteur dans l’atelier (M12, ADR 0015 § Révéler)', () => {
   beforeEach(() => {
-    window.localStorage.clear();
     window.history.replaceState(null, '', '/');
   });
 
@@ -158,95 +174,141 @@ describe('révéler la solution de l’auteur dans l’atelier (M12, ADR 0015 §
     vi.restoreAllMocks();
   });
 
-  it('n’offre pas l’entrée dans l’atelier libre, créé de zéro', () => {
+  it('n’offre pas l’entrée dans l’atelier libre, créé de zéro', async () => {
     window.history.replaceState(null, '', '/editor');
-    render(<App />);
+    await renderStorageReady(<App />);
 
-    expect(within(openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    await waitFor(async () => {
+      expect(within(await openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    });
   });
 
-  it('n’offre pas l’entrée pour une création sans source', () => {
-    saveCreation({ document: intactCreation.document });
-    openCreation();
+  it('n’offre pas l’entrée pour une création sans source', async () => {
+    await saveCreation({ document: intactCreation.document });
+    await openCreation();
 
-    expect(within(openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    await waitFor(async () => {
+      expect(within(await openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    });
   });
 
-  it('n’offre pas l’entrée quand la source n’a pas de solution', () => {
+  it('n’offre pas l’entrée quand la source n’a pas de solution', async () => {
     const { solution: ignoredSolution, ...withoutSolution } = source;
     void ignoredSolution;
-    saveCreation(creationFromLevel(withoutSolution, { createId: () => creationId }));
-    openCreation();
+    await saveCreation(creationFromLevel(withoutSolution, { createId: () => creationId }));
+    await openCreation();
 
-    expect(within(openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    await waitFor(async () => {
+      expect(within(await openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    });
   });
 
-  it('pose la solution « à placer » après confirmation, et l’enregistre', () => {
-    saveCreation(intactCreation);
-    openCreation();
-    expect(toPlaceTypes(storedCreation().document)).toEqual([]);
+  it('pose la solution « à placer » après confirmation, et l’enregistre', async () => {
+    await saveCreation(intactCreation);
+    await openCreation();
+    await waitFor(async () => {
+      expect(toPlaceTypes((await storedCreation()).document)).toEqual([]);
+    });
 
-    revealAndConfirm();
+    await revealAndConfirm();
 
     // `restoreSolution` names a pose after its inventory entry, as `workshopFromPuzzle` does.
-    expect(boardWires()).toBe('buttons-2>decor-fan decor-lever>decor-conveyor');
-    const stored = storedCreation();
-    expect(toPlaceTypes(stored.document)).toEqual(['beam', 'button']);
-    expect(stored.source).toEqual(source);
-    expect(screen.queryByRole('status')).toBeNull();
+    await waitFor(() => {
+      expect(boardWires()).toBe('buttons-2>decor-fan decor-lever>decor-conveyor');
+    });
+    const stored = await storedCreation();
+    await waitFor(() => {
+      expect(toPlaceTypes(stored.document)).toEqual(['beam', 'button']);
+    });
+    await waitFor(() => {
+      expect(stored.source).toEqual(source);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).toBeNull();
+    });
   });
 
-  it('« Annuler » dans la boîte de confirmation ne change rien', () => {
-    saveCreation(intactCreation);
-    openCreation();
+  it('« Annuler » dans la boîte de confirmation ne change rien', async () => {
+    await saveCreation(intactCreation);
+    await openCreation();
 
-    fireEvent.click(within(openMenu()).getByRole('button', { name: revealEntryName }));
+    await storageAction(async () =>
+      fireEvent.click(within(await openMenu()).getByRole('button', { name: revealEntryName })),
+    );
     const dialog = screen.getByRole('dialog', { name: revealEntryName });
-    expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+    await waitFor(() => {
+      expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveFocus();
+    });
+    await storageAction(() =>
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler' })),
+    );
 
-    expect(screen.queryByRole('dialog', { name: revealEntryName })).toBeNull();
-    expect(boardWires()).toBe('');
-    expect(toPlaceTypes(storedCreation().document)).toEqual([]);
-    expect(screen.getByRole('button', { name: 'Annuler' })).toBeDisabled();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: revealEntryName })).toBeNull();
+    });
+    await waitFor(() => {
+      expect(boardWires()).toBe('');
+    });
+    await waitFor(async () => {
+      expect(toPlaceTypes((await storedCreation()).document)).toEqual([]);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Annuler' })).toBeDisabled();
+    });
   });
 
-  it('s’annule d’un seul « Annuler » de l’historique', () => {
-    saveCreation(intactCreation);
-    openCreation();
-    revealAndConfirm();
+  it('s’annule d’un seul « Annuler » de l’historique', async () => {
+    await saveCreation(intactCreation);
+    await openCreation();
+    await revealAndConfirm();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
 
-    expect(boardWires()).toBe('');
-    expect(toPlaceTypes(storedCreation().document)).toEqual([]);
-    expect(screen.getByRole('button', { name: 'Annuler' })).toBeDisabled();
+    await waitFor(() => {
+      expect(boardWires()).toBe('');
+    });
+    await waitFor(async () => {
+      expect(toPlaceTypes((await storedCreation()).document)).toEqual([]);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Annuler' })).toBeDisabled();
+    });
   });
 
-  it('dit discrètement combien de fils ont été ignorés', () => {
+  it('dit discrètement combien de fils ont été ignorés', async () => {
     const withoutFan = {
       ...intactCreation.document,
       objects: intactCreation.document.objects.filter(({ id }) => id !== 'decor-fan'),
     };
-    saveCreation({ document: withoutFan, source });
-    openCreation();
+    await saveCreation({ document: withoutFan, source });
+    await openCreation();
 
-    revealAndConfirm();
+    await revealAndConfirm();
 
-    expect(boardWires()).toBe('decor-lever>decor-conveyor');
-    expect(
-      screen.getByText('1 fil de la solution de l’auteur n’a pas pu être posé.'),
-    ).toHaveAttribute('role', 'status');
+    await waitFor(() => {
+      expect(boardWires()).toBe('decor-lever>decor-conveyor');
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText('1 fil de la solution de l’auteur n’a pas pu être posé.'),
+      ).toHaveAttribute('role', 'status');
+    });
   });
 
-  it('n’offre pas l’entrée en jouant le puzzle', () => {
-    saveCreation(intactCreation);
-    openCreation();
-    revealAndConfirm();
+  it('n’offre pas l’entrée en jouant le puzzle', async () => {
+    await saveCreation(intactCreation);
+    await openCreation();
+    await revealAndConfirm();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Essayer en joueur' }));
-    expect(screen.getByText('Atelier', { selector: '.level-mode' })).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Essayer en joueur' })),
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Atelier', { selector: '.level-mode' })).toBeVisible();
+    });
 
-    expect(within(openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    await waitFor(async () => {
+      expect(within(await openMenu()).queryByRole('button', { name: revealEntryName })).toBeNull();
+    });
   });
 });

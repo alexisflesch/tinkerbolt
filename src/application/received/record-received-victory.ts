@@ -1,4 +1,5 @@
 import type { ConstructionAttempt } from '../construction';
+import type { LevelDocument } from '../../domain/level-document';
 import { countObjectsUsed } from '../progression';
 import { solutionFromAttempt } from '../puzzle/player-solution';
 import type {
@@ -21,24 +22,20 @@ type RecordReceivedVictoryResult =
  * launch, as for the campaign progression. A storage failure is a result,
  * never an exception.
  */
-export const recordReceivedVictory = (
+export const recordReceivedVictory = async (
   repository: ReceivedLevelRepository,
   id: string,
+  source: LevelDocument,
   attempt: ConstructionAttempt,
-): RecordReceivedVictoryResult => {
-  const loaded = repository.load(id);
-  if (loaded.status === 'error') return { status: 'not-kept', code: loaded.code };
-  if (loaded.level === null) return { status: 'not-found' };
-
+): Promise<RecordReceivedVictoryResult> => {
   const objectsUsed = countObjectsUsed(attempt);
-  const previousBest = loaded.level.solved ? loaded.level.bestObjectCount : undefined;
-  const level: ReceivedLevel = {
-    ...loaded.level,
-    solved: true,
-    bestObjectCount: previousBest === undefined ? objectsUsed : Math.min(previousBest, objectsUsed),
-    playerSolution: solutionFromAttempt(attempt),
-  };
-  const saved = repository.save(level);
+  const saved = await repository.recordVictory(
+    id,
+    source,
+    objectsUsed,
+    solutionFromAttempt(attempt),
+  );
   if (saved.status === 'error') return { status: 'not-kept', code: saved.code };
-  return { status: 'recorded', level };
+  if (saved.level === null) return { status: 'not-found' };
+  return { status: 'recorded', level: saved.level };
 };

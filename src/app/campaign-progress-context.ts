@@ -15,13 +15,15 @@ interface CampaignLevelProgressView {
 }
 
 interface CampaignProgressContextValue {
+  readonly loading: boolean;
+  readonly known: boolean;
   readonly progress: CampaignProgress;
   readonly levels: Readonly<Record<string, CampaignLevelProgressView>>;
   readonly storageError: ProgressRepositoryErrorCode | null;
   readonly storageWarning: 'invalid-data-backed-up' | null;
   readonly recordCampaignSuccess: (levelId: string, objectsUsed: number) => void;
   /** U11: « Remettre la progression à zéro » from `/settings`; an error leaves it as it was. */
-  readonly resetCampaignProgress: () => ProgressSaveResult;
+  readonly resetCampaignProgress: () => Promise<ProgressSaveResult>;
   /**
    * Dev-mode override (`pnpm dev`, injected from `main.tsx`): every level
    * reports `unlocked: true` regardless of progress, so the whole campaign

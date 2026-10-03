@@ -1,3 +1,4 @@
+import { storedDraft } from './indexed-db-fixture';
 import { mkdir, readFile } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
@@ -77,20 +78,12 @@ const dragTouch = async (
 };
 
 /** The x of the remixed beam (the only object to place) in the stored creation. */
-const storedBeamX = (page: Page, draftId: string): Promise<number | null> =>
-  page.evaluate((id) => {
-    const raw = localStorage.getItem(`tinkerbolt:draft:${id}`);
-    if (raw === null) return null;
-    const envelope = JSON.parse(raw) as {
-      data?: {
-        document?: {
-          objects?: Array<{ toPlace?: boolean; transform?: { position?: { x?: number } } }>;
-        };
-      };
-    };
-    const beam = envelope.data?.document?.objects?.find(({ toPlace }) => toPlace === true);
-    return beam?.transform?.position?.x ?? null;
-  }, draftId);
+const storedBeamX = async (page: Page, draftId: string): Promise<number | null> => {
+  const draft = await storedDraft(page, draftId);
+  return (
+    draft?.document.objects.find(({ toPlace }) => toPlace === true)?.transform.position.x ?? null
+  );
+};
 
 test('reçoit, gagne, remixe, déplace un objet et exporte au toucher (M11)', async ({
   page,

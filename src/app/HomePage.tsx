@@ -35,7 +35,7 @@ function Place({ to, title, text, sprite, children }: PlaceProps) {
 
 /** `/` (V7, maquette validée en V4): one call to play, then the three places. */
 export function HomePage() {
-  const { levels, storageError, storageWarning } = useCampaignProgress();
+  const { levels, loading, known, storageError, storageWarning } = useCampaignProgress();
   const pwaInvitation = usePwaInvitation(null);
   const resolvedCount = embeddedLevels.filter(
     (level) => levels[level.id]?.resolved === true,
@@ -92,9 +92,19 @@ export function HomePage() {
             sprite="basket"
           >
             <div className="home-meter">
-              <progress aria-label="Progression de la campagne" value={resolvedCount} max={total} />
+              {known && (
+                <progress
+                  aria-label="Progression de la campagne"
+                  value={resolvedCount}
+                  max={total}
+                />
+              )}
               <span>
-                {resolvedCount} / {total}
+                {loading
+                  ? 'Chargement…'
+                  : known
+                    ? `${String(resolvedCount)} / ${String(total)}`
+                    : 'Progression inconnue'}
               </span>
             </div>
           </Place>

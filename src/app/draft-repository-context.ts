@@ -3,10 +3,11 @@ import { createContext, useContext } from 'react';
 import type { DraftRepository } from '../application/drafts/draft-repository';
 
 export const unavailableDraftRepository: DraftRepository = {
-  list: () => ({ status: 'error', code: 'storage-unavailable' }),
-  load: () => ({ status: 'error', code: 'storage-unavailable' }),
-  save: () => ({ status: 'error', code: 'storage-unavailable' }),
-  delete: () => ({ status: 'error', code: 'storage-unavailable' }),
+  list: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+  load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+  save: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+  delete: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+  create: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
 };
 
 /** L26 drafts, provided by `App`; without a provider nothing is stored. */

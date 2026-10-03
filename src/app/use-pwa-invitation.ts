@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { pwaInvitation, type PwaInvitationKind } from './pwa-invitation';
 import { usePreferencesRepository } from './preferences-repository-context';
+import { useStorageRead } from './use-storage-read';
 import { usePwa } from './use-pwa';
 
 interface BoardContext {
@@ -9,6 +10,7 @@ interface BoardContext {
   readonly isUpdateOfferable: boolean;
   /** The attempt has changes that the update's reload would lose. */
   readonly hasUnsavedConstruction: boolean;
+  readonly beforeReload?: (() => Promise<void>) | undefined;
 }
 
 interface PwaInvitationOffer {
@@ -28,14 +30,12 @@ interface PwaInvitationOffer {
 export function usePwaInvitation(board: BoardContext | null): PwaInvitationOffer | null {
   const pwa = usePwa();
   const preferences = usePreferencesRepository();
-  const [isInstallDeclined, setIsInstallDeclined] = useState(() => {
-    try {
-      const loaded = preferences.load();
-      return loaded.status === 'ok' && loaded.preferences.installInvitationDeclined === true;
-    } catch {
-      return false;
-    }
-  });
+  const loaded = useStorageRead(useCallback(() => preferences.load(), [preferences]));
+  const [declined, setDeclined] = useState(false);
+  const isInstallDeclined =
+    declined ||
+    loaded === null ||
+    (loaded.status === 'ok' && loaded.preferences.installInvitationDeclined === true);
 
   const kind = pwaInvitation({
     place: board === null ? 'home' : 'board',
@@ -48,20 +48,19 @@ export function usePwaInvitation(board: BoardContext | null): PwaInvitationOffer
   if (kind === null) return null;
 
   const declineInstall = (): void => {
-    setIsInstallDeclined(true);
-    try {
-      const loaded = preferences.load();
-      preferences.save({
-        ...(loaded.status === 'ok' ? loaded.preferences : {}),
-        installInvitationDeclined: true,
-      });
-    } catch {
-      // Best effort: the invitation stays hidden for this visit.
-    }
+    setDeclined(true);
+    void preferences.patch({ installInvitationDeclined: true });
   };
 
   if (kind === 'update') {
-    return { kind, onAccept: pwa.applyUpdate, onDismiss: pwa.dismissUpdate };
+    return {
+      kind,
+      onAccept: () => {
+        if (board?.beforeReload === undefined) pwa.applyUpdate();
+        else void board.beforeReload().then(pwa.applyUpdate);
+      },
+      onDismiss: pwa.dismissUpdate,
+    };
   }
   return {
     kind,

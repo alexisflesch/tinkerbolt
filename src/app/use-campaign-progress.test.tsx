@@ -1,21 +1,21 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CampaignProgress } from '../application/progression';
-import type { ProgressRepository } from '../application/progression/progress-repository';
 import { CampaignProgressProvider } from './CampaignProgressProvider';
+import { renderStorageReady, testProgressRepository, storageAction } from './storage-test-fixture';
 import { useCampaignProgress } from './use-campaign-progress';
 
-const createRepository = (
-  progress: CampaignProgress = {},
-): ProgressRepository & { readonly save: ReturnType<typeof vi.fn> } => ({
-  load: () => ({ status: 'ok', progress }),
-  save: vi.fn(() => ({ status: 'ok' as const })),
-  clear: () => ({ status: 'ok' }),
-});
+const createRepository = (progress: CampaignProgress = {}) => {
+  const repository = testProgressRepository(progress);
+  return {
+    ...repository,
+    recordVictory: vi.fn((id: string, count: number) => repository.recordVictory(id, count)),
+  };
+};
 
 function ProgressProbe() {
   const { levels, recordCampaignSuccess, unlockAllLevels } = useCampaignProgress();
@@ -42,7 +42,7 @@ function ProgressProbe() {
 }
 
 describe('useCampaignProgress', () => {
-  it('expose les déblocages et persiste une réussite injectée, puis persiste une réussite injectée', () => {
+  it('expose les déblocages et persiste une réussite injectée, puis persiste une réussite injectée', async () => {
     const repository = createRepository({
       'tuto-4': { resolved: true, bestObjectCount: 3 },
     });
@@ -54,42 +54,57 @@ describe('useCampaignProgress', () => {
       value: { persist },
     });
 
-    const { unmount } = render(
+    const { unmount } = await renderStorageReady(
       <CampaignProgressProvider repository={repository}>
         <ProgressProbe />
       </CampaignProgressProvider>,
     );
 
-    expect(screen.getByTestId('unlock-all-levels')).toHaveTextContent('false');
-    expect(JSON.parse(screen.getByTestId('first-level').textContent)).toMatchObject({
-      unlocked: true,
-      resolved: false,
-      tier: null,
-      nextChallengeHint: null,
+    await waitFor(() => {
+      expect(screen.getByTestId('unlock-all-levels')).toHaveTextContent('false');
     });
-    expect(JSON.parse(screen.getByTestId('second-level').textContent)).toMatchObject({
-      unlocked: false,
-      resolved: false,
+    await waitFor(() => {
+      expect(JSON.parse(screen.getByTestId('first-level').textContent)).toMatchObject({
+        unlocked: true,
+        resolved: false,
+        tier: null,
+        nextChallengeHint: null,
+      });
     });
-    expect(JSON.parse(screen.getByTestId('challenged-level').textContent)).toMatchObject({
-      unlocked: false,
-      resolved: true,
-      bestObjectCount: 3,
-      tier: 'resolved',
-      nextChallengeHint: null,
+    await waitFor(() => {
+      expect(JSON.parse(screen.getByTestId('second-level').textContent)).toMatchObject({
+        unlocked: false,
+        resolved: false,
+      });
+    });
+    await waitFor(() => {
+      expect(JSON.parse(screen.getByTestId('challenged-level').textContent)).toMatchObject({
+        unlocked: false,
+        resolved: true,
+        bestObjectCount: 3,
+        tier: 'resolved',
+        nextChallengeHint: null,
+      });
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la victoire' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la victoire' })),
+    );
 
-    expect(repository.save).toHaveBeenCalledWith({
-      'tuto-1': { resolved: true, bestObjectCount: 0 },
-      'tuto-4': { resolved: true, bestObjectCount: 3 },
+    await waitFor(() => {
+      expect(repository.recordVictory).toHaveBeenCalledWith('tuto-1', 0);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la victoire' }));
-    expect(persist).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(screen.getByTestId('second-level').textContent)).toMatchObject({
-      unlocked: true,
-      resolved: false,
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la victoire' })),
+    );
+    await waitFor(() => {
+      expect(persist).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(JSON.parse(screen.getByTestId('second-level').textContent)).toMatchObject({
+        unlocked: true,
+        resolved: false,
+      });
     });
 
     unmount();
@@ -100,23 +115,29 @@ describe('useCampaignProgress', () => {
     }
   });
 
-  it('force le déblocage de tous les niveaux quand unlockAllLevels est vrai (mode développement)', () => {
+  it('force le déblocage de tous les niveaux quand unlockAllLevels est vrai (mode développement)', async () => {
     const repository = createRepository();
 
-    const { unmount } = render(
+    const { unmount } = await renderStorageReady(
       <CampaignProgressProvider repository={repository} unlockAllLevels>
         <ProgressProbe />
       </CampaignProgressProvider>,
     );
 
-    expect(screen.getByTestId('unlock-all-levels')).toHaveTextContent('true');
-    expect(JSON.parse(screen.getByTestId('second-level').textContent)).toMatchObject({
-      unlocked: true,
-      resolved: false,
+    await waitFor(() => {
+      expect(screen.getByTestId('unlock-all-levels')).toHaveTextContent('true');
     });
-    expect(JSON.parse(screen.getByTestId('challenged-level').textContent)).toMatchObject({
-      unlocked: true,
-      resolved: false,
+    await waitFor(() => {
+      expect(JSON.parse(screen.getByTestId('second-level').textContent)).toMatchObject({
+        unlocked: true,
+        resolved: false,
+      });
+    });
+    await waitFor(() => {
+      expect(JSON.parse(screen.getByTestId('challenged-level').textContent)).toMatchObject({
+        unlocked: true,
+        resolved: false,
+      });
     });
 
     unmount();

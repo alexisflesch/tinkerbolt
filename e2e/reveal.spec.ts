@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { creationFromLevel } from '../src/application/drafts/creation-from-level';
 import { levelDocumentSchema, type LevelDocument } from '../src/domain/level-document';
-import { createLocalStorageDraftRepository } from '../src/infrastructure/storage/local-storage-draft-repository';
+import { creationFixture, seedIndexedDB } from './indexed-db-fixture';
 
 const formats = [
   { width: 390, height: 844 },
@@ -121,39 +121,12 @@ const creationId = 'creation-m12';
 /** The remixer deleted the decor's fan: the author's button wire can no longer be laid. */
 const openRemixWithoutFan = async (page: Page): Promise<void> => {
   const { document } = creationFromLevel(source, { createId: () => creationId });
-  const entries = new Map<string, string>();
-  const storage: Storage = {
-    get length() {
-      return entries.size;
-    },
-    clear: () => {
-      entries.clear();
-    },
-    getItem: (key) => entries.get(key) ?? null,
-    key: (index) => [...entries.keys()][index] ?? null,
-    removeItem: (key) => {
-      entries.delete(key);
-    },
-    setItem: (key, value) => {
-      entries.set(key, value);
-    },
-  };
-  const saved = createLocalStorageDraftRepository(
-    storage,
-    () => new Date('2026-10-01T12:00:00.000Z'),
-  ).save({
+  const row = await creationFixture({
     document: { ...document, objects: document.objects.filter(({ id }) => id !== 'decor-fan') },
     source,
   });
-  expect(saved.status).toBe('ok');
-
   await page.goto('/');
-  await page.evaluate(
-    (stored) => {
-      for (const [key, value] of stored) localStorage.setItem(key, value);
-    },
-    [...entries],
-  );
+  await seedIndexedDB(page, [row]);
   await page.goto(`/editor?draft=${creationId}`);
 };
 

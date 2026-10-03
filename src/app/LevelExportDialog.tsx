@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Download, Link2 } from 'lucide-react';
 
 import {
@@ -8,10 +8,8 @@ import {
   type ConstructionAttempt,
 } from '../application/construction';
 import type { Command } from '../application/history';
-import type {
-  Preferences,
-  PreferencesRepository,
-} from '../application/preferences/preferences-repository';
+import { rememberAuthor } from '../application/preferences/remember-author';
+import { useStorageRead } from './use-storage-read';
 import type { LevelDocument } from '../domain/level-document';
 import type { PuzzleRunner } from '../application/puzzle/puzzle-workshop';
 import { Button } from '../ui/Button';
@@ -39,35 +37,6 @@ const MAX_LEVEL_DESCRIPTION_LENGTH = 2000;
 /** ADR 0016 § Licence: the exact notice shown when sharing. */
 const LICENCE_NOTICE =
   'En partageant ce niveau, tu le places sous licence CC BY 4.0 : d’autres pourront le modifier et le republier en te citant.';
-
-/**
- * ADR 0016 § Pseudo: the last pseudonym kept on this device. A storage
- * failure only means no suggestion: it never stands in the way of an export.
- */
-const rememberedPseudo = (preferences: PreferencesRepository): string => {
-  try {
-    const loaded = preferences.load();
-    return loaded.status === 'ok' ? (loaded.preferences.author ?? '') : '';
-  } catch {
-    return '';
-  }
-};
-
-const rememberPseudo = (preferences: PreferencesRepository, author: string | undefined): void => {
-  try {
-    // U8, U10: the other preferences (level 1's hint, the declined install) are kept as they were.
-    const loaded = preferences.load();
-    const { firstLevelHintDone, installInvitationDeclined }: Preferences =
-      loaded.status === 'ok' ? loaded.preferences : {};
-    const kept: Preferences = {
-      ...(firstLevelHintDone === undefined ? {} : { firstLevelHintDone }),
-      ...(installInvitationDeclined === undefined ? {} : { installInvitationDeclined }),
-    };
-    preferences.save(author === undefined ? kept : { ...kept, author });
-  } catch {
-    // Best effort, like the result it would have returned: the export already happened.
-  }
-};
 
 interface LevelExportDialogProps {
   /** The author's committed document: never a simulation snapshot or a gesture preview. */
@@ -114,9 +83,21 @@ export function LevelExportDialog({
   const [preparation] = useState(() => prepareLevelExport(levelDocument, run));
   const [name, setName] = useState(levelDocument.metadata.title);
   // A level that already names its author keeps it; otherwise the last pseudonym is offered.
-  const [pseudo, setPseudo] = useState(
-    () => levelDocument.metadata.author ?? rememberedPseudo(preferences),
-  );
+  const [pseudo, setPseudo] = useState(levelDocument.metadata.author ?? '');
+  const pseudoTouched = useRef(false);
+  const remembered = useStorageRead(useCallback(() => preferences.load(), [preferences]));
+  const [storageNotice, setStorageNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (remembered === null) return;
+    if (
+      remembered.status === 'ok' &&
+      !pseudoTouched.current &&
+      levelDocument.metadata.author === undefined
+    )
+      setPseudo(remembered.preferences.author ?? '');
+    if (remembered.status === 'error')
+      setStorageNotice('Le pseudo ne peut pas être lu sur cet appareil.');
+  }, [remembered, levelDocument.metadata.author]);
   const [description, setDescription] = useState(levelDocument.metadata.description ?? '');
   const pseudoError = pseudoRefusal(pseudo);
   const named =
@@ -132,13 +113,16 @@ export function LevelExportDialog({
    * M14, M14b: the exported title, pseudonym and description become the
    * creation's, and the pseudonym is kept. A blank description is removed.
    */
-  const recordAttribution = ({ metadata }: LevelDocument): void => {
+  const recordAttribution = async ({ metadata }: LevelDocument): Promise<void> => {
     onApplyAttribution?.([
       updateLevelTitle({ context: 'author', title: metadata.title }),
       updateLevelAuthor({ context: 'author', author: metadata.author }),
       updateLevelDescription({ context: 'author', description: metadata.description }),
     ]);
-    rememberPseudo(preferences, metadata.author);
+    const result = await rememberAuthor(preferences, metadata.author);
+    setStorageNotice(
+      result.status === 'ok' ? null : 'Ton pseudo n’a pas été enregistré sur cet appareil.',
+    );
   };
 
   const copyShareLink = async (puzzle: LevelDocument): Promise<void> => {
@@ -209,6 +193,8 @@ export function LevelExportDialog({
               }}
             />
           </label>
+          {remembered === null && <p role="status">Chargement des préférences…</p>}
+          {storageNotice !== null && <p role="alert">{storageNotice}</p>}
           <label className="export-link">
             <span className="export-link-label">Pseudo (facultatif)</span>
             <input
@@ -222,6 +208,7 @@ export function LevelExportDialog({
                 pseudoError === null ? pseudoHelpId : `${pseudoHelpId} ${pseudoErrorId}`
               }
               onChange={(event) => {
+                pseudoTouched.current = true;
                 setPseudo(event.currentTarget.value);
               }}
             />
@@ -236,12 +223,13 @@ export function LevelExportDialog({
           )}
           <p className="panel-note">{LICENCE_NOTICE}</p>
           <Button
-            disabled={named === null}
+            disabled={named === null || remembered === null}
             onClick={() => {
               if (named === null) return;
               downloadFile(named.fileName, preparation.mimeType, named.fileText);
-              setDownloadedFileName(named.fileName);
-              recordAttribution(named.puzzle);
+              void recordAttribution(named.puzzle).then(() => {
+                setDownloadedFileName(named.fileName);
+              });
             }}
           >
             <Download size={18} aria-hidden="true" />
@@ -249,11 +237,10 @@ export function LevelExportDialog({
           </Button>
           <Button
             tone="go"
-            disabled={named === null || share.status === 'working'}
+            disabled={named === null || remembered === null || share.status === 'working'}
             onClick={() => {
               if (named === null) return;
-              void copyShareLink(named.puzzle);
-              recordAttribution(named.puzzle);
+              void recordAttribution(named.puzzle).then(() => copyShareLink(named.puzzle));
             }}
           >
             <Link2 size={18} aria-hidden="true" />

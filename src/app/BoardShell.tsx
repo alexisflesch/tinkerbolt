@@ -67,6 +67,9 @@ interface BoardShellProps {
   };
   /** A discreet status over the board until dismissed (M8: a shared level not kept). */
   readonly notice?: string;
+  readonly storageError?: string | undefined;
+  readonly saveNotice?: string | undefined;
+  readonly beforeLeave?: (() => Promise<void>) | undefined;
   /**
    * ADR 0015 § Révéler: the level a creation comes from. When it carries a
    * solution, the workshop's menu offers to reveal it.
@@ -110,6 +113,9 @@ export function BoardShell({
   notice,
   authorSource,
   firstLevelHint,
+  storageError,
+  saveNotice,
+  beforeLeave,
 }: BoardShellProps) {
   const navigate = useNavigate();
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
@@ -172,7 +178,11 @@ export function BoardShell({
   // U10 (ADR 0012): a waiting update is offered only in a safe phase, and
   // only while its reload would lose nothing (no command on this board yet).
   const isUpdateOfferable = usePwaUpdateStatus(session);
-  const pwaInvitation = usePwaInvitation({ isUpdateOfferable, hasUnsavedConstruction: hasActed });
+  const pwaInvitation = usePwaInvitation({
+    isUpdateOfferable,
+    hasUnsavedConstruction: hasActed,
+    beforeReload: beforeLeave,
+  });
   const onHintDoneRef = useRef(firstLevelHint?.onDone);
   useEffect(() => {
     onHintDoneRef.current = firstLevelHint?.onDone;
@@ -297,11 +307,14 @@ export function BoardShell({
   const shownNotice = revealNotice ?? (isNoticeDismissed ? undefined : notice);
 
   const returnToLevels = (): void => {
-    if (exit !== undefined) {
-      exit.onExit();
-      return;
-    }
-    void navigate('/levels');
+    void (async () => {
+      await beforeLeave?.();
+      if (exit !== undefined) {
+        exit.onExit();
+        return;
+      }
+      void navigate('/levels');
+    })();
   };
 
   const playAsPlayer = (): void => {
@@ -312,7 +325,10 @@ export function BoardShell({
       return;
     }
     wiring.cancelWiring();
-    onPlayAsPlayer(conversion.puzzle);
+    void (async () => {
+      await beforeLeave?.();
+      onPlayAsPlayer(conversion.puzzle);
+    })();
   };
 
   return (
@@ -321,6 +337,7 @@ export function BoardShell({
       subtitle={subtitle}
       attribution={attribution}
       variant="board"
+      beforeNavigate={beforeLeave}
       {...(revealSource === undefined
         ? {}
         : {
@@ -341,7 +358,7 @@ export function BoardShell({
               className="icon-button objective-button"
               type="button"
               aria-label={exit.label}
-              onClick={exit.onExit}
+              onClick={returnToLevels}
             >
               <span className="objective-button-glyph" aria-hidden="true">
                 <ArrowLeft size={18} />
@@ -480,8 +497,12 @@ export function BoardShell({
           onCancelPlacement={pointers.cancelPlacement}
           onLaunchSimulation={() => {
             wiring.cancelWiring();
-            setHasLaunched(true);
-            simulation.launchSimulation();
+            const launch = () => {
+              setHasLaunched(true);
+              simulation.launchSimulation();
+            };
+            if (beforeLeave === undefined) launch();
+            else void beforeLeave().then(launch);
           }}
           onPause={simulation.pauseCurrentSimulation}
           onResume={simulation.resumeCurrentSimulation}
@@ -505,6 +526,8 @@ export function BoardShell({
           onWheelZoom={boardCamera.zoomWithWheel}
         />
         <div className="status-slot">
+          {storageError !== undefined && <p role="alert">{storageError}</p>}
+          {saveNotice !== undefined && <p role="status">{saveNotice}</p>}
           {pwaInvitation !== null && (
             <PwaInvitation
               kind={pwaInvitation.kind}

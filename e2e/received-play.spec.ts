@@ -89,7 +89,7 @@ test('joue quand même un fichier importé que le stockage plein n’a pas gard�
     'Le parcours tactile est validé sur mobile.',
   );
   await page.addInitScript(() => {
-    Storage.prototype.setItem = () => {
+    IDBObjectStore.prototype.put = () => {
       throw new DOMException('Quota dépassé', 'QuotaExceededError');
     };
   });

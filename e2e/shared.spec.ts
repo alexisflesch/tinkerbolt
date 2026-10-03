@@ -1,3 +1,4 @@
+import { browserRows } from './indexed-db-fixture';
 import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
@@ -23,10 +24,8 @@ test('ouvre un lien partagé fabriqué par le codec sur mobile', async ({ page }
   await expect(page.getByText('Mes niveaux', { exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
   // M8 : le lien valide est gardé comme niveau reçu avant d’être joué.
-  const receivedIndex = await page.evaluate(() =>
-    window.localStorage.getItem('tinkerbolt:received'),
-  );
-  expect(receivedIndex).toMatch(/"recu-[0-9a-f]{16}"/);
+  const receivedIndex = await browserRows(page, 'receivedLevels');
+  expect(JSON.stringify(receivedIndex)).toMatch(/"recu-[0-9a-f]{16}"/);
 
   await mkdir('test-results/shared', { recursive: true });
   await page.screenshot({
@@ -76,9 +75,11 @@ test('joue un lien partagé et dit discrètement qu’il n’a pas été gardé 
   if (fileResult.status !== 'ok') return;
   const fragment = await encodeShareFragment(fileResult.document);
   await page.addInitScript(() => {
-    Storage.prototype.setItem = () => {
-      throw new DOMException('Quota dépassé', 'QuotaExceededError');
-    };
+    for (const method of ['add', 'put'] as const) {
+      IDBObjectStore.prototype[method] = () => {
+        throw new DOMException('Quota dépassé', 'QuotaExceededError');
+      };
+    }
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/shared${fragment}`);

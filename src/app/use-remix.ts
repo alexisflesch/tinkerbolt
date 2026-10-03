@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { ConstructionAttempt } from '../application/construction';
@@ -24,23 +24,33 @@ interface Remix {
 export function useRemix(level: LevelDocument): Remix {
   const drafts = useDraftRepository();
   const navigate = useNavigate();
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const [error, setError] = useState<string | undefined>(undefined);
 
   return {
     remix: (attempt) => {
-      const result = saveCreationFromLevel(drafts, level, {
-        playerSolution: solutionFromAttempt(attempt),
-        createId: randomIdPart,
-      });
-      if (result.status === 'error') {
-        setError(
-          result.code === 'quota-exceeded'
-            ? 'Le remix n’a pas pu être créé : l’espace de stockage de cet appareil est plein.'
-            : 'Le remix n’a pas pu être créé : le stockage local de cet appareil est indisponible.',
-        );
-        return;
-      }
-      void navigate(`/editor?draft=${encodeURIComponent(result.draftId)}`);
+      void (async () => {
+        const result = await saveCreationFromLevel(drafts, level, {
+          playerSolution: solutionFromAttempt(attempt),
+          createId: randomIdPart,
+        });
+        if (!active.current) return;
+        if (result.status === 'error') {
+          setError(
+            result.code === 'quota-exceeded'
+              ? 'Le remix n’a pas pu être créé : l’espace de stockage de cet appareil est plein.'
+              : 'Le remix n’a pas pu être créé : le stockage local de cet appareil est indisponible.',
+          );
+          return;
+        }
+        void navigate(`/editor?draft=${encodeURIComponent(result.draftId)}`);
+      })();
     },
     error,
     clearError: () => {

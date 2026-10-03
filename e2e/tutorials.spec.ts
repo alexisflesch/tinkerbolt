@@ -1,3 +1,4 @@
+import { progressFixture, seedIndexedDB } from './indexed-db-fixture';
 import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
@@ -105,20 +106,14 @@ for (const [index, level] of tutorials.entries()) {
   test(`N2 : résout ${level.id} au toucher et mémorise sa victoire`, async ({ page }, testInfo) => {
     test.skip(!['mobile', 'v1'].includes(testInfo.project.name), 'Parcours tactile sur téléphone.');
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.addInitScript(
-      (ids) => {
-        if (localStorage.getItem('tinkerbolt:progress') !== null) return;
-        localStorage.setItem(
-          'tinkerbolt:progress',
-          JSON.stringify({
-            kind: 'progress',
-            version: 1,
-            data: Object.fromEntries(ids.map((id) => [id, { resolved: true, bestObjectCount: 1 }])),
-          }),
-        );
-      },
-      tutorials.slice(0, index).map(({ id }) => id),
-    );
+    await page.goto('/');
+    await seedIndexedDB(page, [
+      await progressFixture(
+        Object.fromEntries(
+          tutorials.slice(0, index).map(({ id }) => [id, { resolved: true, bestObjectCount: 1 }]),
+        ),
+      ),
+    ]);
     await page.goto(`/levels/${level.id}/play`);
     await placeSolution(page, level);
     await mkdir('test-results/tutorials', { recursive: true });

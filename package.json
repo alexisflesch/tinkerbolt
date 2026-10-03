@@ -28,6 +28,7 @@
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm deadcode && pnpm content:check && pnpm test:run && pnpm build && pnpm test:e2e:critical"
   },
   "dependencies": {
+    "dexie": "4.4.6",
     "lucide-react": "1.48.0",
     "planck": "1.5.0",
     "react": "19.1.1",
@@ -50,6 +51,7 @@
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react-hooks": "5.2.0",
     "eslint-plugin-react-refresh": "0.4.20",
+    "fake-indexeddb": "6.2.5",
     "jsdom": "26.1.0",
     "knip": "5.62.0",
     "prettier": "3.6.2",

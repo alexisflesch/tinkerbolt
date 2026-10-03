@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
 import type { ConstructionAttempt } from '../application/construction';
@@ -8,6 +8,8 @@ import type { LevelDocument } from '../domain/level-document';
 import type { CampaignVictory } from '../ui/CampaignVictoryDialog';
 import { BoardShell } from './BoardShell';
 import { offersFirstLevelHint } from './first-level-hint';
+import { StorageLoading } from './StorageLoading';
+import { useStorageRead } from './use-storage-read';
 import { LockedLevelPage } from './LockedLevelPage';
 import { usePreferencesRepository } from './preferences-repository-context';
 import { useCampaignProgress } from './use-campaign-progress';
@@ -20,9 +22,11 @@ import { useRemix } from './use-remix';
  */
 export function PlayLevelPage() {
   const { levelId } = useParams();
-  const { levels: levelProgress } = useCampaignProgress();
+  const { levels: levelProgress, loading } = useCampaignProgress();
   const levelIndex = embeddedLevels.findIndex((level) => level.id === levelId);
   const level = embeddedLevels[levelIndex];
+
+  if (loading) return <StorageLoading title="Campagne" />;
 
   if (level === undefined) return <Navigate to="/levels" replace />;
 
@@ -52,7 +56,7 @@ interface CampaignLevelBoardProps {
  */
 function CampaignLevelBoard({ level, levelIndex }: CampaignLevelBoardProps) {
   const navigate = useNavigate();
-  const { recordCampaignSuccess, levels: levelProgress } = useCampaignProgress();
+  const { recordCampaignSuccess, levels: levelProgress, storageError } = useCampaignProgress();
   const firstLevelHint = useFirstLevelHint(levelIndex, levelProgress[level.id]?.resolved === true);
   const launchedAttemptRef = useRef<ConstructionAttempt | null>(null);
   /** The last won attempt, as launched (U4); `null` otherwise. */
@@ -91,6 +95,11 @@ function CampaignLevelBoard({ level, levelIndex }: CampaignLevelBoardProps) {
       title={`Niveau ${String(levelIndex + 1)} · ${level.metadata.title}`}
       subtitle="Campagne"
       firstLevelHint={firstLevelHint}
+      storageError={
+        storageError === null
+          ? undefined
+          : 'La progression ne peut pas être enregistrée : le stockage est indisponible.'
+      }
       campaignVictory={campaignVictory}
       onSimulationLaunched={(attempt) => {
         launchedAttemptRef.current = attempt;
@@ -120,19 +129,16 @@ function useFirstLevelHint(
   isLevelSolved: boolean,
 ): { readonly onDone: () => void } | undefined {
   const preferences = usePreferencesRepository();
-  const [isHintDone, setIsHintDone] = useState(() => {
-    const loaded = preferences.load();
-    return loaded.status === 'ok' && loaded.preferences.firstLevelHintDone === true;
-  });
-  if (!offersFirstLevelHint({ levelIndex, isLevelSolved, isHintDone })) return undefined;
+  const loaded = useStorageRead(useCallback(() => preferences.load(), [preferences]));
+  const [dismissed, setDismissed] = useState(false);
+  const isHintDone =
+    dismissed || (loaded?.status === 'ok' && loaded.preferences.firstLevelHintDone === true);
+  if (loaded === null || !offersFirstLevelHint({ levelIndex, isLevelSolved, isHintDone }))
+    return undefined;
   return {
     onDone: () => {
-      setIsHintDone(true);
-      const loaded = preferences.load();
-      preferences.save({
-        ...(loaded.status === 'ok' ? loaded.preferences : {}),
-        firstLevelHintDone: true,
-      });
+      setDismissed(true);
+      void preferences.patch({ firstLevelHintDone: true });
     },
   };
 }

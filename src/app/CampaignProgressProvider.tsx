@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import {
   evaluateTier,
@@ -30,53 +30,70 @@ export function CampaignProgressProvider({
   unlockAllLevels = false,
   children,
 }: CampaignProgressProviderProps) {
-  const [initialResult] = useState(() => repository.load());
-  const [progress, setProgress] = useState<CampaignProgress>(() =>
-    initialResult.status === 'ok' ? initialResult.progress : {},
-  );
+  const [progress, setProgress] = useState<CampaignProgress>({});
   const progressRef = useRef(progress);
+  const [loading, setLoading] = useState(true);
+  const [known, setKnown] = useState(false);
   const storagePersistenceRequestedRef = useRef(false);
-  const [storageError, setStorageError] = useState<ProgressRepositoryErrorCode | null>(() =>
-    initialResult.status === 'error' ? initialResult.code : null,
-  );
-  const [storageWarning] = useState<'invalid-data-backed-up' | null>(() =>
-    initialResult.status === 'ok' ? (initialResult.warning ?? null) : null,
-  );
+  const [storageError, setStorageError] = useState<ProgressRepositoryErrorCode | null>(null);
+  const [storageWarning, setStorageWarning] = useState<'invalid-data-backed-up' | null>(null);
+  const generation = useRef(0);
+  const writes = useRef<Promise<void>>(Promise.resolve());
+  const resetting = useRef(false);
+
+  useEffect(() => {
+    const current = ++generation.current;
+    setLoading(true);
+    void repository.load().then((result) => {
+      if (generation.current !== current) return;
+      if (result.status === 'ok') {
+        progressRef.current = result.progress;
+        setProgress(result.progress);
+        setKnown(true);
+        setStorageWarning(result.warning ?? null);
+      } else setStorageError(result.code);
+      setLoading(false);
+    });
+    return () => {
+      generation.current += 1;
+    };
+  }, [repository]);
 
   const recordCampaignSuccess = useCallback(
     (levelId: string, objectsUsed: number): void => {
+      if (resetting.current) return;
+      const current = generation.current;
       const updated = recordSuccess(progressRef.current, levelId, objectsUsed);
       progressRef.current = updated;
       setProgress(updated);
-
-      const result = repository.save(updated);
-      setStorageError(result.status === 'error' ? result.code : null);
-
+      writes.current = writes.current.then(async () => {
+        const result = await repository
+          .recordVictory(levelId, objectsUsed)
+          .catch(() => ({ status: 'error' as const, code: 'storage-unavailable' as const }));
+        if (generation.current !== current) return;
+        setStorageError(result.status === 'error' ? result.code : null);
+        if (result.status === 'ok') setKnown(true);
+      });
       if (!storagePersistenceRequestedRef.current) {
         storagePersistenceRequestedRef.current = true;
         try {
-          const persistenceRequest =
-            typeof navigator === 'undefined' || typeof navigator.storage.persist !== 'function'
-              ? undefined
-              : navigator.storage.persist();
-          if (persistenceRequest !== undefined) void persistenceRequest.catch(() => false);
+          if (typeof navigator !== 'undefined' && typeof navigator.storage.persist === 'function')
+            void navigator.storage.persist().catch(() => false);
         } catch {
-          // Persistent storage is best effort; a browser refusal must not block play.
+          /* A browser refusal must not block play. */
         }
       }
     },
     [repository],
   );
 
-  /**
-   * U11: forgets the campaign progress in storage first; the screens only
-   * show the fresh campaign (level 1 open) once storage agreed. A failure,
-   * or an exception from the port, leaves the progress as it was.
-   */
-  const resetCampaignProgress = useCallback((): ProgressSaveResult => {
+  const resetCampaignProgress = useCallback(async (): Promise<ProgressSaveResult> => {
+    resetting.current = true;
+    generation.current += 1;
+    await writes.current;
     let result: ProgressSaveResult;
     try {
-      result = repository.clear();
+      result = await repository.clear();
     } catch {
       result = { status: 'error', code: 'storage-unavailable' };
     }
@@ -84,7 +101,9 @@ export function CampaignProgressProvider({
       progressRef.current = {};
       setProgress({});
       setStorageError(null);
-    }
+      setKnown(true);
+    } else setStorageError(result.code);
+    resetting.current = false;
     return result;
   }, [repository]);
 
@@ -119,6 +138,8 @@ export function CampaignProgressProvider({
   const value = useMemo(
     () => ({
       progress,
+      loading,
+      known,
       levels,
       storageError,
       storageWarning,
@@ -128,6 +149,8 @@ export function CampaignProgressProvider({
     }),
     [
       levels,
+      loading,
+      known,
       progress,
       recordCampaignSuccess,
       resetCampaignProgress,

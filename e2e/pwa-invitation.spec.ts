@@ -1,3 +1,4 @@
+import { storedEnvelope, seedIndexedDB, preferencesFixture } from './indexed-db-fixture';
 import { mkdir } from 'node:fs/promises';
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -43,18 +44,11 @@ const expectBesideTheBoard = async (page: Page, invitation: Locator): Promise<vo
 };
 
 const hideFirstLevelHint = async (page: Page): Promise<void> => {
-  await page.evaluate(() => {
-    window.localStorage.setItem(
-      'tinkerbolt:preferences',
-      JSON.stringify({ kind: 'preferences', version: 1, data: { firstLevelHintDone: true } }),
-    );
-  });
+  await seedIndexedDB(page, [await preferencesFixture({ firstLevelHintDone: true })]);
 };
 
 const storedPreferences = async (page: Page): Promise<unknown> => {
-  const raw = await page.evaluate(() => window.localStorage.getItem('tinkerbolt:preferences'));
-  const parsed: unknown = JSON.parse(raw ?? 'null');
-  return parsed;
+  return storedEnvelope(page, 'preferences', 'player');
 };
 
 let nextVersion = 0;
