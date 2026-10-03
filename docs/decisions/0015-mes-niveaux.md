@@ -292,3 +292,15 @@ structure narrative n’est un schéma exécutable accepté par défaut.
 Les décisions sont acceptées avant code. Le stockage et la reprise sont à
 implémenter en C2a/C3 ; `etat.md` reste le constat de ce qui est livré et la
 [feuille de route](../feuille-de-route.md) la seule séquence active.
+
+## Contrat de reprise proposé — C2
+
+La [proposition ADR 0017](0017-player-construction-and-async-storage.md)
+détaille identité, compatibilité source, enveloppe et provenance de la
+construction, réception et suppression atomiques, autosauvegarde et erreurs.
+Elle conserve la distinction entre création, reçu figé et construction ;
+une reprise exacte conserve aussi un décor déplaçable sans le faire passer
+pour un objet d’inventaire. **Statut proposé** : garder après victoire,
+garder sous verrou après remise à zéro de progression et mettre en secours
+une construction incompatible restent des arbitrages en attente. Aucun
+stockage Dexie ni reprise n’est déclaré livré par ce renvoi.

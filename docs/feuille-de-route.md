@@ -16,10 +16,11 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 
 **C0 et C1 terminés, gate globale verte.** C1 est corrigé dans le commit
 `6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
-C2 : contrat préparé, trois arbitrages soumis à l’auteur. C5 est implémenté
+C2 : [ADR 0017 proposée](decisions/0017-player-construction-and-async-storage.md),
+trois arbitrages soumis à l’auteur. C5 est implémenté
 et vérifié (1206 tests Vitest, 89 E2E), validation visuelle attendue aux deux
-formats desktop. Les contrats de C2 ne sont
-pas encore arrêtés ; l’amendement accepté des ADR 0011/0015 fixe seulement les
+formats desktop. Les contrats de reprise ne sont pas encore acceptés ;
+l’amendement accepté des ADR 0011/0015 fixe seulement les
 décisions de stockage et de reprise confirmées. Dexie et la reprise des
 constructions ne sont pas encore livrés.
 
@@ -80,10 +81,10 @@ constructions ne sont pas encore livrés.
 
 ## Arbitrages encore ouverts
 
-| ID | Question | Tâches dépendantes |
-| --- | --- | --- |
-| Q6 | Contrat de chaque famille nouvelle et ordre confirmé après audit. | C8, puis chaque C9a–d pour son contrat. |
-| Q8 | Mécanisme de soumission disponible sur l’instance Grist de la Forge ; éventuel relais et son hébergement. | F1, puis F2. |
+| ID  | Question                                                                                                  | Tâches dépendantes                      |
+| --- | --------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Q6  | Contrat de chaque famille nouvelle et ordre confirmé après audit.                                         | C8, puis chaque C9a–d pour son contrat. |
+| Q8  | Mécanisme de soumission disponible sur l’instance Grist de la Forge ; éventuel relais et son hébergement. | F1, puis F2.                            |
 
 C2 doit également fixer l’identité et la compatibilité d’une construction
 sauvegardée, son enveloppe, les états d’erreur et les opérations atomiques,
@@ -101,7 +102,7 @@ précise leurs dépendances supplémentaires.
 
 | Ordre | ID    | Livrable                                                                | Prérequis                                                       |
 | ----- | ----- | ----------------------------------------------------------------------- | --------------------------------------------------------------- |
-| 1     | C0    | Raccord avec les sources de vérité et démarrage de la nouvelle séquence | V1 clôturée (V9).                                            |
+| 1     | C0    | Raccord avec les sources de vérité et démarrage de la nouvelle séquence | V1 clôturée (V9).                                               |
 | 2     | C1    | Bug de placement reproduit, testé et corrigé                            | C0.                                                             |
 | 3     | C2    | Contrats de reprise locale et de stockage asynchrone                    | Décisions de stockage et de reprise confirmées.                 |
 | 4     | C2a   | Stockage IndexedDB avec Dexie, sans reprise de l’ancien stockage        | C2.                                                             |
@@ -470,6 +471,24 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 - `pnpm check` après intégration de ce commit : vert, 1201 tests Vitest et
   89 E2E v1. Fichier d’essai auteur et configuration Playwright restaurés
   identiques. Aucun restylage ni changement de contenu des niveaux.
+
+### C2 — Contrat de reprise — proposé, validation de l’auteur attendue
+
+- Sol 6.1 `high` a préparé le contrat, relu puis intégré par l’orchestrateur :
+  [ADR 0017](decisions/0017-player-construction-and-async-storage.md), statut
+  **proposé**, avec renvois ADR 0005/0011/0015 et index. Aucun code, dépendance
+  ou changement du stockage livré.
+- La construction reprend document **et provenance**, avec validation stricte
+  des relations source/stock/décor et un codec de tentative distinct du codec
+  de niveau. Identité/empreinte, files d’écriture et méthodes atomiques restent
+  décrites dans cette proposition ; aucune nouvelle API Dexie n’est livrée.
+- Trois propositions soumises à l’auteur : conserver après victoire ; garder
+  les constructions sous les nouveaux verrous après remise à zéro de progression ;
+  sauvegarder en secours une construction incompatible puis ouvrir la nouvelle
+  source avec avertissement. Aucune acceptation déduite du silence.
+- Format Markdown, neuf liens locaux et diff vérifiés. C2 reste partiel :
+  **C2a et C3 attendent l’acceptation du contrat**. L’exception au codec normal
+  et la provenance persistable sont documentées avant toute implémentation.
 
 ### C5 — Synchroniser résultat et modale — implémenté, validation visuelle attendue
 

@@ -20,6 +20,7 @@ décisions confirmées : Dexie asynchrone, base vide sans transfert des ancienne
 données locales, reprise automatique de la construction avant simulation.
 Ces décisions ne sont pas encore implémentées : le stockage livré reste
 `localStorage`, et la construction de joueur n’est pas persistée.
+Le contrat C2 est proposé dans l’[ADR 0017](decisions/0017-player-construction-and-async-storage.md).
 Les contrats C2, maquettes et familles restent à valider dans leurs tâches.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
@@ -27,7 +28,7 @@ rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
 C1 (`6150c94`, autre agent de l’auteur) corrige la pose après câblage dans le
 tutoriel 3 : les identifiants des poses de la solution cachée sont réservés,
 afin qu’un objet joueur ne les masque pas. Sa régression DOM et la gate globale
-ont été vérifiées par l’orchestrateur. C2 est en préparation, ses trois
+ont été vérifiées par l’orchestrateur. C2 est proposé, ses trois
 arbitrages de reprise restent soumis à l’auteur. C5 synchronise désormais les
 actions de victoire et la modale au délai existant de 600 ms, ou sans délai si
 les animations sont réduites. Fermer la modale garde les actions disponibles ;

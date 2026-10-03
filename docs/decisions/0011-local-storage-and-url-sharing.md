@@ -218,3 +218,15 @@ implémente la reprise des constructions et vérifie les autosauvegardes d’Ate
 La [feuille de route](../feuille-de-route.md) porte seule l’ordre d’exécution ;
 cet amendement ne constate pas leur implémentation. Le codec de fichier, le
 format du lien partagé et les comportements de réception restent applicables.
+
+## Contrat asynchrone proposé — C2
+
+La [proposition ADR 0017](0017-player-construction-and-async-storage.md)
+décrit le schéma initial Dexie, les ports asynchrones, transactions et
+erreurs de la nouvelle base, sans reprise des anciennes données. Elle
+distingue les documents sources complets, toujours traités par le codec
+de fichier, du document consommé d’une construction : celui-ci nécessite
+un **codec de tentative dédié**, fondé sur `levelDocumentAttemptSchema`
+et les relations à la source/provenance, sans affaiblir le schéma de niveau.
+Ce renvoi ne valide pas le contrat : **ADR 0017 proposée**, trois arbitrages
+produit encore soumis à l’auteur. Les décisions C0 ci-dessus restent acceptées.

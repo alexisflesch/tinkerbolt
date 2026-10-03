@@ -28,42 +28,43 @@ implémenter.
 Une information a un seul propriétaire. En cas de divergence, le propriétaire
 gagne et l'autre document doit être corrigé, pas arbitré au cas par cas.
 
-| Document                                                  | ~lignes | Fait autorité sur                                                                                                      |
-| --------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `AGENTS.md`                                               | 103     | règles applicables à tout changement, invariants non négociables                                                       |
-| `docs/backlog.md`                                         | 138     | découpage des tranches, dépendances, tranche courante                                                                  |
-| `docs/cahier-des-charges.md`                              | 436     | vision produit, périmètre, hors-périmètre                                                                              |
-| `docs/etat.md`                                            | 849     | ce qui est livré, les dettes, la dernière gate                                                                         |
-| `docs/feuille-de-route.md`                                | —       | seule séquence active C/M/F, ordre et journal ; historique v1 clôturé                                                  |
-| `docs/plan-implementation.03.10.26.md`                    | —       | préparation du 3 octobre, décisions confirmées et avis ; tâches reprises dans la feuille de route                      |
-| `docs/todo.03.10.26.md`                                   | —       | demande de l’auteur du 3 octobre, conservée intacte                                                                    |
-| `docs/feuille-de-route-mes-niveaux.md`                    | 3034    | historique de la phase « Mes niveaux » (journal G1 à N2)                                                               |
-| `docs/feuille-de-route-luna.md`                           | 2633    | historique de la reprise précédente (journal L1 à U29)                                                                 |
-| `docs/plan-remise-en-jeu.md`                              | 1208    | historique A–F ; spécifications détaillées de C1, C2, D3                                                               |
-| `docs/architecture.md`                                    | 223     | couches, dépendances, états distincts, modèle d'objet                                                                  |
-| `docs/qualite.md`                                         | 149     | stratégie de test, niveaux de test, gates                                                                              |
-| `docs/catalogue-initial.md`                               | 239     | contrats des onze familles d'objets                                                                                    |
-| `docs/tinkerbolt_control_wires_v1.md`                     | 125     | spécification fonctionnelle des fils de commande                                                                       |
-| `docs/mobile-editor-interactions.md`                      | 595     | gestes, états d'interface, scénarios tactiles (v2 : hors v1)                                                           |
-| `docs/levels/nouveaux-niveaux.md`                         | —       | campagne esquissée : 18 propositions, niveau 15 différé                                                                |
-| `docs/levels/conception-niveaux.md`                       | 156     | concevoir un niveau : règles du jeu, objets, physique, méthode                                                         |
-| `docs/decisions/0001-product-foundations.md`              | 33      | fondations produit (accepté)                                                                                           |
-| `docs/decisions/0002-physics-engine-selection.md`         | 126     | choix du moteur physique, Planck.js (accepté)                                                                          |
-| `docs/decisions/0003-project-bootstrap.md`                | 309     | outillage, scripts, gates, politique de dépendances (accepté)                                                          |
-| `docs/decisions/0004-level-document-v1.md`                | 103     | contrat `LevelDocument` v1 (accepté ; v2 : ADR 0007, code)                                                             |
-| `docs/decisions/0005-construction-attempt.md`             | 51      | provenance éphémère d'une tentative (accepté)                                                                          |
-| `docs/decisions/0006-board-renderer.md`                   | 101     | renderer du plateau et pipeline de sprites (accepté)                                                                   |
-| `docs/decisions/0007-world-scale-and-camera.md`           | 269     | repère du monde, scène, caméra, échelle des sprites (accepté)                                                          |
-| `docs/decisions/0008-client-side-routing.md`              | 99      | routage côté client, schéma d'URL (accepté)                                                                            |
-| `docs/decisions/0009-control-wires.md`                    | 90      | fils de commande : modèle, rendu, câblage (accepté, amendé)                                                            |
-| `docs/decisions/0010-object-challenge-and-progression.md` | 92      | défi d'objets ✅/⭐/🏆, ouverture des niveaux (accepté)                                                                |
-| `docs/decisions/0011-local-storage-and-url-sharing.md`    | —       | IndexedDB/Dexie asynchrone, sans reprise `localStorage` ; codecs et partage URL (accepté, amendé C0)                   |
-| `docs/decisions/0012-pwa-service-worker.md`               | 47      | PWA, service worker, mises à jour (accepté)                                                                            |
-| `docs/decisions/0013-puzzle-workshop-solution.md`         | 95      | objets à placer, solution de référence, export vérifié (accepté)                                                       |
-| `docs/decisions/0014-icon-library.md`                     | —       | bibliothèque d’icônes de l’interface (accepté)                                                                         |
-| `docs/decisions/0015-mes-niveaux.md`                      | —       | « Mes niveaux », niveaux reçus, créations, solution cachée ; reprise automatique avant simulation (accepté, amendé C0) |
-| `docs/decisions/0016-attribution-licence-niveaux.md`      | 95      | auteur, sources, licence CC BY 4.0 des niveaux (accepté)                                                               |
-| `LICENSE`                                                 | 661     | conditions de licence du code du logiciel (GNU AGPL-3.0-or-later)                                                      |
+| Document                                                       | ~lignes | Fait autorité sur                                                                                                        |
+| -------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `AGENTS.md`                                                    | 103     | règles applicables à tout changement, invariants non négociables                                                         |
+| `docs/backlog.md`                                              | 138     | découpage des tranches, dépendances, tranche courante                                                                    |
+| `docs/cahier-des-charges.md`                                   | 436     | vision produit, périmètre, hors-périmètre                                                                                |
+| `docs/etat.md`                                                 | 849     | ce qui est livré, les dettes, la dernière gate                                                                           |
+| `docs/feuille-de-route.md`                                     | —       | seule séquence active C/M/F, ordre et journal ; historique v1 clôturé                                                    |
+| `docs/plan-implementation.03.10.26.md`                         | —       | préparation du 3 octobre, décisions confirmées et avis ; tâches reprises dans la feuille de route                        |
+| `docs/todo.03.10.26.md`                                        | —       | demande de l’auteur du 3 octobre, conservée intacte                                                                      |
+| `docs/feuille-de-route-mes-niveaux.md`                         | 3034    | historique de la phase « Mes niveaux » (journal G1 à N2)                                                                 |
+| `docs/feuille-de-route-luna.md`                                | 2633    | historique de la reprise précédente (journal L1 à U29)                                                                   |
+| `docs/plan-remise-en-jeu.md`                                   | 1208    | historique A–F ; spécifications détaillées de C1, C2, D3                                                                 |
+| `docs/architecture.md`                                         | 223     | couches, dépendances, états distincts, modèle d'objet                                                                    |
+| `docs/qualite.md`                                              | 149     | stratégie de test, niveaux de test, gates                                                                                |
+| `docs/catalogue-initial.md`                                    | 239     | contrats des onze familles d'objets                                                                                      |
+| `docs/tinkerbolt_control_wires_v1.md`                          | 125     | spécification fonctionnelle des fils de commande                                                                         |
+| `docs/mobile-editor-interactions.md`                           | 595     | gestes, états d'interface, scénarios tactiles (v2 : hors v1)                                                             |
+| `docs/levels/nouveaux-niveaux.md`                              | —       | campagne esquissée : 18 propositions, niveau 15 différé                                                                  |
+| `docs/levels/conception-niveaux.md`                            | 156     | concevoir un niveau : règles du jeu, objets, physique, méthode                                                           |
+| `docs/decisions/0001-product-foundations.md`                   | 33      | fondations produit (accepté)                                                                                             |
+| `docs/decisions/0002-physics-engine-selection.md`              | 126     | choix du moteur physique, Planck.js (accepté)                                                                            |
+| `docs/decisions/0003-project-bootstrap.md`                     | 309     | outillage, scripts, gates, politique de dépendances (accepté)                                                            |
+| `docs/decisions/0004-level-document-v1.md`                     | 103     | contrat `LevelDocument` v1 (accepté ; v2 : ADR 0007, code)                                                               |
+| `docs/decisions/0005-construction-attempt.md`                  | 51      | provenance éphémère d'une tentative (accepté)                                                                            |
+| `docs/decisions/0006-board-renderer.md`                        | 101     | renderer du plateau et pipeline de sprites (accepté)                                                                     |
+| `docs/decisions/0007-world-scale-and-camera.md`                | 269     | repère du monde, scène, caméra, échelle des sprites (accepté)                                                            |
+| `docs/decisions/0008-client-side-routing.md`                   | 99      | routage côté client, schéma d'URL (accepté)                                                                              |
+| `docs/decisions/0009-control-wires.md`                         | 90      | fils de commande : modèle, rendu, câblage (accepté, amendé)                                                              |
+| `docs/decisions/0010-object-challenge-and-progression.md`      | 92      | défi d'objets ✅/⭐/🏆, ouverture des niveaux (accepté)                                                                  |
+| `docs/decisions/0011-local-storage-and-url-sharing.md`         | —       | IndexedDB/Dexie asynchrone, sans reprise `localStorage` ; codecs et partage URL (accepté, amendé C0)                     |
+| `docs/decisions/0012-pwa-service-worker.md`                    | 47      | PWA, service worker, mises à jour (accepté)                                                                              |
+| `docs/decisions/0013-puzzle-workshop-solution.md`              | 95      | objets à placer, solution de référence, export vérifié (accepté)                                                         |
+| `docs/decisions/0014-icon-library.md`                          | —       | bibliothèque d’icônes de l’interface (accepté)                                                                           |
+| `docs/decisions/0015-mes-niveaux.md`                           | —       | « Mes niveaux », niveaux reçus, créations, solution cachée ; reprise automatique avant simulation (accepté, amendé C0)   |
+| `docs/decisions/0016-attribution-licence-niveaux.md`           | 95      | auteur, sources, licence CC BY 4.0 des niveaux (accepté)                                                                 |
+| `docs/decisions/0017-player-construction-and-async-storage.md` | —       | contrat détaillé de stockage/reprise C2 (**proposé**, trois arbitrages en attente ; ne pas implémenter avant validation) |
+| `LICENSE`                                                      | 661     | conditions de licence du code du logiciel (GNU AGPL-3.0-or-later)                                                        |
 
 Sources de vérité exécutables, prioritaires sur toute prose :
 
@@ -100,7 +101,8 @@ Colonne « lire » = lecture obligatoire et suffisante. Ne pas élargir sans rai
 | Conception d'un nouveau niveau                 | `levels/conception-niveaux.md` (se suffit à lui-même)                                                                                                                                | `src/content/levels/`                                          |
 | Contenu d'un niveau                            | Tâche explicite dans `feuille-de-route.md`, `levels/nouveaux-niveaux.md`, ADR 0007 § Scène d'un niveau (aucune extension de campagne prévue en C/M/F)                                | `src/content/levels/`                                          |
 | Parcours end-to-end (v1 : desktop)             | `qualite.md` § Tests end-to-end ; `mobile-editor-interactions.md` § Scénarios d'acceptation (parcours, v2 pour les gestes)                                                           | `e2e/`                                                         |
-| Stockage, import/export, codec URL             | ADR 0011, ADR 0015, `architecture.md` § Stockage et partage                                                                                                                          | `src/infrastructure/`, `src/application/`                      |
+| Contrat de reprise et stockage asynchrone C2   | ADR 0011/0015 amendées C0, ADR 0005, ADR 0017 (**proposée**), `architecture.md` § Stockage et partage                                                                                | ADR 0017 et renvois ciblés                                     |
+| Stockage, import/export, codec URL             | ADR 0011, ADR 0015, ADR 0017 (**proposée : aucune implémentation avant validation**), `architecture.md` § Stockage et partage                                                        | `src/infrastructure/`, `src/application/`                      |
 | Défi d'objets, progression de campagne         | ADR 0010, ADR 0011 § Amendement du 3 octobre 2026 (stockage cible ; `etat.md` pour l’implémentation livrée)                                                                          | `src/application/progression/`, `src/content/`                 |
 | PWA, service worker                            | ADR 0012, ADR 0003                                                                                                                                                                   | racine, `src/app/`                                             |
 | Outillage, script, configuration, CI           | ADR 0003, `package.json`                                                                                                                                                             | racine                                                         |

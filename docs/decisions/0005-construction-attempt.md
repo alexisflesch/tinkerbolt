@@ -66,3 +66,12 @@ autour de l’origine du placement avant le contrôle des quatre coins.
   versionnée distincte, sans ajouter la provenance au niveau ;
 - le confinement par forme complète devra remplacer le test du centre lorsque le
   catalogue physique fournira des dimensions testables.
+
+## Contrat de reprise proposé — C2
+
+La [proposition ADR 0017](0017-player-construction-and-async-storage.md)
+détaille l’enveloppe de construction qui pourrait persister document et
+provenance ensemble, hors du `LevelDocument` partageable. Elle distingue
+le codec de tentative consommée du codec de niveau source et exige leur
+validation relationnelle. **Statut proposé : aucun détail C2 n’est acquis
+par ce renvoi**, notamment les trois arbitrages produit en attente.
