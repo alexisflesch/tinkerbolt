@@ -10,7 +10,6 @@ import type { LevelDocument } from '../domain/level-document';
 import { AppFrame } from '../ui/AppFrame';
 import { Panel } from '../ui/Panel';
 import { BoardShell } from './BoardShell';
-import { useDevelopmentMode } from './development-mode-context';
 import { useDraftRepository } from './draft-repository-context';
 import { LockedLevelPage } from './LockedLevelPage';
 import { randomIdPart } from './random-id-part';
@@ -98,7 +97,6 @@ function FreeEditor({ onCreated }: { readonly onCreated: (draftId: string) => vo
 interface WorkshopProps {
   readonly initialDocument: LevelDocument;
   readonly onDocumentCommitted?: (document: LevelDocument) => void;
-  readonly calibrationDocument?: LevelDocument;
   /** « Jouer » from « Mes niveaux » (M9): open on the puzzle when there is one. */
   readonly startPlaying?: boolean;
   /** ADR 0015 § Révéler: the creation's source, offered to the workshop only. */
@@ -121,7 +119,6 @@ const workshopTitle = ({ metadata }: LevelDocument): string =>
 function Workshop({
   initialDocument,
   onDocumentCommitted,
-  calibrationDocument,
   startPlaying = false,
   authorSource,
 }: WorkshopProps) {
@@ -164,7 +161,6 @@ function Workshop({
       }}
       onPlayAsPlayer={setPlaytest}
       authorSource={authorSource}
-      {...(calibrationDocument === undefined ? {} : { calibrationDocument })}
     />
   );
 }
@@ -187,18 +183,11 @@ function DraftEditor({ draftId }: { readonly draftId: string }) {
     );
   }
 
-  return <StoredDraftEditor draftId={draftId} campaignLevel={campaignLevel} />;
+  return <StoredDraftEditor draftId={draftId} />;
 }
 
-interface StoredDraftEditorProps {
-  readonly draftId: string;
-  /** The campaign level a `<id>-brouillon` creation comes from, if any. */
-  readonly campaignLevel: LevelDocument | undefined;
-}
-
-function StoredDraftEditor({ draftId, campaignLevel }: StoredDraftEditorProps) {
+function StoredDraftEditor({ draftId }: { readonly draftId: string }) {
   const drafts = useDraftRepository();
-  const developmentMode = useDevelopmentMode();
   // `location.state` is typed `any`: read it as `unknown` and narrow it.
   const navigationState: unknown = useLocation().state;
   const [draft] = useState<DraftCreation | null>(() => {
@@ -223,15 +212,11 @@ function StoredDraftEditor({ draftId, campaignLevel }: StoredDraftEditorProps) {
     );
   }
 
-  // ADR 0015 § Révéler: the U28 calibration guide lists the solution; development only.
-  const calibrationDocument = developmentMode ? campaignLevel : undefined;
-
   return (
     <Workshop
       initialDocument={draft.document}
       startPlaying={asksToPlayPuzzle(navigationState)}
       authorSource={draft.source}
-      {...(calibrationDocument === undefined ? {} : { calibrationDocument })}
       onDocumentCommitted={(document) => {
         // Best effort, like progress (ADR 0011): a failed save never blocks editing.
         // The creation's source (ADR 0015) is kept as loaded.

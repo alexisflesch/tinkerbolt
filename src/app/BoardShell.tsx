@@ -24,7 +24,6 @@ import { Button } from '../ui/Button';
 import { ObjectDrawer } from '../ui/ObjectDrawer';
 import { Dialog } from '../ui/Dialog';
 import { SimulationControls } from '../ui/SimulationControls';
-import { CalibrationGuide } from '../ui/CalibrationGuide';
 import { FirstLevelHint } from '../ui/FirstLevelHint';
 import { PwaInvitation } from '../ui/PwaInvitation';
 import { firstLevelHintStep } from './first-level-hint';
@@ -66,8 +65,6 @@ interface BoardShellProps {
     readonly shortLabel?: string;
     readonly onExit: () => void;
   };
-  /** U28: the pristine campaign document used as the author calibration brief. */
-  readonly calibrationDocument?: LevelDocument;
   /** A discreet status over the board until dismissed (M8: a shared level not kept). */
   readonly notice?: string;
   /**
@@ -110,7 +107,6 @@ export function BoardShell({
   resetDocument = initialDocument,
   onPlayAsPlayer,
   exit,
-  calibrationDocument,
   notice,
   authorSource,
   firstLevelHint,
@@ -208,7 +204,6 @@ export function BoardShell({
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isRevealDialogOpen, setIsRevealDialogOpen] = useState(false);
   const revealDialogCancelRef = useRef<HTMLButtonElement>(null);
-  const [isCalibrationOpen, setIsCalibrationOpen] = useState(calibrationDocument !== undefined);
   const shownCampaignVictory =
     simulation.attemptOutcome?.outcome === 'won' ? campaignVictory : null;
   const victoryDialog = useVictoryDialog(shownCampaignVictory !== null);
@@ -456,13 +451,6 @@ export function BoardShell({
             wiring.startWiring(inventoryEntryId);
             setIsDrawerOpen(false);
           }}
-          {...(calibrationDocument === undefined
-            ? {}
-            : {
-                onOpenCalibration: () => {
-                  setIsCalibrationOpen(true);
-                },
-              })}
         />
       )}
       <section
@@ -585,19 +573,6 @@ export function BoardShell({
           {/* The objective remains explicit when other balls also appear on the board. */}
           {currentEditorAttempt(session).document.objects.filter(({ type }) => type === 'ball')
             .length > 1 && <p className="dialog-text">Seule la balle rouge compte.</p>}
-        </Dialog>
-      )}
-      {calibrationDocument !== undefined && isCalibrationOpen && (
-        <Dialog
-          label="Fiche de calibrage"
-          title={<>Calibrage · {calibrationDocument.metadata.title}</>}
-          closeLabel="Fermer la fiche de calibrage"
-          className="calibration-dialog"
-          onClose={() => {
-            setIsCalibrationOpen(false);
-          }}
-        >
-          <CalibrationGuide level={calibrationDocument} />
         </Dialog>
       )}
       {isResetDialogOpen && (

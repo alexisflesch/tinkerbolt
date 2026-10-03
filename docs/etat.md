@@ -1,6 +1,6 @@
 # État du dépôt — TinkerBolt
 
-Dernière mise à jour : 2 octobre 2026. Feuille de route v1 (desktop d’abord) ; V0, V1 (fin de N2), V2a (démo supprimée), V2b (pas de bordure, pas de perte par le haut ; validation visuelle attendue) et V2c (repli hors ligne de `/my-levels`) V3 (navigation et vocabulaire ; validation visuelle attendue) V5 (aperçu des niveaux), V6 (carte de niveau commune ; validation visuelle attendue) et V7 (accueil, en-tête, scrollbar, police Nunito ; validation visuelle attendue) livrées, gate globale verte ; prochaine tâche : V8 (parcours beta-testeur). U3 reste abandonnée.
+Dernière mise à jour : 3 octobre 2026. Feuille de route v1 (desktop d’abord) ; V0, V1 (fin de N2), V2a (démo supprimée), V2b (pas de bordure, pas de perte par le haut ; validation visuelle attendue) et V2c (repli hors ligne de `/my-levels`) V3 (navigation et vocabulaire ; validation visuelle attendue) V5 (aperçu des niveaux), V6 (carte de niveau commune ; validation visuelle attendue) et V7 (accueil, en-tête, scrollbar, police Nunito ; validation visuelle attendue) livrées. V7b livrée (validation visuelle attendue) : fiche supprimée, révélation dev conservée, test U6 corrigé et relancé seul sur instruction de l'auteur. Prochaine tâche : V8 (parcours beta-testeur). U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -30,7 +30,18 @@ l’aperçu réel du tutoriel 5 et la progression de la campagne ; en-tête
 « Titre · Contexte » sans pastille ; scrollbar sable commune ; police Nunito
 embarquée et précachée ; fonds retirés du précache ; atelier neuf « Nouveau
 niveau » ; boîtes d’export au tutoiement ; validation visuelle de l’auteur
-attendue) est livrée. Prochaine tâche : **V8** (parcours beta-testeur).
+attendue) est livrée. **V7b** supprime la fiche de calibrage U28, son bouton
+dans le catalogue, sa propagation et son CSS ; l'ouverture d'une nouvelle
+création de campagne avec la solution révélée en développement reste couverte
+par le test DOM `CampaignDraftEditing` et les tests de `openCampaignDraft`.
+La version publiée garde la solution cachée à l'ouverture. Captures desktop
+dans `tmp/v7b/captures/` ; validation visuelle de l'auteur attendue.
+La gate complète a trouvé une attente prématurée dans **U6 — remet l’atelier
+à zéro** : `openWorkshop` cherchait « Atelier » pendant la navigation.
+Le helper attend maintenant l'URL `/editor` et le plateau visible, puis
+conserve l'assertion du texte. U6 passe seul après un nouveau build ; la gate
+globale n'est pas relancée, à la demande explicite de l'auteur.
+Prochaine tâche : **V8** (parcours beta-testeur).
 Les sources auteur et son fichier d’essai restent intacts ; rien n’est poussé.
 
 ## Stack en place
@@ -187,8 +198,8 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   inchangée. Chaque état engagé de l’historique est enregistré dans la
   création. Le contexte auteur ignore les permissions joueur : les objets de
   départ se déplacent et tournent. Le niveau embarqué et la progression ne
-  changent pas. La fiche de calibrage U28 lit toujours le niveau embarqué et
-  n’est affichée qu’en développement (M11).
+  changent pas. V7b retire la fiche de calibrage U28 ; la solution d'une
+  création neuve reste révélée en développement (M11).
 - Atelier libre `src/content/levels/workshop.json` (scène 16 × 9, inventaire de
   99 par famille, contexte auteur, sans description depuis M14b). Depuis M13,
   il est enregistré à sa première modification engagée : une création
@@ -342,7 +353,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   `DevelopmentModeContext`) : une création de campagne **neuve** s’ouvre
   solution révélée par la commande M7 (`openCampaignDraft(…, { revealSolution
 })`), une création existante est rouverte telle quelle ; la fiche de
-  calibrage U28 n’est affichée qu’en développement. Validation visuelle
+  calibrage U28 est supprimée depuis V7b. Validation visuelle
   attendue (captures `test-results/remix/{levels-locked,remix-victory,remix-workshop,locked-draft}-{390x844,844x390,1440x900}.png`,
   `test-results/my-levels/my-levels-filled-*.png`).
 - Révéler dans l’atelier M12 (ADR 0015 § Révéler) : dans l’atelier d’une
@@ -744,14 +755,10 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   et atelier. Les copies `src/content/levels/tuto-{1..5}.json`
   ne diffèrent de `levels/` que par id, titre, description, auteur et, pour le
   tutoriel 3, l’état initial du ventilateur (vérifié en V1).
-- **Fiche de calibrage U28** : ouvrir une création de campagne en développement
-  affiche la fiche de l’esquisse source avec l’intention/essai décrit par
-  l’auteur, l’inventaire exact autorisé et ses quantités, la solution
-  approximative (placements, rotations et fils) et le décor fixe à préserver.
-  Elle se referme puis se rouvre depuis le catalogue auteur ; l’atelier libre et
-  les créations personnalisées ne sont pas concernées. Le catalogue auteur reste
-  complet pour permettre l’expérimentation, la fiche faisant foi pour
-  l’inventaire joueur.
+- **Fiche de calibrage U28 supprimée (V7b)** : aucun dialogue ni bouton de
+  calibrage, même sous `pnpm dev`. Le catalogue auteur reste complet et
+  l'ouverture solution révélée d'une création neuve de campagne reste active
+  en développement ; la version publiée ouvre sans révéler la solution.
 
 ## Dettes et limites explicites
 
@@ -899,6 +906,25 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+Validation ciblée après le correctif U6 de V7b (3 octobre 2026) : `pnpm build`
+passe, puis le seul test « U6 — remet l’atelier à zéro après confirmation au
+tactile » passe sur `v1` (1 test). L'auteur demande cette relance ciblée puis
+V8, sans nouvelle gate globale : exception consignée dans la feuille de route.
+Fichier d'essai intact ; configuration Playwright temporairement sur 4319
+puis restaurée identique (SHA-256 `9b03b7d8…754cb`).
+
+`pnpm check` après l'implémentation de V7b (3 octobre 2026) : **échoue** sur
+Playwright — 87 tests `v1` réussis, 1 échec dans `editor-interactions.spec.ts`
+(U6, sélection ambiguë de « Atelier » pendant la navigation). Typecheck,
+lint, Prettier, Knip, contenu (6 documents), Vitest (1200 tests, 90 fichiers)
+et build (précache : 55 entrées, 2600,20 Kio) passent. La gate a été exécutée
+hors sandbox et sur le port isolé 4319, le port 4173 étant occupé par une
+autre application. Configuration Playwright restaurée à l'identique
+(SHA-256 `9b03b7d8…754cb`) ; fichier d'essai restauré identique
+(SHA-256 `1113625e…a92907`, mode 644). Captures V7b inspectées par l'agent
+aux deux formats desktop, en dev et production ; validation de l'auteur
+attendue. L'échec U6 est corrigé et son test relancé seul (voir ci-dessus).
 
 `pnpm check` après T1 (2 octobre 2026) : passe — 1200 tests Vitest (90 fichiers), 88 tests
 Playwright `v1` (0 ignoré), précache 55 entrées. `e2e/goal-ball.spec.ts` est stable en

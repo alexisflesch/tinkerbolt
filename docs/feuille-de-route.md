@@ -4,22 +4,29 @@ Rédigée le 2 octobre 2026 avec l'auteur. Remplace la feuille de route de la
 phase « Mes niveaux », archivée dans `feuille-de-route-mes-niveaux.md` (journal
 G1 à N2) : on n'y lit que l'entrée qu'une tâche cite.
 
-Destinataire : l'agent d'implémentation (Claude Code, Opus). Il délègue chaque
-tâche à un sous-agent neuf — **Opus pour le raisonnement et l'UI/UX, Sonnet pour
-l'écriture de code** — et reste responsable du résultat : il relit le diff,
-regarde les captures, lance la gate et tient le journal.
+Destinataire : l'agent d'implémentation (Codex, Sol 6.1). Amendement de l'auteur
+du 3 octobre 2026 : **Sol 6.1 remplace Opus pour le raisonnement et l'UI/UX ;
+Terra remplace Sonnet pour l'écriture de code, ou Luna en effort `xhigh` pour
+les tâches simples. Astra est interdit.** Ces équivalences s'appliquent aux
+mentions Opus/Sonnet des tâches restantes ; les journaux historiques restent
+inchangés. Il délègue chaque tâche à un sous-agent neuf et reste responsable
+du résultat : il relit le diff, regarde les captures, lance la gate et tient
+le journal.
 
-## Point de reprise (pause demandée par l'auteur, 2 octobre 2026)
+## Point de reprise (3 octobre 2026)
 
-**Fait et commité** (gate verte à chaque commit, rien n'est poussé) : V0, V1,
-V2a–c, V3, V4 (maquettes validées), V5, V6, V7, T1. Dernier commit au moment de
-la pause : voir `git log` (T1 `59119d2`, puis ce point de reprise).
+**Fait et commité** (validation prévue pour chaque tâche, rien n'est poussé) :
+V0, V1, V2a–c, V3, V4 (maquettes validées), V5, V6, V7, T1 et V7b
+(suppression de la fiche de calibrage, révélation dev conservée ; validation
+visuelle attendue). V7b : le test U6 a été corrigé et relancé seul à la demande
+de l'auteur, après la gate complète à 87/88 E2E. Dernier commit
+d'implémentation : voir `git log`.
 
 **Validé par l'auteur** : maquettes V4 ; police Nunito vue dans son navigateur
 (V7). **Validation visuelle attendue** : captures V2b, V6, V7 (elles étaient
 dans le scratchpad de la session, perdues ; les régénérer pour V9).
 
-**Prochaines tâches, dans l'ordre** : V7b (ci-dessous), V8, V9.
+**Prochaines tâches, dans l'ordre** : V8, V9.
 
 **Réponses de l'auteur à garder** :
 
@@ -86,6 +93,10 @@ Les règles d'`AGENTS.md` s'appliquent. Compléments propres à la v1 :
   `feat(ui): renvoie le logo vers l'accueil (V3)`. Ne jamais pousser.
 - **Gate** : `pnpm check` avant chaque commit. `pnpm check:fast` pendant le
   travail.
+  Exception autorisée par l'auteur le 3 octobre 2026 pour V7b : après la gate
+  complète (1200 tests Vitest et 87/88 E2E), corriger la synchronisation du
+  test U6, relancer uniquement celui-ci, puis passer à V8 sans nouvelle gate
+  globale. Cette exception ne s'étend pas aux tâches suivantes.
 - **Captures** d'un changement visible : 1440 × 900 et 1280 × 720, inspectées
   par l'agent, citées dans le journal. L'auteur valide ; la tâche reste
   « validation visuelle attendue » dans `etat.md` jusque-là.
@@ -893,3 +904,74 @@ an accessible element with the role "heading" and name "Amène la balle jusqu’
   de pixels, mêmes formats.
 - Preuves : 5 exécutions isolées vertes (2 réussis chacune) ; `pnpm check` verte
   (1200 tests Vitest, 88 tests Playwright `v1`, précache 55 entrées).
+
+### V7b — Retirer la fiche de calibrage — fait (validation visuelle attendue) — commit V7b (3 octobre 2026)
+
+- Reprise autorisée par l'auteur avec Codex : Sol 6.1 pour le rôle Opus,
+  Terra pour le rôle Sonnet, ou Luna `xhigh` pour les tâches simples ; Astra
+  interdit. Consignes d'`AGENTS.md` et introduction de cette feuille mises à
+  jour avant implémentation. Retrait du code délégué à Luna `xhigh`, diff
+  relu par la session principale.
+- Test rouge : `CampaignDraftEditing.test.tsx`, premier test réécrit pour V7b,
+  `expect(element).not.toBeInTheDocument()` : le dialogue « Fiche de
+  calibrage » est encore présent à l'ouverture d'une création en mode dev.
+  Le test conserve le brouillon distinct, la source et la progression
+  intactes ; il vérifie aussi les objets et les fils de la solution révélée.
+- Supprimés : `CalibrationGuide.tsx`, son import, son dialogue et son état
+  dans `BoardShell`, la prop `calibrationDocument` propagée depuis
+  `EditorPage`, le bouton et le callback `onOpenCalibration` du catalogue,
+  l'import `ClipboardList` et les styles `.calibration-*` / `.drawer-calibration`.
+  La prop `campaignLevel` et la lecture de `DevelopmentModeContext` de
+  `StoredDraftEditor`, devenues inutiles, sont retirées. `LevelsPage`,
+  `openCampaignDraft` et le chemin de révélation restent inchangés.
+- Commentaires actualisés : `App`, `main`, `DevelopmentModeContext` et le
+  test E2E `campaign-draft` (ses assertions d'absence sont conservées).
+  ADR 0015 § Révéler amendée et mentions du comportement livré dans
+  `etat.md` corrigées ; le contexte historique de l'ADR est conservé.
+- La recherche `calibrat` prescrite par la tâche manquait « calibrage » :
+  recherche élargie à `calibr`. La première gate exécutée hors sandbox a
+  révélé l'attente obsolète de `EditAndRemix.test.tsx` (« avec la fiche »).
+  Ce test est réécrit pour l'absence du dialogue et du bouton, avec son
+  assertion de solution révélée conservée. Aucun test supprimé ni ignoré.
+- Tests ciblés verts : `CampaignDraftEditing`, `ObjectDrawer` et
+  `campaign-draft` (23 tests), puis `EditAndRemix` (10 tests).
+- Captures : `tmp/v7b/captures/atelier-{dev,production}-{1440x900,1280x720}.png`,
+  prises sous `pnpm dev` et sur le build servi par `vite preview`, toutes
+  inspectées par la session principale : plateau et catalogue dégagés,
+  solution du tutoriel 5 révélée avec ses deux objets et ses deux fils en
+  dev, cachée en production ; aucun dialogue ni bouton de fiche. Le script
+  vérifie aussi la source et le rechargement sans modification du brouillon.
+  La référence comparée est l'import compilé du niveau : Vite arrondit trois
+  coordonnées du JSON brut d'un ULP, également dans le build antérieur à V7b ;
+  aucun contenu ni réglage physique modifié.
+- Gate : typecheck, lint, Prettier, Knip, contenu (6 documents), Vitest
+  (1200 tests, 90 fichiers) et build (précache : 55 entrées, 2600,20 Kio)
+  passent. Le passage dans le sandbox s'est arrêté sur le
+  socket local de `tsx` (`EPERM`), comme lors des reprises précédentes ;
+  la gate est exécutée hors sandbox. Le fichier d'essai de l'auteur est
+  écarté temporairement et restauré identique à chaque passage.
+- Première exécution Playwright interrompue : le port 4173 sert une autre
+  application (« Nouveau profil » dans les snapshots), que `reuseExistingServer`
+  a réutilisée. Nouvelle gate sur le port isolé 4319 : adaptation temporaire
+  de l'URL et du port de preview, configuration restaurée identique ensuite.
+  Aucun serveur tiers arrêté, aucune spec ou assertion modifiée.
+- Résultat Playwright sur TinkerBolt : **87 réussis, 1 échec** —
+  `editor-interactions.spec.ts`, U6 « remet l’atelier à zéro »,
+  `openWorkshop`, ligne 13 : `getByText('Atelier', { exact: true })`
+  trouve encore le bouton du menu et le titre de la carte d'accueil
+  (`strict mode violation`) pendant la navigation. Le snapshot final
+  montre bien l'Atelier : arrivée asynchrone. Arrêt et demande à l'auteur
+  avant correction du test préexistant.
+- L'auteur autorise le correctif U6 et demande de ne relancer que ce test
+  avant V8. `openWorkshop` attend désormais l'URL `/editor` et la région
+  « Plateau de jeu » visible avant l'assertion du texte « Atelier », gardée
+  identique. Aucun délai arbitraire, aucune assertion retirée.
+  `pnpm build`, puis `playwright test e2e/editor-interactions.spec.ts
+  --project=v1 --grep 'U6 — remet l’atelier à zéro'` : **1 test réussi**.
+  La première sélection, ancrée avec `^`, ne lançait aucun test (Playwright
+  filtre le nom complet avec le fichier) ; sélection corrigée, vérifiée
+  avec `--list` : un seul test. Gate globale non relancée, sur instruction
+  explicite de l'auteur.
+- Fichier d'essai restauré identique (SHA-256 `1113625e…a92907`, mode 644),
+  configuration Playwright restaurée identique (SHA-256 `9b03b7d8…754cb`).
+- Pour l'auteur : valider les captures V7b. Rien n'est poussé ; suite : V8.

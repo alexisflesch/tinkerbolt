@@ -306,14 +306,15 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     expect(toPlaceObjects(storedCreation(levelTwoDraftId).document)).toEqual([]);
   });
 
-  it('en développement, ouvre une nouvelle création de campagne solution révélée, avec la fiche', () => {
+  it('en développement, ouvre une nouvelle création de campagne avec la solution révélée, sans fiche de calibrage (V7b)', () => {
     const { repository } = createProgressRepository(levelOneResolved);
     window.history.replaceState(null, '', '/levels');
     render(<App progressRepository={repository} developmentMode />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' }));
 
-    expect(screen.getByRole('dialog', { name: 'Fiche de calibrage' })).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: 'Fiche de calibrage' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Ouvrir la fiche de calibrage' })).toBeNull();
     expect(toPlaceObjects(storedCreation(levelTwoDraftId).document)).toHaveLength(
       levelTwo.solution?.placements.length ?? -1,
     );

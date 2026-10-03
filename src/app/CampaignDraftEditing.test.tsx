@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { creationFromLevel } from '../application/drafts/creation-from-level';
+import { workshopFromPuzzle } from '../application/puzzle/puzzle-workshop';
 import type { ProgressRepository } from '../application/progression/progress-repository';
 import { embeddedLevels } from '../content/embedded-levels';
 import type * as EmbeddedLevels from '../content/embedded-levels';
@@ -100,10 +101,9 @@ describe('éditer un niveau de la campagne (U17)', () => {
     vi.restoreAllMocks();
   });
 
-  it('ouvre depuis la liste un brouillon distinct du niveau en mode auteur', () => {
+  it('ouvre en développement un brouillon distinct, solution révélée et sans fiche de calibrage (V7b)', () => {
     const { repository, save } = createProgressRepository();
     window.history.replaceState(null, '', '/levels');
-    // The calibration guide only shows in development (M11, ADR 0015 § Révéler).
     render(<App progressRepository={repository} developmentMode />);
 
     const card = screen.getByRole('region', { name: 'Niveau 2' });
@@ -115,20 +115,11 @@ describe('éditer un niveau de la campagne (U17)', () => {
     );
     expect(screen.queryByText('Éditeur · Par-dessus le mur (remix)')).not.toBeInTheDocument();
     expect(screen.getByText('Atelier')).toBeVisible();
-    const calibration = screen.getByRole('dialog', { name: 'Fiche de calibrage' });
-    expect(calibration).toHaveTextContent('Le tremplin transforme la chute de la rouge en saut.');
-    expect(calibration).toHaveTextContent('Tremplin');
-    expect(calibration).toHaveTextContent('1 exemplaire');
-    expect(calibration).toHaveTextContent('Poutre courte');
-    expect(calibration).toHaveTextContent('Masse');
-    expect(calibration).toHaveTextContent('Solution approximative à viser');
-    fireEvent.click(
-      within(calibration).getByRole('button', { name: 'Fermer la fiche de calibrage' }),
-    );
+    expect(screen.queryByRole('dialog', { name: 'Fiche de calibrage' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir la fiche de calibrage' }));
-    expect(screen.getByRole('dialog', { name: 'Fiche de calibrage' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Fermer la fiche de calibrage' }));
+    expect(
+      screen.queryByRole('button', { name: 'Ouvrir la fiche de calibrage' }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Fermer le catalogue' }));
     expect(screen.getByRole('button', { name: 'Exporter le niveau' })).toBeVisible();
 
@@ -139,6 +130,12 @@ describe('éditer un niveau de la campagne (U17)', () => {
       'Par-dessus le mur (remix)',
     );
     expect(stored.status === 'ok' ? stored.creation?.source : null).toEqual(pristineLevelTwo);
+    const revealed = workshopFromPuzzle(levelTwo);
+    expect(levelTwo.solution?.placements.length).toBeGreaterThan(0);
+    expect(stored.status === 'ok' ? stored.creation?.document.objects : null).toEqual(
+      revealed.objects,
+    );
+    expect(stored.status === 'ok' ? stored.creation?.document.wires : null).toEqual(revealed.wires);
     expect(
       window.localStorage.getItem('tinkerbolt:draft:campaign-02-par-dessus-le-mur'),
     ).toBeNull();

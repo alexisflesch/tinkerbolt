@@ -10,6 +10,8 @@ const openWorkshop = async (page: Page): Promise<void> => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
   await page.getByRole('button', { name: 'Atelier', exact: true }).click();
+  await expect(page).toHaveURL(/\/editor$/u);
+  await expect(page.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
   await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
 };
 

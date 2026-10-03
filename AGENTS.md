@@ -22,9 +22,9 @@ son journal. L'état réellement livré est dans `docs/etat.md`.
 n'y lit que l'entrée qu'une tâche cite.
 
 Le découpage en tranches est dans `docs/backlog.md`. La reprise est conduite par
-Claude Code (Opus) ; il peut déléguer une sous-tâche délimitée à un sous-agent
-Claude Sonnet ou Opus et reste responsable du résultat. `gpt-6-astra` n'est
-jamais utilisé.
+Codex (Sol 6.1, équivalent d'Opus) ; il peut déléguer une sous-tâche délimitée
+à Terra (équivalent de Sonnet), ou à Luna en effort `xhigh` pour les tâches
+simples, et reste responsable du résultat. `gpt-6-astra` n'est jamais utilisé.
 
 Le code, les schémas exécutables et les tests priment sur les exemples narratifs.
 Un exemple obsolète doit être corrigé ou supprimé.

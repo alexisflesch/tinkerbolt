@@ -1830,81 +1830,6 @@ select:focus-visible {
   line-height: 1.4;
 }
 
-.calibration-dialog {
-  width: min(560px, calc(100vw - 2 * var(--space-4)));
-}
-
-.calibration-dialog .panel-body {
-  gap: var(--space-4);
-}
-
-.calibration-guide {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.calibration-section {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--panel-line);
-}
-
-.calibration-section:first-of-type {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.calibration-section h3 {
-  color: var(--ink);
-  font-size: var(--text-m);
-}
-
-.calibration-section p {
-  line-height: 1.4;
-}
-
-.calibration-note {
-  color: var(--muted-ink);
-  font-size: var(--text-s);
-}
-
-.calibration-list {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.calibration-list li {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  border: 1px solid var(--panel-line);
-  border-radius: var(--radius-m);
-  background: var(--panel-bg-raised);
-  font-size: var(--text-s);
-}
-
-.calibration-list li span {
-  color: var(--muted-ink);
-  text-align: right;
-}
-
-.calibration-solution-list {
-  padding-left: var(--space-4);
-  list-style: decimal;
-}
-
-.calibration-wire-list {
-  margin-top: var(--space-2);
-}
-
 /*
  * U4b : victoire de campagne (`CampaignVictoryDialog.tsx`). Une carte centrée
  * sur toute la largeur utile en portrait téléphone : paliers côte à côte,
@@ -2240,32 +2165,6 @@ select:focus-visible {
   font-size: var(--text-xs);
   font-weight: 700;
   white-space: nowrap;
-}
-
-.drawer-calibration {
-  display: inline-flex;
-  min-width: var(--touch-target);
-  min-height: var(--touch-target);
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 var(--space-2);
-  border: 2px solid var(--night-950);
-  border-radius: var(--radius-m);
-  color: var(--on-night);
-  background: var(--night-700);
-  font: inherit;
-  font-size: var(--text-s);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.drawer-calibration:active {
-  transform: translateY(1px);
-}
-
-.object-drawer-collapsed .drawer-calibration {
-  display: none;
 }
 
 .drawer-toggle,

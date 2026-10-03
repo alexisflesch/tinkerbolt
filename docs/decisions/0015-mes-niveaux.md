@@ -200,8 +200,11 @@ le remixeur agrandit la scène, comme une pose d'auteur (`addAuthoredPlacement`)
 
 Sous `pnpm dev` (`import.meta.env.DEV`), la création d'un niveau de campagne
 s'ouvre solution révélée, pour le calibrage par le mainteneur, comme
-`unlockAllLevels` (U5b). La fiche de calibrage U28, qui liste la solution,
-n'est affichée qu'en développement.
+`unlockAllLevels` (U5b).
+
+Amendement du 3 octobre 2026 (V7b, demande de l'auteur) : la fiche de calibrage
+U28 et son bouton sont supprimés, y compris en développement. L'ouverture
+solution révélée sous `pnpm dev` est conservée.
 
 ### Atelier libre
 

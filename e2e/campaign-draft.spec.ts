@@ -55,7 +55,7 @@ test('édite un tutoriel de campagne au toucher et conserve le brouillon', async
   await resolveLevelOne(page);
   await page.goto('/levels');
   await page.getByRole('button', { name: 'Modifier le niveau 2' }).tap();
-  // A production build shows no calibration guide (M11, ADR 0015 § Révéler).
+  // V7b removes the calibration guide from campaign drafts.
   await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Fiche de calibrage' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();

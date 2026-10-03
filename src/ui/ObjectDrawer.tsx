@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronUp, ClipboardList, Plus, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
 
 import {
   currentEditorAttempt,
@@ -103,8 +103,6 @@ interface ObjectDrawerProps {
   readonly isWiringActive: boolean;
   /** The author's card passes nothing; the player's names its inventory entry (U21). */
   readonly onSelectWire: (inventoryEntryId?: string) => void;
-  /** U28: reopens the campaign calibration brief. */
-  readonly onOpenCalibration?: () => void;
 }
 
 interface WireCardProps {
@@ -203,7 +201,6 @@ export function ObjectDrawer({
   onSelectKind,
   isWiringActive,
   onSelectWire,
-  onOpenCalibration,
 }: ObjectDrawerProps) {
   const drawerIsExpanded = isDrawerOpen || isSideLayout;
   const inventory =
@@ -241,18 +238,6 @@ export function ObjectDrawer({
             <h2>Objets disponibles</h2>
           </div>
           <span className="object-count">{objectCountLabel}</span>
-          {onOpenCalibration !== undefined && (
-            <button
-              className="drawer-calibration"
-              type="button"
-              aria-label="Ouvrir la fiche de calibrage"
-              aria-haspopup="dialog"
-              onClick={onOpenCalibration}
-            >
-              <ClipboardList size={18} aria-hidden="true" />
-              <span>Fiche</span>
-            </button>
-          )}
           <button
             className="drawer-toggle"
             type="button"

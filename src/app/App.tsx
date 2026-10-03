@@ -53,7 +53,7 @@ interface AppProps {
   /**
    * Dev-mode tools (ADR 0015 § Révéler): `main.tsx` passes
    * `import.meta.env.DEV`; a new campaign creation opens with its solution
-   * revealed and the calibration guide shows. `false` by default.
+   * revealed. `false` by default.
    */
   readonly developmentMode?: boolean;
   /** U10: replaces the production service worker registration (tests only). */
