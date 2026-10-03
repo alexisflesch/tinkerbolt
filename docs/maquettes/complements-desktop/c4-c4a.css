@@ -243,6 +243,8 @@ small {
   width: 256px;
   height: 24px;
   transform: translateX(-50%);
+  /* La sélection transformée contient le menu : au-dessus des sprites, sous les propriétés. */
+  z-index: 3;
 }
 .selection-label {
   position: absolute;
@@ -266,9 +268,9 @@ small {
   height: 24px;
   position: absolute;
   top: 0;
-  left: 50%;
+  left: 0;
+  width: 100%;
   transform-origin: center;
-  margin-left: -128px;
   padding: 2px;
   touch-action: none;
 }
@@ -276,23 +278,34 @@ small {
   width: 100%;
   height: 16px;
 }
-.handle-line {
-  position: absolute;
-  bottom: 36px;
-  left: 50%;
-  width: 1px;
-  height: 14px;
-  background: #2f67c7;
-}
+/* Ancrages dans le repère de la poutre ; les pictogrammes restent droits. */
 .handles {
   position: absolute;
-  bottom: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 12px;
+  inset: 0;
+  transform: rotate(var(--selection-angle, 0deg));
+  transform-origin: center;
+  pointer-events: none;
+  z-index: 1;
+}
+.handle-line {
+  position: absolute;
+  height: 1px;
+  background: #2f67c7;
+  transform-origin: left center;
+}
+.rotation-handle-line {
+  top: 0;
+  left: 0;
+  width: calc(28px * 1.4142135624 - 14px);
+  transform: rotate(225deg);
+}
+.size-handle-line {
+  top: 50%;
+  left: 100%;
+  width: 14px;
 }
 .handle {
+  position: absolute;
   width: 44px;
   height: 44px;
   min-width: 44px;
@@ -300,7 +313,16 @@ small {
   padding: 8px;
   color: #fff;
   background: transparent;
-  position: relative;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+#rotation-handle {
+  top: -28px;
+  left: -28px;
+}
+#size-handle {
+  top: 50%;
+  left: calc(100% + 28px);
 }
 .handle::before {
   content: '';
@@ -311,6 +333,7 @@ small {
 }
 .handle svg {
   position: relative;
+  transform: rotate(var(--icon-angle, 0deg));
   width: 18px;
   height: 18px;
 }

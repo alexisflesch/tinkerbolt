@@ -83,8 +83,9 @@
           />
           <div class="selected-object" id="selected-object">
             <div class="selection-label" id="selection-label">Poutre moyenne</div>
-            <div class="handle-line"></div>
             <div class="handles">
+              <div class="handle-line rotation-handle-line"></div>
+              <div class="handle-line size-handle-line"></div>
               <button
                 class="handle"
                 id="rotation-handle"
@@ -224,15 +225,16 @@
         if (sizeMenu.hidden) return;
         const boardBounds = byId('board').getBoundingClientRect();
         const selectedBounds = selected.getBoundingClientRect();
+        const handleBounds = byId('size-handle').getBoundingClientRect();
         sizeMenu.style.maxHeight = `${boardBounds.height - 32}px`;
         const menuBounds = sizeMenu.getBoundingClientRect();
         const left = Math.max(
           boardBounds.left + 16,
-          Math.min(selectedBounds.left + 200, boardBounds.right - menuBounds.width - 16),
+          Math.min(handleBounds.right + 12, boardBounds.right - menuBounds.width - 16),
         );
         const top = Math.max(
           boardBounds.top + 16,
-          Math.min(selectedBounds.top - 42, boardBounds.bottom - menuBounds.height - 16),
+          Math.min(handleBounds.top - 42, boardBounds.bottom - menuBounds.height - 16),
         );
         sizeMenu.style.left = `${left - selectedBounds.left}px`;
         sizeMenu.style.top = `${top - selectedBounds.top}px`;
@@ -279,8 +281,13 @@
       };
       const renderBeam = () => {
         byId('beam-image').src = `../../../public/assets/sprites/beam-${size}@2x.png`;
-        byId('beam-object').style.width = `${lengths[size]}px`;
-        byId('beam-object').style.marginLeft = `${-lengths[size] / 2}px`;
+        selected.style.width = `${lengths[size]}px`;
+        selected.style.setProperty('--selection-angle', `${angle}deg`);
+        selected.style.setProperty('--icon-angle', `${-angle}deg`);
+        const radians = (angle * Math.PI) / 180;
+        const rotatedHeight =
+          lengths[size] * Math.abs(Math.sin(radians)) + 24 * Math.abs(Math.cos(radians));
+        byId('selection-label').style.top = `${12 + rotatedHeight / 2 + 12}px`;
         byId('beam-object').style.transform = `rotate(${angle}deg)`;
         byId('selection-label').textContent =
           `Poutre ${names[size]}${locked ? ' · verrouillée' : ''}`;
