@@ -1,6 +1,10 @@
 # État du dépôt — TinkerBolt
 
-Dernière mise à jour : 3 octobre 2026. Feuille de route v1 (desktop d’abord) ; V0, V1 (fin de N2), V2a (démo supprimée), V2b (pas de bordure, pas de perte par le haut ; validation visuelle attendue) et V2c (repli hors ligne de `/my-levels`) V3 (navigation et vocabulaire ; validation visuelle attendue) V5 (aperçu des niveaux), V6 (carte de niveau commune ; validation visuelle attendue) et V7 (accueil, en-tête, scrollbar, police Nunito ; validation visuelle attendue) livrées. V7b livrée (validation visuelle attendue) : fiche supprimée, révélation dev conservée, test U6 corrigé et relancé seul sur instruction de l'auteur. V8 livrée : parcours beta-testeur desktop complet, gate verte (1200 tests Vitest, 89 E2E), validation visuelle attendue. Prochaine tâche : V9 (recette avec l’auteur). U3 reste abandonnée.
+Dernière mise à jour : 3 octobre 2026. Feuille de route v1 desktop terminée
+(V0 à V9). V9 clôturée par l'auteur : le fonctionnement du core est validé.
+Les retouches et les détails visuels seront réévalués avec lui dans une
+nouvelle fenêtre. Dernière gate V9 verte : 1200 tests Vitest et 89 E2E.
+U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -16,26 +20,27 @@ La feuille de route v1 (desktop d’abord) est dans
 archives, projet Playwright `v1`), **V1** (fin de N2 : Knip, test d’export,
 copies des tutoriels vérifiées), **V2a** (route, page, contenu et tests de la
 démonstration supprimés), **V2b** (parchemin et grille sur tout le viewport,
-plus de perte par le haut ; validation visuelle de l’auteur attendue) et **V2c**
-(repli hors ligne de `/my-levels`) sont livrées, gate globale verte. **V3**
+plus de perte par le haut) et **V2c** (repli hors ligne de `/my-levels`) sont
+livrées, gate globale verte. **V3**
 (navigation et vocabulaire : logo lié à l’accueil, « Jouer » → Campagne, lexique
 Accueil · Campagne · Atelier · Mes niveaux · Paramètres, `/import` hors ligne ;
-validation visuelle de l’auteur attendue) est livrée. **V5** (aperçu d’un niveau :
+détails visuels à réévaluer en fenêtre fraîche) est livrée. **V5** (aperçu d’un
+niveau :
 `renderLevelPreview`, cache par empreinte, composant `LevelPreview`) est livrée.
 **V6** (carte de niveau commune `LevelCard` avec aperçu, pour la campagne,
 « Mes créations » et « Niveaux reçus » ; « Importer » et « Nouveau niveau » dans
-le bandeau de Mes niveaux ; « Modifié le … » sur les créations ; validation
-visuelle de l’auteur attendue) est livrée. **V7** (accueil de la maquette avec
+le bandeau de Mes niveaux ; « Modifié le … » sur les créations ; détails visuels
+à réévaluer en fenêtre fraîche) est livrée. **V7** (accueil de la maquette avec
 l’aperçu réel du tutoriel 5 et la progression de la campagne ; en-tête
 « Titre · Contexte » sans pastille ; scrollbar sable commune ; police Nunito
 embarquée et précachée ; fonds retirés du précache ; atelier neuf « Nouveau
-niveau » ; boîtes d’export au tutoiement ; validation visuelle de l’auteur
-attendue) est livrée. **V7b** supprime la fiche de calibrage U28, son bouton
+niveau » ; boîtes d’export au tutoiement ; détails visuels à réévaluer en
+fenêtre fraîche) est livrée. **V7b** supprime la fiche de calibrage U28, son bouton
 dans le catalogue, sa propagation et son CSS ; l'ouverture d'une nouvelle
 création de campagne avec la solution révélée en développement reste couverte
 par le test DOM `CampaignDraftEditing` et les tests de `openCampaignDraft`.
 La version publiée garde la solution cachée à l'ouverture. Captures desktop
-dans `tmp/v7b/captures/` ; validation visuelle de l'auteur attendue.
+dans `tmp/v7b/captures/`.
 La gate complète a trouvé une attente prématurée dans **U6 — remet l’atelier
 à zéro** : `openWorkshop` cherchait « Atelier » pendant la navigation.
 Le helper attend maintenant l'URL `/editor` et le plateau visible, puis
@@ -49,9 +54,16 @@ par leurs codecs et comparés ; une nouvelle réception conserve la victoire
 sans doublon. Un troisième contexte reçoit le lien avec la solution cachée.
 Les refus d'essayer et d'exporter sans objet « À placer » expliquent la marche
 à suivre ; aucun changement de production nécessaire. Captures aux deux
-formats dans `tmp/v8/captures/`, validation de l'auteur attendue.
+formats dans `tmp/v8/captures/`, détails visuels à réévaluer en fenêtre fraîche.
 La gate globale de V8 est verte, y compris U6 corrigé.
-Prochaine tâche : **V9** (recette finale avec l'auteur).
+**V9** est terminée sur instruction de l'auteur : le fonctionnement du core
+est validé et clôture cette reprise de la v1. Galerie dans
+`tmp/v9/recette.html`, textes dans `tmp/v9/textes.md`, 136 captures pour
+68 états aux deux formats desktop. README actualisé. Les retouches et les
+détails visuels seront réévalués avec l'auteur dans une nouvelle fenêtre ;
+aucune tâche de cette feuille de route ne reste en attente de validation.
+Les mentions d'attente dans les comptes rendus de gates précédents décrivent
+l'état au moment de leur exécution.
 Les sources auteur et son fichier d’essai restent intacts ; rien n’est poussé.
 
 ## Stack en place
@@ -508,7 +520,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   `sprite-assets.test.ts` (dimensions et budget des trois fichiers, vignette) et
   parcours `e2e/beam-sprites.spec.ts` (captures
   `test-results/beam-sprites/beams-{390x844,844x390,1440x900}.png`).
-  **Validation visuelle de l’auteur attendue.**
+  **Détails visuels à réévaluer en fenêtre fraîche.**
 - Fantôme de placement (U1, spécification C1 de `plan-remise-en-jeu.md`) :
   l’objet en cours de placement est dessiné par le renderer avec son sprite,
   son empreinte et sa rotation réelles, à l’échelle de la caméra, translucide
@@ -527,7 +539,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   (U1) »), `App.test.tsx` et parcours `e2e/placement-ghost.spec.ts` (boîte du
   fantôme = empreinte puis objet posé, captures
   `test-results/placement-ghost/ghost-{valid,invalid}-{390x844,844x390,1440x900}.png`).
-  **Validation visuelle de l’auteur attendue.**
+  **Détails visuels à réévaluer en fenêtre fraîche.**
 - Zones de construction et déplacement hors zone (U13) : en résolution,
   pendant la construction, le plateau dessine chaque zone qui restreint la
   pose (teinte bleue légère et contour en tirets, sous les objets), toutes
@@ -548,7 +560,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   et parcours tactile `e2e/build-zones.spec.ts` (pixels de la zone, refus
   unique, objet revenu, déplacement accepté ; captures
   `test-results/build-zones/{zone,hors-zone,refus}-{390x844,844x390,1440x900}.png`).
-  **Validation visuelle de l’auteur attendue.**
+  **Détails visuels à réévaluer en fenêtre fraîche.**
 - Balle cible sans surcharge (R1, remplace le rendu U7, ADR 0006 amendée) :
   sprites rouges pour la cible et bleus pour les autres, sans anneau ajouté au
   repos, au zoom ni en simulation. Une balle sélectionnée n’est plus encadrée
@@ -558,7 +570,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   compte. ». Les contours de placement et « À placer » sont conservés.
   Tests renderer, App et E2E sur pixels réels. Neuf captures inspectées :
   `test-results/goal-ball/{repos,selection,simulation}-{390x844,844x390,1440x900}.png` ;
-  validation visuelle de l’auteur attendue.
+  détails visuels à réévaluer en fenêtre fraîche.
 - Aide du niveau 1 (U8) : sur le premier niveau de la campagne, jamais
   résolu, une carte brève (liseré jaune, ampoule, bouton « Masquer l’aide »)
   dit d’abord « Touche « Lancer » pour voir la machine tourner. », puis, de
@@ -578,7 +590,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   `e2e/first-level-hint.spec.ts` (toucher, rechargement, boîtes disjointes du
   plateau et des boutons ; captures
   `test-results/first-level-hint/{lancer,tiroir}-{390x844,844x390,1440x900}.png`).
-  **Validation visuelle de l’auteur attendue.**
+  **Détails visuels à réévaluer en fenêtre fraîche.**
 - Caméra pure `src/presentation/board-camera.ts` (ADR 0007) : ajustement
   `contain` à la scène, bornes de zoom, panoramique, pincement, boutons de
   cadrage, recadrage sur vrai redimensionnement seulement.
@@ -616,7 +628,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   « Mes niveaux » ont un repli hors ligne (motif testé dans
   `scripts/navigate-fallback-allowlist.ts`, V2c ; `/import` ajouté par V3). Le hook `usePwaUpdateStatus(phase)` expose une mise à jour en
   attente seulement pendant une phase sûre, hors simulation et manipulation.
-- **U10 — invitations PWA** (2 octobre 2026, validation visuelle attendue) :
+- **U10 — invitations PWA** (2 octobre 2026, détails visuels à réévaluer en fenêtre fraîche) :
   une carte « Nouvelle version disponible. » avec « Mettre à jour » et « Plus
   tard » se montre en tête de l’accueil et, sur un plateau, dans l’emplacement
   réservé, en phase sûre et tant qu’aucune commande n’y a été validée (le
@@ -628,7 +640,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   Décision pure `pwaInvitation`, port de service worker injectable
   (`RegisterServiceWorker`) ; E2E `e2e/pwa-invitation.spec.ts` sur le build
   réel (nouvelle version enregistrée sur la même portée, événement simulé).
-- **U11 — paramètres** (2 octobre 2026, validation visuelle attendue) :
+- **U11 — paramètres** (2 octobre 2026, détails visuels à réévaluer en fenêtre fraîche) :
   `/settings` n’est plus vide. Le panneau « Pseudo » montre le pseudo retenu
   dans le champ « Pseudo retenu » (44 px de haut au moins). « Enregistrer le
   pseudo » le remplace, espaces de bord retirés ; un champ vide l’oublie.
@@ -652,7 +664,7 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   `local-storage-preferences-repository.test.ts`, `SettingsPage.test.tsx` et
   parcours tactile `e2e/settings.spec.ts` (390 × 844 et 844 × 390 ; captures
   `test-results/settings/{repos,pseudo-invalide,confirmation,statut}-{390x844,844x390,1440x900}.png`).
-  **Validation visuelle de l’auteur attendue.**
+  **Détails visuels à réévaluer en fenêtre fraîche.**
 - **U27 — icônes d’interface** : les pictogrammes d’action, de navigation, de cadrage, de catalogue, d’export et de résultat utilisent `lucide-react` (ADR 0014). Les libellés accessibles restent inchangés.
 - **U6 — recommencer et remise à zéro de l’atelier** : pendant la simulation,
   une seule commande « Recommencer » est visible ; dans l’atelier, « Ràz atelier »
@@ -916,6 +928,15 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` à la clôture de V9 (3 octobre 2026) : **passe** — typecheck,
+lint, formatage, Knip, contenu (6 documents), 1200 tests Vitest (90 fichiers),
+build (précache : 55 entrées, 2600,20 Kio) et **89 tests Playwright v1
+réussis**, aucun ignoré. V9 ne change que la documentation ; le core est
+validé par l'auteur, les détails visuels seront repris en fenêtre fraîche.
+Gate sur le port isolé 4319 ; configuration restaurée identique (SHA-256
+`9b03b7d8…754cb`) et fichier d'essai restauré identique (SHA-256
+`1113625e…a92907`, mode 644).
 
 `pnpm check` après V8 (3 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu (6 documents embarqués), 1200 tests Vitest

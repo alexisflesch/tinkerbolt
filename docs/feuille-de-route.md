@@ -15,19 +15,23 @@ le journal.
 
 ## Point de reprise (3 octobre 2026)
 
-**Fait et commité** (validation prévue pour chaque tâche, rien n'est poussé) :
-V0, V1, V2a–c, V3, V4 (maquettes validées), V5, V6, V7, T1, V7b et V8
-(suppression de la fiche de calibrage, révélation dev conservée ; validation
-visuelle attendue). V7b : le test U6 a été corrigé et relancé seul à la demande
-de l'auteur, après la gate complète à 87/88 E2E. V8 : parcours complet
-desktop couvert, gate verte (1200 tests Vitest, 89 E2E). Dernier commit
-d'implémentation : voir `git log`.
+**Feuille de route v1 terminée** : V0 à V9, dont V7b (fiche de calibrage
+retirée, révélation dev conservée) et V8 (parcours beta-testeur couvert).
+V9 est clôturée par l'auteur le 3 octobre 2026 : le core de l'application
+fonctionne et constitue le résultat validé pour cette reprise. Gate V9
+verte : 1200 tests Vitest et 89 E2E. Dernier commit : voir `git log`.
+Rien n'est poussé.
 
-**Validé par l'auteur** : maquettes V4 ; police Nunito vue dans son navigateur
-(V7). **Validation visuelle attendue** : captures V2b, V6, V7 (elles étaient
-dans le scratchpad de la session, perdues ; les régénérer pour V9).
+**Suite décidée par l'auteur** : reprendre les retouches et réévaluer les
+détails visuels avec lui dans une nouvelle fenêtre. Les anciennes mentions
+« validation visuelle attendue » du journal sont historiques ; elles ne
+laissent aucune tâche ouverte dans cette feuille de route. Aucun nouveau
+travail d'interface n'est à commencer dans la présente session.
 
-**Prochaine tâche** : V9 (recette finale avec l'auteur).
+**Dossier de recette conservé** : `tmp/v9/recette.html` et
+`tmp/v9/textes.md`, 136 captures aux deux formats desktop. Les maquettes V4
+et la police Nunito ont été validées auparavant ; les détails visuels seront
+réévalués lors de la prochaine reprise.
 
 **Réponses de l'auteur à garder** :
 
@@ -84,6 +88,10 @@ propose :
    niveaux, y compris ceux de la campagne, pour inviter au remix.
 6. **Maquettes avant code** pour tout ce qui relève du goût (V4) : aucun agent
    n'implémente un écran restylé sans maquette validée par l'auteur.
+7. **Clôture fonctionnelle de la v1** (3 octobre 2026) : l'auteur demande de
+   noter V9 comme faite. Sa priorité pour cette reprise est que le core de
+   l'application fonctionne ; les détails visuels seront réévalués avec lui
+   dans une nouvelle fenêtre.
 
 ## 1. Règles de travail
 
@@ -289,12 +297,16 @@ Gate verte, captures de tous les écrans aux deux formats, relecture de tous
 les textes visibles avec l'auteur, `etat.md` et README à jour. La v1 est
 livrée quand l'auteur l'a validée.
 
-## 3. En attente de l'auteur
+Amendement de l'auteur du 3 octobre 2026 : **V9 est faite**, avec validation
+centrée sur le fonctionnement du core. Les retouches et la réévaluation des
+détails visuels sont reportées à une nouvelle fenêtre avec l'auteur.
 
-- Maquettes V4 validées. Validation des captures de V2b, V6, V7 et V7b
-  attendue, regroupée dans la recette V9.
-- Captures non validées des phases précédentes : on ne les revalide pas une
-  à une ; V9 couvre l'état final.
+## 3. Suite avec l'auteur
+
+V9 clôturée sur instruction de l'auteur. Aucune validation restante ne bloque
+la clôture de cette feuille de route. Les retouches et les détails visuels
+seront réévalués dans une nouvelle fenêtre ; leur périmètre sera fixé avec
+l'auteur à ce moment-là.
 
 ## 4. Journal
 
@@ -1017,3 +1029,40 @@ an accessible element with the role "heading" and name "Amène la balle jusqu’
   remix relues par la session principale. Pas de débordement des dialogues ;
   défilement normal de l'accueil et de Mes niveaux en 1280 × 720.
 - Pour l'auteur : captures et textes à valider dans V9. Rien n'est poussé.
+
+### V9 — Recette v1 — fait (core validé par l'auteur) — commit V9 (3 octobre 2026)
+
+- Dossier de recette préparé par la session principale :
+  `tmp/v9/recette.html` (galerie avec choix du format), `tmp/v9/textes.md`
+  (textes visibles, libellés accessibles, valeurs et choix des champs) et
+  `tmp/v9/inventaire.md`. 68 états aux deux formats desktop, soit 136 captures.
+- Pages principales, cinq tutoriels avant construction et après victoire,
+  atelier, propriétés des onze familles, essai en joueur, import, réception,
+  export, partage, remix, duplication, confirmations et principaux écrans
+  d'erreur. Installation : événement navigateur simulé ; mise à jour : vrai
+  service worker. Deux captures dev de V7b reprises dans le dossier.
+- Parcours exécutés dans des navigateurs de recette isolés, via l'interface ;
+  niveaux lus et export téléchargé validés par les codecs. Les cinq tutoriels
+  et le niveau reçu sont réellement résolus. Captures de l'accueil et de
+  Mes niveaux reprises en attendant leurs aperçus générés ; le script attend
+  aussi la peinture des sprites. Aucun changement du logiciel pour ces captures.
+- Relecture visuelle de préparation par la session principale : aucune sortie
+  horizontale ni dialogue hors viewport. Points laissés à l'auteur : titres
+  longs de confirmation et descriptions du catalogue abrégés par des points
+  de suspension. Aucune retouche choisie sans son accord.
+- README actualisé : fonctionnement du core de la v1 desktop validé, création
+  de puzzle par « À placer », gate desktop et lancement mobile hors gate.
+  Aucun comportement modifié, aucun test artificiel ajouté.
+- Gate de clôture `pnpm check` verte : typecheck, lint, formatage, Knip,
+  contenu (6 documents), 1200 tests Vitest (90 fichiers), build
+  (55 entrées de précache, 2600,20 Kio), 89 E2E v1 réussis, aucun ignoré.
+  Le code de production reste celui de V8. Port isolé 4319 ; configuration
+  Playwright restaurée identique (SHA-256 `9b03b7d8…754cb`), fichier d'essai
+  de l'auteur restauré identique (SHA-256 `1113625e…a92907`, mode 644).
+  Clôture documentaire de V9 enregistrée localement ; aucun push.
+- L'auteur avait repris les contrôles visuels ; il clôture ensuite explicitement
+  V9 : « ce qui m'importe pour l'instant c'est que le core de l'app fonctionne ».
+  Il prévoit de refaire les retouches avec l'agent dans une nouvelle fenêtre,
+  où les détails visuels seront réévalués. Cette décision remplace l'attente
+  de validation générale indiquée à la préparation de V9. Aucun travail
+  visuel supplémentaire entrepris dans cette session.
