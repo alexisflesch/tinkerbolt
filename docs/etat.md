@@ -2,7 +2,7 @@
 
 Dernière mise à jour : 3 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0 et C1 livrés**,
-C5 implémenté, validation visuelle attendue. Dernière gate C5 verte :
+C5 implémenté, validation visuelle attendue. Dernière gate T2 verte :
 1206 tests Vitest et 89 E2E. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
@@ -950,6 +950,16 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après T2 (3 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu (6 documents), 1206 tests Vitest (90 fichiers), build
+(55 entrées de précache) et 89 E2E v1, aucun ignoré. Le passage précédent
+avait trouvé une course
+dans N2 tuto-2 au clic sur un bouton de propriétés devenu absent ; le helper
+attend désormais le panneau visible, sans changer les assertions métier.
+Build puis rejeu isolé de tuto-2 : cinq réussites consécutives. Port 4319 ;
+configuration Playwright (SHA-256 `9b03b7d8…754cb`) et fichier d’essai auteur
+(SHA-256 `1113625e…a92907`) restaurés identiques. Validation visuelle C5 attendue.
 
 `pnpm check` après C5 (3 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu (6 documents), 1206 tests Vitest (90 fichiers), build

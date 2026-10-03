@@ -500,6 +500,24 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   l’orchestrateur. **Validation visuelle de l’auteur attendue**, C5 n’est pas
   déclaré entièrement terminé.
 
+### T2 — Stabiliser les propriétés du tutoriel 2 — fait, test seul
+
+- La gate finale de préparation documentaire a trouvé une course préexistante
+  dans N2 tuto-2 : `isVisible()` observe « Ouvrir les propriétés », puis le
+  `tap()` attend 30 s alors que l’effet de sélection a déjà ouvert la feuille
+  et retiré ce bouton. Le snapshot montre « Propriétés de Poutre » ouverte.
+  Échec avant simulation et victoire ; aucun nouveau bug de production.
+- Correctif confié à Luna `xhigh`, relu par l’orchestrateur : attendre la région
+  des propriétés après chaque pose, comme dans T1, puis garder les rotations
+  et la fermeture existantes. Aucun délai, retry, seuil, viewport ou assertion
+  métier changé ; aucun code de production modifié.
+- Typecheck E2E, ESLint et Prettier ciblés passent. Root a exécuté `pnpm build`
+  puis le seul tuto-2 cinq fois de suite : **5 réussites**. Nouvelle gate
+  complète : **1206 tests Vitest et 89 E2E v1 réussis**, aucun ignoré.
+- Configuration Playwright et fichier d’essai auteur restaurés identiques.
+  Ce helper reflète l’ouverture automatique actuellement livrée ; C4a/M1
+  devront adapter le parcours lors du changement de comportement prévu.
+
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 
 Le contenu qui suit conserve les décisions, tâches et journal de la session v1.
