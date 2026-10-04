@@ -17,10 +17,11 @@ Chaque tranche est verticale, commence par ses tests observables et se termine p
 | v3 Forge/Grist      | F0 à F3            | M4. Destination et bascule définies, mécanisme d’envoi vérifié, proposition dans TinkerBolt, modération et recette.                                                                                                                                                        |
 | v4 réserve          | Objectifs nouveaux | Décision et contrat séparés ; aucune implémentation anticipée en C/M/F.                                                                                                                                                                                                    |
 
-Les dépendances de chaque tâche sont dans la feuille de route. Les contrats
-des nouvelles familles et la soumission Grist restent ouverts. C2 est accepté,
-C2a et C3 sont livrés. Sur instruction de l’auteur du 4 octobre, les tâches
-restantes commencent par C8, C9a–d, C7 puis C6, avant C4/C4a. Les maquettes
+Les dépendances de chaque tâche sont dans la feuille de route. Les contrats C9,
+l’ordre, le modèle de caisse et le réglage initial du minuteur sont confirmés
+dans les ADR 0018/0019 et 0009. La soumission Grist reste ouverte. C2 est
+accepté, C2a et C3 sont livrés. C8 est clôturé ; la séquence active commence
+maintenant par C9a–d, C7 puis C6, avant C4/C4a. Les maquettes
 C4/C4a ont été examinées et leurs positions corrigées sur instruction de
 l’auteur. Les autres maquettes restent à valider. C0 ne constate ni
 remplacement du stockage ni livraison UI.

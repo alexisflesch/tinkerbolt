@@ -19,7 +19,9 @@ fonctionnelle (comportement, gestes, rendu) vit dans la note réécrite.
 
 ### Le document ne stocke que la relation
 
-`LevelDocument.wires` est une liste de `{ id, sourceId, targetId }`. La lettre
+`LevelDocument v2.wires` est une liste de `{ id, sourceId, targetId }`. Le
+format v3 peut également référencer le minuteur intermédiaire (`timerId`, voir
+l’amendement C9 ci-dessous). La lettre
 du circuit, sa couleur, les points d'ancrage et le tracé ne sont **pas**
 persistés : ils se dérivent de l'ordre des fils et de la position des objets.
 
@@ -37,15 +39,15 @@ Validation (`src/domain/level-document.ts`) : identifiant de fil unique, source
 plusieurs convoyeurs. Supprimer un objet supprime ses fils dans la même
 commande.
 
-### Évolution compatible du format, sans nouvelle version
+### Évolution compatible du format, sans nouvelle version — précédent historique v2
 
 `wires` est facultatif en entrée et vaut `[]` par défaut. Tout document v2 écrit
 avant cette décision reste valide et se relit à l'identique, fils vides compris.
-Aucune migration n'est donc requise, comme pour l'ajout des familles masse,
-levier et convoyeur à l'union discriminée. Aucun document n'est encore persisté
-hors du dépôt (IndexedDB et partage restent à livrer), si bien qu'une ancienne
-version de l'application relisant un fichier récent n'est pas un cas réel à ce
-jour ; ce le deviendra avec T6, qui devra le traiter.
+Aucune migration n'était donc requise à cette étape, comme pour l'ajout des
+familles masse, levier et convoyeur à l'union discriminée. La justification
+historique selon laquelle aucun document n'était persisté hors du dépôt est
+caduque depuis C2a/C3. Le choix courant pour les familles C9 est v3 avec
+migration, suivant l'ADR 0018.
 
 ### Rendu en Canvas 2D, pas en SVG
 
@@ -142,9 +144,9 @@ Décision de l'auteur : **un fil est un objet d'inventaire comme les autres** ;
 un puzzle peut en donner au joueur. La section « Le câblage est un acte
 d'auteur » ci-dessus est caduque pour les fils d'inventaire.
 
-- Format : l'inventaire v2 accepte `{ id, type: 'wire', quantity, props: {},
-  permissions }`, avec `move` et `rotate` toujours `false` (un fil n'a ni
-  position ni angle) ; `remove` dit si le joueur peut reprendre un fil qu'il a
+- Format : l'inventaire v2 accepte
+  `{ id, type: 'wire', quantity, props: {}, permissions }`, avec `move` et
+  `rotate` toujours `false` (un fil n'a ni position ni angle) ; `remove` dit si le joueur peut reprendre un fil qu'il a
   posé, comme pour un objet. Ajout compatible, sans nouvelle version ni
   migration ; l'inventaire v1 n'accepte pas de fil.
 - Commande : `connectControlWire` en contexte joueur exige `inventoryEntryId`
@@ -173,11 +175,35 @@ d'auteur » ci-dessus est caduque pour les fils d'inventaire.
 - le réglage « Fixe / À placer » de chaque fil reste dans le panneau de l'objet
   relié, sous le titre « Fil du circuit … ».
 
+## Amendement du 4 octobre 2026 — nouvelles familles C9 et minuteur en série
+
+L’auteur confirme les raccords de commande et l’expérience du minuteur ; les
+contrats produit complets sont dans l’[ADR 0019](0019-c9-object-contracts.md).
+Le document évolue en v3 suivant l’[ADR 0018](0018-level-document-v3.md).
+
+- Le bouton commande aussi l’électroaimant et le piston. Le levier ne commande
+  ni l’un ni l’autre. Le minuteur peut s’insérer dans un fil valide sans
+  remplacer son contrôleur ni son dispositif.
+- Un fil qui passe par un minuteur reste une seule relation logique entre son
+  contrôleur et son dispositif et consomme une unité d’inventaire. Il est rendu
+  par deux segments : contrôleur → minuteur → dispositif. La relation conserve
+  l’identité du circuit du contrôleur ; le minuteur ne crée ni dérivation ni
+  circuit distinct.
+- Le geste d’édition est : placer le minuteur, toucher la carte Fil, toucher
+  le contrôleur, le minuteur puis le dispositif. La liaison n’est enregistrée
+  et son unité consommée qu’une fois le parcours complet.
+- Le minuteur retransmet chaque état reçu après son délai, y compris les
+  transitions d’activation et de désactivation. Il n’inverse pas le signal et
+  ne transforme pas une suite d’états en une impulsion unique.
+- La valeur du délai est fixée en Atelier par l’auteur entre 1 et 10 secondes ;
+  elle est verrouillée en résolution de niveau. Le détail du contrôle visuel et
+  sa valeur de départ restent à définir en C9d.
+
 ## Conséquences
 
 - Aucune dépendance ajoutée ; le port physique gagne des « dispositifs » dans
   son instantané (`devices` : position des leviers, sens et défilement des
   convoyeurs), lus par la présentation sans importer le moteur.
 - Le tracé est un calcul pur, testé sans navigateur.
-- Un besoin futur de réseau (jonctions, logique) rouvre cette ADR : il n'est
-  pas anticipé.
+- Un besoin futur de réseau (jonctions, dérivations, logique) rouvre cette ADR :
+  il n'est pas anticipé par le minuteur en série.

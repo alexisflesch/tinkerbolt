@@ -94,13 +94,14 @@ Ces constats décrivent le code lu le 3 octobre ; les revérifier à la reprise.
 
 ## 3. Arbitrages ouverts et avis proposés
 
-Les recommandations de cette section ne sont pas des décisions acquises.
-Un arbitrage ne bloque que les tâches qui en dépendent.
+Les avis non encore arbitrés restent des recommandations. Les décisions
+confirmées le 4 octobre pour C9 sont enregistrées dans les ADR 0018/0019 et
+l’amendement de l’ADR 0009. Q6 est résolu ; les constantes physiques restantes
+sont des réglages d’implémentation couverts par les scènes de test.
 
-| ID  | Question                                                          | Avis proposé                                                                                                                                                | Bloque                              |
-| --- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| Q6  | Quels comportements donner aux nouveaux objets ?                  | Définir un contrat par famille, puis intégrer caisses → électroaimant → piston → minuteur. Le minuteur vient après les récepteurs de commande disponibles.  | C9a à C9d, chacun pour son contrat. |
-| Q8  | Quel point d’entrée permettra l’envoi à Grist depuis TinkerBolt ? | Vérifier un mécanisme public de soumission officiellement supporté sur l’instance ; à défaut, prévoir un relais limité à l’envoi, avec secret côté serveur. | F1, puis F2.                        |
+| ID  | Question                                                          | Avis proposé                                                                                                                                                | Bloque       |
+| --- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| Q8  | Quel point d’entrée permettra l’envoi à Grist depuis TinkerBolt ? | Vérifier un mécanisme public de soumission officiellement supporté sur l’instance ; à défaut, prévoir un relais limité à l’envoi, avec secret côté serveur. | F1, puis F2. |
 
 ### Avis sur Dexie et IndexedDB
 
@@ -314,22 +315,23 @@ précise leurs dépendances supplémentaires.
 Comparer sources `art/`, exports `public/assets/`, registre, rendu, simulation
 et catalogue. Distinguer variantes d’une famille existante et nouvelles familles.
 
-| Sources repérées                                      | Famille candidate            | Contrat à définir avant le code                                                             |
-| ----------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `art/assets/boxes/wooden-box.png`, `metallic-box.png` | Caisse, variantes bois/métal | Corps, dimensions, masse et matériau ; sens fonctionnel de la variante métal.               |
-| `art/assets/electro-magnet/`                          | Électroaimant                | Objets attirés, portée et force, état initial, commande et représentation de l’activité.    |
-| `art/assets/piston/`                                  | Piston                       | Ancrage, course, vitesse/force, commande, collisions et retour à l’état initial.            |
-| `art/assets/timer/`                                   | Minuteur                     | Déclenchement, durée, signal de sortie, répétition éventuelle et reset ; temps simulé fixe. |
+| Sources repérées                                      | Famille candidate                  | Contrat confirmé et détails restants                                                                                       |
+| ----------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `art/assets/boxes/wooden-box.png`, `metallic-box.png` | Famille `box`, matériau bois/métal | Seule la métallique est attirée ; choisir et tester forme, dimensions et masses.                                           |
+| `art/assets/electro-magnet/`                          | Électroaimant                      | Caisse métallique seule, commandé par bouton (pas le levier), portée comparable ou un peu inférieure au ventilateur.       |
+| `art/assets/piston/`                                  | Piston                             | Bouton maintenu : sorti ; relâché : retour à la position de départ en propulsant les objets. Course/vitesse à régler.      |
+| `art/assets/timer/`                                   | Minuteur                           | Inséré dans un fil unique, retarde chaque changement d’état ; 1–10 s réglables en Atelier, fixés par niveau en résolution. |
 
-- L’auteur valide les contrats et l’ordre d’intégration. Une image seule ne
-  suffit pas à inventer un comportement physique.
+- Comportements confirmés par l’auteur et consignés dans l’[ADR 0019](decisions/0019-c9-object-contracts.md) ; version v3 et migrations dans l’[ADR 0018](decisions/0018-level-document-v3.md). Confirmer encore l’ordre C9 et les valeurs initiales non fixées.
+- Une image seule ne suffit pas à inventer un comportement physique.
 - **Sortie :** liste exhaustive rapprochée du code, contrats acceptés et tâches
   C9 dimensionnées. Tout objet différé est nommé avec la décision de report.
 
 ### C9a à C9d — Intégrer une famille complète à la fois
 
-Ordre proposé : **C9a caisses → C9b électroaimant → C9c piston → C9d minuteur**.
-L’audit C8 confirme les dépendances, notamment métal/aimant et commande/minuteur.
+Ordre proposé, à confirmer par l’auteur : **C9a caisses → C9b électroaimant →
+C9c piston → C9d minuteur**. Les contrats sont dans l’ADR 0019 ; le minuteur
+en série complète l’ADR 0009.
 
 Pour chacune :
 
@@ -338,8 +340,10 @@ Pour chacune :
   miniature et outils d’édition.
 - Fournir inventaire, propriétés permises, sérialisation, import/export,
   solution de référence et intégration aux fils lorsque le contrat le demande.
-- Tester les documents de niveau existants et les nouveaux ; privilégier
-  l’ajout compatible d’une famille. Aucune reprise de l’ancien stockage local.
+- Ajouter les familles dans le schéma v3, avec migrations strictes v1 → v2 → v3.
+  Couvrir aussi les créations, niveaux reçus et constructions C3 v2, sans perdre
+  les tentatives compatibles ni masquer une source modifiée. Voir ADR 0018.
+  Aucune reprise de l’ancien stockage local.
 - Vérifier une scène de test jouable sans ajouter les nouveaux objectifs de v4
   ni étendre la campagne sans tâche dédiée.
 - **Sortie :** famille effectivement utilisable dans l’Atelier et un puzzle,
@@ -347,8 +351,9 @@ Pour chacune :
 
 ### C10 — Recette des compléments desktop
 
-- Rejouer placement fil → objet, reprise locale, modification de poutre,
-  victoire et utilisation des nouveaux objets dans un niveau partagé.
+- Rejouer fil direct et liaison contrôleur → minuteur → dispositif (une unité
+  de fil, deux segments, transitions retardées), reprise locale, modification
+  de poutre, victoire et nouveaux objets dans un niveau partagé.
 - Vérifier accueil, splash, icônes et résultat aux deux formats desktop.
 - **Sortie :** `pnpm check` vert, validation visuelle de l’auteur, `etat.md`
   et journal à jour. Les éventuels reports sont explicites.
@@ -484,11 +489,14 @@ et les invariants restent applicables. Aucune capture ni vérification d’image
 pendant l’implémentation actuelle ; la recette visuelle est différée.
 
 Le 4 octobre, l’auteur a demandé de terminer C3 avant de changer l’ordre de la
-suite ; **C3 est maintenant livré**. Pour essayer les nouvelles familles
-d’objets, la priorité devient **C8 → C9a–d → C7 → C6**, avant C4/C4a. L’ordre
-faisant autorité, les dépendances et le journal restent dans la [feuille de route
-active](feuille-de-route.md). Cette priorité ne vaut pas acceptation des contrats
-Q6 : chaque famille attend toujours son contrat validé avant le code.
+suite ; **C3 est maintenant livré**. C8 est ensuite clôturé après l’audit et les
+arbitrages. L’ordre prioritaire courant est **C9a–d → C7 → C6 → C4/C4a**, comme
+consigné dans la [feuille de route active](feuille-de-route.md). L’auteur a
+confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
+du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.
+Les constantes physiques sont équilibrées pendant les tâches correspondantes.
+La feuille de route reste seule propriétaire de la séquence, des dépendances et
+du journal.
 
 Les critères visuels des sections préparatoires décrivent la recette finale,
 avec le report ci-dessus. Le journal et les étapes réellement livrées restent

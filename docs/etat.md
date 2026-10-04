@@ -2,8 +2,8 @@
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1 et
-C3.2 livrés**. La suite prioritaire demandée par l’auteur est C8, C9a–d, C7 puis
-C6, avant C4/C4a. C5 est implémenté ; recette visuelle différée sur instruction
+C3.2 livrés**. C8 est clôturé. La suite prioritaire demandée par l’auteur est
+C9a–d, C7 puis C6, avant C4/C4a. C5 est implémenté ; recette visuelle différée sur instruction
 de l’auteur. Dernière gate C3.2 verte : 1 236 tests Vitest et 92 E2E v1. U3
 reste abandonnée.
 
@@ -37,12 +37,18 @@ aux deux formats dans `tmp/c4/captures/` ont été examinées par l’auteur. Le
 positions demandées sont corrigées : rotation au coin haut gauche, taille à
 droite centrée ; la poursuite est autorisée. Aucun de ces nouveaux contrôles
 n’est implémenté dans l’application. La recette visuelle est différée sur instruction de l’auteur ; elle ne bloque
-pas l’implémentation autorisée. Les contrats des nouvelles familles restent
-à accepter dans leurs tâches.
-L’[audit préparatoire C8](audit-assets-c8.md) rapproche les 17 groupes d’assets
-du code livré et mesure les sources candidates. Les caisses, l’électroaimant,
-le piston et le minuteur restent absents de l’application ; leurs contrats,
-l’ordre et la décision de version du format restent ouverts. C8 est partiel.
+pas l’implémentation autorisée. Les comportements principaux des nouvelles
+familles sont confirmés ; leurs détails de modèle et d’équilibrage restent
+consignés dans les tâches C9.
+L’[audit C8](audit-assets-c8.md) rapproche les 17 groupes d’assets du code livré
+et mesure les sources candidates. C8 est clôturé : les contrats auteur sont
+consignés dans les ADR 0018/0019 et l’amendement 0009. C9 suivra l’ordre accepté
+caisses → électroaimant → piston → minuteur. Les caisses forment une famille
+`box` à variante bois/métal ; le délai du minuteur est un entier de 1 à 10 s,
+3 s par défaut, avec affichage possible au dixième. Seule la caisse métallique
+est attirée ; la bille en acier est hors C9. L’équilibrage physique reste à
+faire dans les scènes de test. C9a, l’intégration complète de la famille `box`,
+est la prochaine tâche.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
 

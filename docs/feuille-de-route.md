@@ -19,16 +19,18 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 C2 : [ADR 0017 acceptée](decisions/0017-player-construction-and-async-storage.md),
 avec les arbitrages de l’auteur intégrés. **C2a et C3 livrés.** À la demande de
 l’auteur, l’ordre restant est
-**C8 → C9a–d → C7 → C6 → C4 → C4a → C10**. C5 est déjà implémenté ; seule sa
+**C9a–d → C7 → C6 → C4 → C4a → C10**. C5 est déjà implémenté ; seule sa
 recette visuelle reste différée. C3.1 et C3.2 sont livrés ; la dernière gate
 globale passe avec 1 236 tests Vitest et 92 E2E v1. Le jeu reprend maintenant
 les constructions de campagne et reçues avant toute simulation.
 C4/C4a ont été examinées par l’auteur : rotation au coin haut gauche et taille
 au milieu du bord droit, puis poursuite autorisée.
-L’audit C8 est préparé, Q6 et la décision de version restent
-ouverts. Les ADR 0011/0015 et 0017 fixent désormais les
-contrats de stockage et de reprise. Les quatre stockages utilisent Dexie avec
-ports asynchrones ; la suite active porte d’abord sur les familles d’objets.
+C8 est livré après validation auteur : format v3, comportements, variante de
+caisse, délai du minuteur et ordre **caisses → électroaimant → piston → minuteur**
+sont consignés dans les ADR 0018/0019 et 0009. La prochaine tâche active est
+C9a, puis C9b–d, C7, C6, C4, C4a et C10. Les ADR 0011/0015 et 0017 fixent les
+contrats de stockage et de reprise ; les quatre stockages utilisent Dexie avec
+ports asynchrones.
 
 ## Règles de la reprise active
 
@@ -114,12 +116,11 @@ ports asynchrones ; la suite active porte d’abord sur les familles d’objets.
 
 ## Arbitrages encore ouverts
 
-| ID  | Question                                                                                                  | Tâches dépendantes                      |
-| --- | --------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| Q6  | Contrat de chaque famille nouvelle et ordre confirmé après audit.                                         | C8, puis chaque C9a–d pour son contrat. |
-| Q8  | Mécanisme de soumission disponible sur l’instance Grist de la Forge ; éventuel relais et son hébergement. | F1, puis F2.                            |
+| ID  | Question                                                                                                  | Tâches dépendantes |
+| --- | --------------------------------------------------------------------------------------------------------- | ------------------ |
+| Q8  | Mécanisme de soumission disponible sur l’instance Grist de la Forge ; éventuel relais et son hébergement. | F1, puis F2.       |
 
-C2 a fixé ces contrats dans l’ADR 0017 acceptée. Les conseils du plan
+C8/Q6 est résolu dans les ADR 0009/0018/0019. C2 a fixé ces contrats dans l’ADR 0017 acceptée. Les conseils du plan
 préparatoire ne remplacent pas cette décision.
 
 ## Séquence active — compléments desktop
@@ -138,18 +139,18 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C2a   | Stockage IndexedDB avec Dexie, sans reprise de l’ancien stockage        | C2.                                                             |
 | Livré                 | C3.1  | Validation et persistance des constructions                             | C2a.                                                            |
 | Livré                 | C3.2  | Raccord, sauvegarde et reprise des constructions dans le jeu            | C3.1.                                                           |
-| 1                     | C8    | Inventaire exact des assets et contrats des nouveaux objets             | C0.                                                             |
-| 2–5                   | C9a–d | Nouvelles familles, une à la fois                                       | C8 ; contrat de chaque famille accepté.                         |
-| 6                     | C7    | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
-| 7                     | C6    | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| 8                     | C4    | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
-| 9                     | C4a   | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Livré                 | C8    | Inventaire exact des assets et contrats des nouveaux objets             | C0.                                                             |
+| 1–4                   | C9a–d | Nouvelles familles, une à la fois                                       | C8 ; contrats acceptés dans ADR 0018/0019 et ADR 0009.          |
+| 5                     | C7    | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
+| 6                     | C6    | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
+| 7                     | C4    | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
+| 8                     | C4a   | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5    | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 10                    | C10   | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
-| 11                    | M0    | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
-| 12                    | M1    | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
-| 13                    | M2    | Interface portrait                                                      | M1.                                                             |
-| 14                    | M3    | Interface paysage                                                       | M2.                                                             |
+| 9                     | C10   | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 10                    | M0    | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
+| 11                    | M1    | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
+| 12                    | M2    | Interface portrait                                                      | M1.                                                             |
+| 13                    | M3    | Interface paysage                                                       | M2.                                                             |
 | 15                    | M4    | Recette téléphone et gate v2                                            | M1 à M3.                                                        |
 | 16                    | F0    | Dépôt et hébergement Forge opérationnels                                | M4 ; destination et stratégie de bascule définies.              |
 | 17                    | F1    | Contrat et prototype du parcours Grist                                  | F0 ; accès à l’instance et décision Q8.                         |
@@ -319,23 +320,25 @@ de l’ADR 0017 ; ce découpage ne crée aucune nouvelle décision produit.
 Comparer sources `art/`, exports `public/assets/`, registre, rendu, simulation
 et catalogue. Distinguer variantes d’une famille existante et nouvelles familles.
 
-| Sources repérées                                      | Famille candidate            | Contrat à définir avant le code                                                             |
-| ----------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `art/assets/boxes/wooden-box.png`, `metallic-box.png` | Caisse, variantes bois/métal | Corps, dimensions, masse et matériau ; sens fonctionnel de la variante métal.               |
-| `art/assets/electro-magnet/`                          | Électroaimant                | Objets attirés, portée et force, état initial, commande et représentation de l’activité.    |
-| `art/assets/piston/`                                  | Piston                       | Ancrage, course, vitesse/force, commande, collisions et retour à l’état initial.            |
-| `art/assets/timer/`                                   | Minuteur                     | Déclenchement, durée, signal de sortie, répétition éventuelle et reset ; temps simulé fixe. |
+| Sources repérées                                      | Famille candidate                  | Contrat confirmé et détails restants                                                                                       |
+| ----------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `art/assets/boxes/wooden-box.png`, `metallic-box.png` | Famille `box`, matériau bois/métal | Seule la métallique est attirée ; choisir et tester forme, dimensions et masses.                                           |
+| `art/assets/electro-magnet/`                          | Électroaimant                      | Caisse métallique seule, commandé par bouton (pas le levier), portée comparable ou un peu inférieure au ventilateur.       |
+| `art/assets/piston/`                                  | Piston                             | Bouton maintenu : sorti ; relâché : retour à la position de départ en propulsant les objets. Course/vitesse à régler.      |
+| `art/assets/timer/`                                   | Minuteur                           | Inséré dans un fil unique, retarde chaque changement d’état ; 1–10 s réglables en Atelier, fixés par niveau en résolution. |
 
-- L’auteur valide les contrats et l’ordre d’intégration. Une image seule ne
-  suffit pas à inventer un comportement physique.
+- Contrats confirmés dans les [ADR 0018](decisions/0018-level-document-v3.md), [0019](decisions/0019-c9-object-contracts.md) et [0009](decisions/0009-control-wires.md) ; l’ordre est accepté. Seuls les réglages physiques restent à équilibrer dans les scènes de test.
+- Une image seule ne suffit pas à inventer un comportement physique.
 - **Sortie :** liste exhaustive rapprochée du code, contrats acceptés et tâches
   C9 dimensionnées. Tout objet différé est nommé avec la décision de report.
 
 ### C9a à C9d — Intégrer une famille complète à la fois
 
-Ordre proposé : **C9a caisses → C9b électroaimant → C9c piston → C9d minuteur**.
-L’audit C8 relève les dépendances à trancher, notamment métal/aimant et
-commande/minuteur ; les dessins ne confirment aucun comportement ni cet ordre.
+Ordre accepté : **C9a caisses → C9b électroaimant → C9c piston → C9d minuteur**.
+Les comportements sont enregistrés dans
+l’[ADR 0019](decisions/0019-c9-object-contracts.md) ; les fils et le minuteur en
+série complètent l’[ADR 0009](decisions/0009-control-wires.md). La version v3 et
+sa migration sont dans l’[ADR 0018](decisions/0018-level-document-v3.md).
 
 Pour chacune :
 
@@ -344,8 +347,9 @@ Pour chacune :
   miniature et outils d’édition.
 - Fournir inventaire, propriétés permises, sérialisation, import/export,
   solution de référence et intégration aux fils lorsque le contrat le demande.
-- Tester les documents de niveau existants et les nouveaux ; privilégier
-  l’ajout compatible d’une famille. Aucune reprise de l’ancien stockage local.
+- Migrer les documents v1/v2 vers v3 sans élargir les schémas v1/v2. Préserver
+  aussi les tentatives C3 enregistrées en v2 en vérifiant leur source avant de
+  réécrire leur empreinte. Aucune reprise de l’ancien stockage local.
 - Vérifier une scène de test jouable sans ajouter les nouveaux objectifs de v4
   ni étendre la campagne sans tâche dédiée.
 - **Sortie :** famille effectivement utilisable dans l’Atelier et un puzzle,
@@ -353,8 +357,9 @@ Pour chacune :
 
 ### C10 — Recette des compléments desktop
 
-- Rejouer placement fil → objet, reprise locale, modification de poutre,
-  victoire et utilisation des nouveaux objets dans un niveau partagé.
+- Rejouer fil direct et liaison contrôleur → minuteur → dispositif (une unité
+  de fil, deux segments, transitions retardées), reprise locale, modification
+  de poutre, victoire et nouveaux objets dans un niveau partagé.
 - Vérifier accueil, splash, icônes et résultat aux deux formats desktop.
 - **Sortie :** `pnpm check` vert, validation visuelle de l’auteur, `etat.md`
   et journal à jour. Les éventuels reports sont explicites.
@@ -713,7 +718,7 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   Ce helper reflète l’ouverture automatique actuellement livrée ; C4a/M1
   devront adapter le parcours lors du changement de comportement prévu.
 
-### C8 — Audit des assets — partiel, contrats Q6 et ordre attendus
+### C8 — Audit des assets — livré le 4 octobre 2026
 
 - Audit et documentation confiés à Luna `xhigh`, puis relus par l’orchestrateur.
   [Relevé préparatoire](audit-assets-c8.md) : 17 groupes d’assets, onze familles
@@ -723,13 +728,17 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 - Dimensions des dix PNG candidats mesurées et images consultées ; sources,
   exports, schéma, registre, géométrie, renderer, simulation et catalogue
   rapprochés. Contrôle Markdown, chemins référencés et whitespace sans erreur.
-- Caisses, électroaimant, piston et minuteur attendent leurs contrats acceptés
-  et l’ordre confirmé. Métal attiré et minuteur source de commande ne sont pas
-  déduits des dessins. Aucune famille C9 n’est commencée.
-- Conflit remonté avant code : ADR 0004 exige version et migration pour une
-  nouvelle famille ; C9 privilégie l’ajout compatible. Le contrat d’évolution
-  du schéma v2 doit être explicité dans sa décision propriétaire avant C9.
-  C8 reste **partiel**, aucun report de famille présumé accepté.
+- L’auteur a confirmé le format v3 et sa migration, les comportements des
+  quatre familles, `box` avec variante bois/métal, minuteur en secondes entières
+  de 1 à 10 (défaut 3 s, affichage possible en dixièmes), et l’ordre C9a–d.
+  Décisions dans les ADR 0018/0019 et amendement 0009. La bille en acier est
+  explicitement hors C9.
+- Les seules valeurs laissées à l’intégration sont les dimensions, masses,
+  courses, portées et forces physiques, à équilibrer dans les scènes de test.
+  Aucune valeur n’est déduite des dessins. C9a est la prochaine tâche.
+- Prettier, `git diff --check` et `node --import tsx scripts/validate-content.ts`
+  passent ; aucun test de comportement n’est requis pour ce changement
+  documentaire.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 
