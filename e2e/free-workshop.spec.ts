@@ -23,6 +23,7 @@ test('M13 — l’atelier libre s’enregistre à la première modification, san
   const bounds = await board.boundingBox();
   if (bounds === null) throw new Error('Le plateau doit être mesurable.');
   await page.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).tap();
   await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
 
   await expect(page).toHaveURL(/\/editor\?draft=creation-[0-9a-f]{32}$/u);

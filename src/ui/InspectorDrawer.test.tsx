@@ -11,8 +11,12 @@ const renderOpenSheet = (onCloseProperties: () => void) =>
     <InspectorDrawer
       isWideLayout={false}
       isPropertiesOpen
+      placements={[]}
+      selectedPlacementId={null}
+      isSceneSelectionDisabled={false}
       onOpenProperties={() => undefined}
       onCloseProperties={onCloseProperties}
+      onSelectPlacement={() => undefined}
       properties={<section aria-label="Propriétés de Levier" />}
       result={null}
     />,

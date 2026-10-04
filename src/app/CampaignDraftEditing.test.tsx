@@ -73,6 +73,7 @@ const tapBoard = async (clientX: number, clientY: number): Promise<void> => {
     });
     fireEvent(board, event);
   }
+  fireEvent.click(board, { detail: 1, clientX, clientY });
   await storageAction();
 };
 

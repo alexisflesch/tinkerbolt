@@ -56,8 +56,8 @@ test('édite un tutoriel de campagne au toucher et conserve le brouillon', async
   await tapWorldPoint(page, 8.195822458208895, 7.974035655966092);
   const beamProperties = page.getByRole('region', { name: 'Propriétés de Poutre' });
   const openProperties = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  // Selection opens the compact inspector during the same touch. Wait for one
-  // of its two stable states before deciding whether a tap is still needed.
+  // Selection and panel visibility are separate: the touch opens the panel
+  // after release, while the explicit button is a fallback for either state.
   await expect(beamProperties.or(openProperties)).toBeVisible();
   if (!(await beamProperties.isVisible())) await openProperties.tap();
   await expect(beamProperties).toBeVisible();

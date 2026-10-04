@@ -53,8 +53,8 @@ const closeCompactProperties = async (page: Page): Promise<void> => {
 
   const close = page.getByRole('button', { name: 'Fermer les propriétés' });
   const open = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  // Placing/selecting may open the compact sheet on the same touch. Wait for
-  // either stable state so a late-opening sheet cannot cover the next target.
+  // The shared C4a panel may be open after an explicit request; wait for its
+  // stable state before sending the next touch to the board.
   await expect(close.or(open)).toBeVisible();
   if (await close.isVisible()) {
     await close.tap();
@@ -88,7 +88,7 @@ const waitForCatalogueToCollapse = async (page: Page): Promise<void> => {
     .toBe(true);
 };
 
-const openPropertiesIfCompact = async (page: Page): Promise<void> => {
+const openSelectedProperties = async (page: Page): Promise<void> => {
   const open = page.getByRole('button', { name: 'Ouvrir les propriétés' });
   if ((await open.count()) > 0 && (await open.first().isVisible())) await open.first().click();
 };
@@ -108,6 +108,7 @@ const placeBeamAtBoardCenter = async (page: Page): Promise<Locator> => {
   const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
   await page.mouse.click(center.x, center.y);
 
+  await openSelectedProperties(page);
   const properties = page.getByRole('region', { name: 'Propriétés de Poutre' });
   await expect(properties).toBeVisible();
   return properties;
@@ -180,8 +181,8 @@ const runConstructionInteractions = async (page: Page): Promise<void> => {
   await chooseMediumBeam(page);
   await placeBeamAtBoardCenter(page);
 
-  // A selected placement opens the compact inspector. Close that overlay so
-  // the next contact reaches the board itself on phone-sized viewports.
+  // Close the inspector overlay so the next contact reaches the board itself
+  // on phone-sized viewports.
   await closeCompactProperties(page);
 
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
@@ -195,6 +196,7 @@ const runConstructionInteractions = async (page: Page): Promise<void> => {
   // Selection is not a history command. This is the placed beam already
   // visible on the canvas, selected through the same user input as a player.
   await page.mouse.click(start.x, start.y);
+  await openSelectedProperties(page);
   await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
   await closeCompactProperties(page);
 
@@ -230,7 +232,7 @@ const runConstructionInteractions = async (page: Page): Promise<void> => {
   await expect(redo).toBeDisabled();
   await waitForCanvasToMatch(canvas, afterDrag);
 
-  await openPropertiesIfCompact(page);
+  await openSelectedProperties(page);
   const properties = page.getByRole('region', { name: 'Propriétés de Poutre' });
   await expect(properties).toBeVisible();
   const size = properties.getByRole('combobox', { name: 'Longueur de la poutre' });
@@ -279,7 +281,7 @@ test('L17b — tourne le levier de 90° dans chaque sens au tactile', async ({ p
   if (bounds === null) throw new Error('Le canvas du plateau doit être visible.');
   const centre = await screenPointForWorld(canvas, { x: 8, y: 4.5 });
   await page.touchscreen.tap(centre.x, centre.y);
-  await openPropertiesIfCompact(page);
+  await openSelectedProperties(page);
   await expect(page.getByRole('region', { name: 'Propriétés de Levier' })).toBeVisible();
   await closeCompactProperties(page);
   const initial = await canvasPixels(canvas);

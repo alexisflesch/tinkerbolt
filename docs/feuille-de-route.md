@@ -72,7 +72,12 @@ disposition du splash : image adaptée au format, barre et crédit centrés en b
 avec aperçu direct, choix aimanté aux tailles 2/4/6 unités, une commande
 annulable au relâchement. En jeu, l’aperçu et la commande respectent le stock,
 sans taille offerte. 1 349 tests Vitest, build et 97 E2E v1 passent ; le détail
-de la gate C4 est consigné dans `etat.md`. **La prochaine tâche est C4a, puis
+de la gate C4 est consigné dans `etat.md`. **C4a est implémenté et validé de
+façon ciblée** : propriétés fermées par défaut, clic simple distinct d’une pose
+ou d’un geste de poignée, liste d’objets accessible, `pnpm check:fast` vert
+(1 353 Vitest), build vert et 2 E2E C4a verts aux deux formats desktop. La gate
+globale et la recette de l’ensemble sont regroupées dans C10 ; aucune nouvelle
+capture n’est faite selon l’instruction de l’auteur. **La prochaine tâche est
 C10.**
 
 ## Règles de la reprise active
@@ -191,9 +196,9 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
 | Livré                 | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
 | Livré                 | C4   | Poignée de redimensionnement des poutres par glissement                  | Trois tailles fixes ; aperçu direct et une commande annulable.  |
-| 1                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Implémenté, gate C10  | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5   | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 2                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 1                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, C4a implémenté, ou reports décidés.             |
 | 3                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
 | 4                     | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
 | 5                     | M2   | Interface portrait                                                      | M1.                                                             |
@@ -319,7 +324,8 @@ de l’ADR 0017 ; ce découpage ne crée aucune nouvelle décision produit.
 
 ### C4a — Ouvrir les propriétés desktop à la demande
 
-- Séparer sélection de l’objet et ouverture des propriétés. Le panneau est
+- **Implémenté et testé de façon ciblée.** Séparer sélection de l’objet et
+  ouverture des propriétés. Le panneau est
   fermé par défaut ; poser, déplacer ou utiliser une poignée ne l’ouvre pas.
 - Un clic simple ouvre les propriétés, avec une commande accessible équivalente
   au clavier. Le clic consécutif à un drag ne doit pas ouvrir le panneau.
@@ -327,8 +333,13 @@ de l’ADR 0017 ; ce découpage ne crée aucune nouvelle décision produit.
   garder toutes les propriétés et actions auteur accessibles.
 - Formaliser le contrat commun sélection/ouverture dans le document de
   référence avant le code. M1 complète sa vérification au toucher en v2.
+- Les tests incluent le clic et le glissement réels de la poignée de taille :
+  son diamètre visible égale celui de la rotation, le clic seul n’ouvre pas le
+  panneau ni son sélecteur et le glissement change la taille.
 - **Sortie :** absence de panneau permanent aux deux formats desktop, réglages
-  accessibles, tests de clic, pose, drag et annulation, captures validées.
+  accessibles et tests de clic, pose, drag et annulation. La gate globale et la
+  recette de l’ensemble restent dans C10 ; la capture visuelle est reportée
+  selon l’instruction de l’auteur.
 
 ### C5 — Synchroniser les actions et la modale de victoire
 

@@ -498,7 +498,8 @@ suite ; **C3 est maintenant livré**. C8 et C9a à C9d sont clôturés après
 l’audit, les arbitrages et l’intégration des quatre familles. L’ordre demandé
 par l’auteur, **C7 → C6 → C4/C4a → C10**, est consigné dans la
 [feuille de route active](feuille-de-route.md) : C7, C6 et C4 sont livrés ;
-C4a puis C10 restent à faire. La disposition du splash et ses
+C4a est maintenant implémenté et validé de façon ciblée ; C10 reste la
+prochaine recette intégrée. La disposition du splash et ses
 captures responsive ont été validées par l’auteur pour C6. L’auteur a
 confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
 du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.
@@ -508,8 +509,8 @@ et dixièmes. La feuille de route reste seule propriétaire de la séquence, des
 dépendances et du journal. La correction d’interaction C4 par l’auteur le
 4 octobre est appliquée dans le code et dans la maquette : poignée à la taille
 visible de celle de rotation, redimensionnement au glissement avec aperçu, sans
-sélecteur. La suite active après C4 reste C4a puis C10 ; la recette visuelle
-des compléments est regroupée à C10.
+sélecteur. C4a sépare maintenant sélection et ouverture des propriétés ; sa
+gate globale et la recette visuelle des compléments restent regroupées à C10.
 
 Les critères visuels des sections préparatoires décrivent la recette finale,
 avec le report ci-dessus. Le journal et les étapes réellement livrées restent

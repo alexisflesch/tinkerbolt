@@ -57,7 +57,8 @@ En phase de construction, l'interface comporte au minimum :
 - un contrôle de cadrage donnant accès à zoom avant, zoom arrière et ajuster à la
   scène ;
 - un tiroir d'objets ;
-- un panneau contextuel compact lorsqu'un objet est sélectionné.
+- une action accessible pour ouvrir les propriétés de l'objet sélectionné ; le
+  panneau contextuel ne s'affiche que sur demande.
 
 En simulation, le tiroir et les contrôles d'édition disparaissent ou sont
 désactivés. Ils sont remplacés par pause ou reprendre et recommencer. Les
@@ -66,8 +67,9 @@ contrôles de caméra restent disponibles.
 Quand le plateau compte plusieurs balles, la balle de l'objectif garde ses
 sprites rouges et les autres leurs sprites bleus, sans anneau ajouté (ADR 0006,
 amendement du 2 octobre 2026). L'objectif dit : « Seule la balle rouge compte. »
-Une balle sélectionnée est identifiée par son nom et son panneau contextuel,
-sans cadre rectangulaire autour du sprite.
+Une balle sélectionnée est identifiée par son nom et un signal visuel de
+sélection ; son panneau contextuel ne s'ouvre qu'à la demande, sans cadre
+rectangulaire autour du sprite.
 
 Sur le niveau 1 de la campagne, tant qu'il n'est pas résolu, une aide brève
 oriente le premier essai (U8) : « Touche « Lancer » pour voir la machine
@@ -163,6 +165,31 @@ Le panneau contextuel affiche le nom accessible de l'objet, les actions permises
 et l'état verrouillé éventuel. En résolution, il peut proposer retirer pour un
 objet issu de l'inventaire. En création, il propose au minimum supprimer,
 dupliquer lorsque permis, et les propriétés exposées par la famille.
+
+### Amendement C4a — dissocier sélection et ouverture des propriétés
+
+Décision auteur du 4 octobre 2026, applicable dès C4a sur desktop et réutilisée
+par M1 au toucher : l'identifiant de l'objet sélectionné et la visibilité du
+panneau sont deux états distincts.
+
+- Une nouvelle session commence sans objet sélectionné et avec les propriétés
+  fermées, en résolution comme en création. Sur desktop, les deux formats
+  gardent le panneau fermé jusqu'à une action explicite.
+- Un clic ou toucher simple sélectionne l'objet et ouvre ses propriétés après
+  le relâchement. Une commande clavier équivalente reste disponible.
+- Poser, déplacer, tourner ou redimensionner sélectionne l'objet concerné sans
+  ouvrir les propriétés. Un clic synthétique après un drag n'est pas un clic
+  simple et ne les ouvre pas. Un geste interrompu ne les ouvre pas non plus.
+- Toucher une zone vide désélectionne l'objet et ferme ses propriétés. La
+  visibilité déjà choisie reste inchangée pendant un geste d'objet ; le geste
+  lui-même ne commande jamais l'ouverture.
+- Une liste accessible « Objets sur le plateau » permet au clavier de choisir
+  un objet et d'ouvrir ses propriétés. Lorsque le panneau est fermé, le bouton
+  « Ouvrir les propriétés » reste visible et activable au clavier. Chaque
+  présentation du panneau fournit une action de fermeture.
+- M1 vérifie ces mêmes règles sur téléphone, y compris le relâchement tactile,
+  les drags et les clics synthétiques du navigateur. Il n'ajoute pas une règle
+  mobile différente.
 
 Supprimer ou retirer est une commande annulable. Retirer un objet placé depuis
 l'inventaire restitue atomiquement la quantité correspondante. Une confirmation

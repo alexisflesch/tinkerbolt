@@ -93,6 +93,7 @@ test('C3 : Atelier conserve déplacement, rotation, propriété et métadonnées
   await page.getByRole('button', { name: 'Modifier le niveau 1', exact: true }).click();
   await catalogue(page, /^Poutre moyenne/u);
   await clickWorld(page, point.x, point.y);
+  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).click();
   await page.getByRole('button', { name: 'Vers la droite' }).click();
   await page.getByRole('button', { name: 'Rotation positive' }).click();
   await page.getByRole('combobox', { name: 'Longueur de la poutre' }).selectOption('short');

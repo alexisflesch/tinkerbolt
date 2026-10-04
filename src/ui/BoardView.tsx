@@ -443,6 +443,9 @@ export function BoardView({
                   aria-label="Redimensionner la poutre"
                   aria-description="Faire glisser le long de la poutre pour la redimensionner, ou utiliser les flèches du clavier."
                   aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
                   onPointerDown={(event) => {
                     event.stopPropagation();
                     if (event.button !== 0 || selectedBeamProjection === undefined) return;

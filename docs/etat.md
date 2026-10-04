@@ -2,9 +2,10 @@
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
-C3.2, C4, C8, C9a à C9d, C7 et C6 livrés**. La suite prioritaire est C4a,
-puis C10. C5 est implémenté ; sa recette visuelle reste différée. Dernière
-gate C4 : 1 349 tests Vitest et 97 E2E v1 réussis. U3 reste
+C3.2, C4, C4a, C8, C9a à C9d, C7 et C6 implémentés**. C5 est implémenté ; sa
+recette visuelle reste différée. C4a passe `pnpm check:fast` (1 353 tests
+Vitest), le build et ses 2 E2E desktop ciblés ; la gate globale reste à C10
+conformément à l’instruction de ne pas faire de nouvelles captures. U3 reste
 abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
@@ -39,9 +40,14 @@ droite centrée ; la poursuite est autorisée. **C4 est maintenant implémenté*
 la poignée de taille a le même diamètre visible que celle de rotation ; le
 glissement affiche un aperçu et s’aimante aux trois variantes. Aucun sélecteur
 ne s’ouvre au clic. En jeu, l’inventaire limite les tailles accessibles.
-La maquette est mise à jour avec cette correction. C4a reste à faire. La recette
-visuelle est différée sur instruction de l’auteur ; elle ne bloque pas
-l’implémentation autorisée. Les comportements principaux des nouvelles
+La maquette est mise à jour avec cette correction. C4a sépare désormais
+sélection et ouverture : panneau fermé par défaut, clic simple pour ouvrir, et
+aucun panneau après pose, déplacement ou glissement d’une poignée. Une liste
+accessible permet de sélectionner les objets et d’ouvrir leurs propriétés au
+clavier. Le test navigateur vérifie aussi que le clic seul sur la poignée ne
+présente aucun sélecteur et que le glissement redimensionne la poutre ; les deux
+formats desktop passent. La recette visuelle et la gate globale sont regroupées
+à C10 selon l’instruction de l’auteur. Les comportements principaux des nouvelles
 familles sont confirmés ; leurs détails de modèle et d’équilibrage restent
 consignés dans les tâches C9. Pour C9a à C9c, la recette visuelle est différée
 selon l’instruction de l’auteur.

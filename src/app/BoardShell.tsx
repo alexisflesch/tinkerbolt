@@ -131,6 +131,7 @@ export function BoardShell({
   beforeLeave,
 }: BoardShellProps) {
   const navigate = useNavigate();
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
   const [revealNotice, setRevealNotice] = useState<string | null>(null);
   const {
@@ -176,6 +177,9 @@ export function BoardShell({
     readCanvasSizeInCss: boardCamera.readCanvasSizeInCss,
     isWiringRef: wiring.isWiringRef,
     onWiringTap: wiring.handleWiringTap,
+    onRequestOpenProperties: () => {
+      setIsInspectorOpen(true);
+    },
   });
   const simulation = useSimulationRunner({
     sessionRef,
@@ -235,7 +239,6 @@ export function BoardShell({
   }, [isPlacementActive]);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isObjectiveOpen, setIsObjectiveOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const resetDialogCancelRef = useRef<HTMLButtonElement>(null);
@@ -308,11 +311,11 @@ export function BoardShell({
   // Only committed history states are reported: gesture previews and the
   // simulation snapshot never reach the draft.
 
-  // While wiring, the selection only marks the chosen source: the compact
-  // inspector stays shut so the devices remain reachable (U15).
+  // Selection and panel visibility are independent (C4a). Empty-board taps,
+  // reset and simulation transitions clear the selection and close the panel.
   useEffect(() => {
-    if (hasSelection && !wiring.isWiringRef.current) setIsInspectorOpen(true);
-  }, [hasSelection, wiring.isWiringRef]);
+    if (!hasSelection) setIsInspectorOpen(false);
+  }, [hasSelection]);
 
   const [isRestarting, setIsRestarting] = useState(false);
   const resetToInitialAttempt = (): void => {
@@ -628,24 +631,29 @@ export function BoardShell({
           <InspectorDrawer
             isWideLayout={isSideLayout}
             isPropertiesOpen={isInspectorOpen}
+            placements={
+              session.phase === 'construction' ? currentEditorAttempt(session).document.objects : []
+            }
+            selectedPlacementId={session.selectedPlacementId}
+            isSceneSelectionDisabled={pointers.placementTool !== null || wiring.wiringStep !== null}
             onOpenProperties={() => {
               setIsInspectorOpen(true);
             }}
             onCloseProperties={() => {
               setIsInspectorOpen(false);
             }}
+            onSelectPlacement={(placementId) => {
+              updateSession(selectEditorPlacement(sessionRef.current, placementId));
+              setIsInspectorOpen(true);
+            }}
             properties={
               hasSelection ? (
                 <ContextPanel
                   session={session}
                   onExecuteCommand={executeCommand}
-                  {...(!isSideLayout
-                    ? {
-                        onClose: () => {
-                          setIsInspectorOpen(false);
-                        },
-                      }
-                    : {})}
+                  onClose={() => {
+                    setIsInspectorOpen(false);
+                  }}
                 />
               ) : null
             }

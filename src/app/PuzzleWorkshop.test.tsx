@@ -160,8 +160,9 @@ describe('atelier créateur de puzzles (U22)', () => {
     const openProperties = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
     if (openProperties !== null) await storageAction(() => fireEvent.click(openProperties));
 
+    const panel = screen.getByRole('region', { name: 'Propriétés de Panier' });
     await waitFor(() => {
-      expect(screen.getByText('Panier')).toBeVisible();
+      expect(within(panel).getByText('Panier')).toBeVisible();
     });
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'À placer' })).toBeNull();

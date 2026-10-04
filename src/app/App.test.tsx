@@ -312,6 +312,13 @@ const sharedM8Level = levelDocumentSchema.parse({
   scene: { min: { x: 0, y: 0 }, max: { x: 8, y: 5.5 } },
 });
 
+const openSelectedProperties = async (): Promise<void> => {
+  const openButton = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
+  if (openButton !== null) {
+    await storageAction(() => fireEvent.click(openButton));
+  }
+};
+
 const tapWorldPoint = (x: number, y: number): void => {
   const board = screen.getByRole('region', { name: 'Plateau de jeu' });
   const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
@@ -339,6 +346,7 @@ const placeCampaignBeam = async (x: number, y: number): Promise<void> => {
     fireEvent.click(screen.getByRole('button', { name: /^Poutre courte/ })),
   );
   tapWorldPoint(x, y);
+  await openSelectedProperties();
 };
 
 /** B5: the declared scene of the level the app boots into, for cross-checking `fitCameraToScene`. */
@@ -374,6 +382,7 @@ const tapBoard = (board: HTMLElement, clientX: number, clientY: number): void =>
     clientX,
     clientY,
   });
+  fireEvent.click(board, { detail: 1, clientX, clientY });
 };
 
 /** Places an object from the open workshop's catalogue with a tap at (x, y). */
@@ -388,6 +397,7 @@ const placeFromCatalogue = async (
 
   const board = screen.getByRole('region', { name: 'Plateau de jeu' });
   tapBoard(board, clientX, clientY);
+  await openSelectedProperties();
   return board;
 };
 
@@ -662,6 +672,7 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
     });
+    const drawer = screen.getByRole('region', { name: 'Objets disponibles' });
 
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
@@ -674,7 +685,7 @@ describe('coque TinkerBolt', () => {
       expect(screen.getByRole('button', { name: 'Balle' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /Panier/ })).not.toBeInTheDocument();
+      expect(within(drawer).queryByRole('button', { name: /Panier/ })).not.toBeInTheDocument();
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Poutre/ })).toBeVisible();
@@ -1032,9 +1043,7 @@ describe('coque TinkerBolt', () => {
       clientY: 50,
     });
 
-    await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Panier' })).toBeVisible();
-    });
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
     advanceSimulationToResult(animationFrames, 40);
 
@@ -1062,9 +1071,7 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
     });
-    await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Panier' })).toBeVisible();
-    });
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Lancer' })).toBeEnabled();
     });
@@ -1331,6 +1338,7 @@ describe('coque TinkerBolt', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Poutre moyenne' })),
     );
     tapWorldPoint(5.0, 2.15);
+    await openSelectedProperties();
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
     });
@@ -2802,15 +2810,18 @@ describe('coque TinkerBolt', () => {
       clientY: 225,
     });
 
-    // Le placement se sélectionne automatiquement : le panneau apparaît dans
-    // le même nœud DOM réservé, toujours unique, sans jamais en créer un
-    // second à côté.
+    // La pose sélectionne la poutre sans ouvrir ses propriétés. Le bouton
+    // explicite l'ouvre dans l'unique emplacement réservé.
     await waitFor(() => {
       expect(workspace.querySelector('.status-slot')).toBe(slotAtMount);
     });
     await waitFor(() => {
       expect(workspace.querySelectorAll('.status-slot')).toHaveLength(1);
     });
+    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).toBeNull();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir les propriétés' })),
+    );
     const propertiesPanel = screen.getByRole('region', { name: 'Propriétés de Poutre' });
     await waitFor(() => {
       expect(within(propertiesPanel).getByText('Propriétés')).toBeVisible();
@@ -2880,6 +2891,147 @@ describe('coque TinkerBolt', () => {
     });
   });
 
+  it('C4a ouvre les propriétés après un clic simple, pas au pointerdown', async () => {
+    await renderStorageReady(<App />);
+    const board = screen.getByRole('region', { name: 'Plateau de jeu' });
+    const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
+    const [originX, originY] = (canvas.getAttribute('data-camera-origin') ?? '')
+      .split(',')
+      .map(Number);
+    const zoom = Number(canvas.getAttribute('data-camera-zoom'));
+    if (originX === undefined || originY === undefined || !(zoom > 0)) {
+      throw new Error('Cadrage caméra invalide dans le test.');
+    }
+    const canvasBounds = canvas.getBoundingClientRect();
+    const point = {
+      x: canvasBounds.left + (6.8 - originX) * zoom,
+      y: canvasBounds.top + (4.9 - originY) * zoom,
+    };
+
+    firePointerEvent(board, 'pointerdown', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: point.x,
+      clientY: point.y,
+    });
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+
+    firePointerEvent(board, 'pointerup', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: point.x,
+      clientY: point.y,
+    });
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+
+    fireEvent.click(board, { detail: 1, clientX: point.x, clientY: point.y });
+    const panel = await screen.findByRole('region', { name: 'Propriétés de Panier' });
+    expect(panel).toBeVisible();
+
+    await storageAction(() =>
+      fireEvent.click(within(panel).getByRole('button', { name: 'Fermer les propriétés' })),
+    );
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir les propriétés' })),
+    );
+    tapBoard(board, 120, 400);
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+  });
+
+  it('C4a garde le panneau compact fermé jusqu’au clic simple puis permet de le refermer', async () => {
+    vi.stubGlobal('innerWidth', 844);
+    vi.stubGlobal('innerHeight', 390);
+    await renderStorageReady(<App />);
+
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    tapWorldPoint(6.8, 4.9);
+    const panel = await screen.findByRole('region', { name: 'Propriétés de Panier' });
+    expect(panel).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(within(panel).getByRole('button', { name: 'Fermer les propriétés' })),
+    );
+    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+  });
+
+  it('C4a garde les propriétés fermées à la pose, au drag et sur un clic de poignée', async () => {
+    await renderStorageReady(<App />);
+    await openEmbeddedWorkshop();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    );
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Poutre moyenne' })),
+    );
+
+    const board = screen.getByRole('region', { name: 'Plateau de jeu' });
+    tapBoard(board, 400, 225);
+    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+
+    const sizeHandle = await screen.findByRole('button', { name: 'Redimensionner la poutre' });
+    fireEvent.click(sizeHandle, { detail: 1 });
+    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
+
+    firePointerEvent(board, 'pointerdown', {
+      pointerId: 2,
+      pointerType: 'mouse',
+      clientX: 400,
+      clientY: 225,
+    });
+    firePointerEvent(board, 'pointermove', {
+      pointerId: 2,
+      pointerType: 'mouse',
+      clientX: 500,
+      clientY: 265,
+    });
+    firePointerEvent(board, 'pointercancel', {
+      pointerId: 2,
+      pointerType: 'mouse',
+      clientX: 500,
+      clientY: 265,
+    });
+    fireEvent.click(board, { detail: 1, clientX: 500, clientY: 265 });
+    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
+
+    firePointerEvent(board, 'pointerdown', {
+      pointerId: 3,
+      pointerType: 'mouse',
+      clientX: 400,
+      clientY: 225,
+    });
+    firePointerEvent(board, 'pointermove', {
+      pointerId: 3,
+      pointerType: 'mouse',
+      clientX: 500,
+      clientY: 265,
+    });
+    firePointerEvent(board, 'pointerup', {
+      pointerId: 3,
+      pointerType: 'mouse',
+      clientX: 500,
+      clientY: 265,
+    });
+    fireEvent.click(board, { detail: 1, clientX: 500, clientY: 265 });
+
+    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+  });
+
+  it('C4a permet de sélectionner un objet au clavier depuis la liste du plateau', async () => {
+    await renderStorageReady(<App />);
+
+    await storageAction(() => fireEvent.click(screen.getByText('Objets sur le plateau')));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Sélectionner Panier' })),
+    );
+
+    expect(await screen.findByRole('region', { name: 'Propriétés de Panier' })).toBeVisible();
+  });
+
   it('place une masse depuis l’inventaire de l’atelier', async () => {
     await renderStorageReady(<App />);
     await placeWorkshopObject('Masse');
@@ -2934,9 +3086,9 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(screen.getByText('Choisis le levier ou le bouton qui le commande')).toBeVisible();
     });
-    await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Convoyeur' })).toBeInTheDocument();
-    });
+    expect(
+      screen.queryByRole('region', { name: 'Propriétés de Convoyeur' }),
+    ).not.toBeInTheDocument();
     tapBoard(board, 200, 225);
 
     const [wired] = (canvas.getAttribute('data-wires') ?? '').split(' ');
@@ -3250,18 +3402,7 @@ describe('coque TinkerBolt', () => {
 
     // A camera pan would move this fixed workshop object away from its known
     // screen position. It must remain selectable after the object drag.
-    firePointerEvent(board, 'pointerdown', {
-      pointerId: 3,
-      pointerType: 'touch',
-      clientX: 400,
-      clientY: 48,
-    });
-    firePointerEvent(board, 'pointerup', {
-      pointerId: 3,
-      pointerType: 'touch',
-      clientX: 400,
-      clientY: 48,
-    });
+    tapBoard(board, 400, 48);
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Propriétés de Balle' })).toBeVisible();
     });
@@ -3369,6 +3510,7 @@ describe('coque TinkerBolt', () => {
       clientX: 384,
       clientY: 384,
     });
+    fireEvent.click(board, { detail: 1, clientX: 384, clientY: 384 });
 
     const panel = screen.getByRole('region', { name: 'Propriétés de Poutre' });
     await waitFor(() => {
@@ -3425,6 +3567,7 @@ describe('coque TinkerBolt', () => {
       clientX: 384,
       clientY: 384,
     });
+    fireEvent.click(board, { detail: 1, clientX: 384, clientY: 384 });
 
     const undoButton = screen.getByRole('button', { name: 'Annuler' });
     // The knob sits a stem above the floor's top edge (y = 8 − 0.125 in the world).

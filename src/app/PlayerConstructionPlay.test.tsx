@@ -75,9 +75,19 @@ const worldEvent = (type: string, x: number, y: number) => {
   fireEvent(screen.getByRole('region', { name: 'Plateau de jeu' }), event);
 };
 const tapWorld = async (x: number, y: number) => {
+  const [originX, originY] = (canvas().getAttribute('data-camera-origin') ?? '')
+    .split(',')
+    .map(Number);
+  const zoom = Number(canvas().getAttribute('data-camera-zoom'));
+  if (originX === undefined || originY === undefined || !(zoom > 0))
+    throw new Error('Missing camera');
+  const clientX = (x - originX) * zoom;
+  const clientY = (y - originY) * zoom;
+  const board = screen.getByRole('region', { name: 'Plateau de jeu' });
   await storageAction(() => {
     worldEvent('pointerdown', x, y);
     worldEvent('pointerup', x, y);
+    fireEvent.click(board, { detail: 1, clientX, clientY });
   });
 };
 const placedState = async (repo: PlayerConstructionRepository) => {
@@ -241,6 +251,9 @@ describe('reprise de construction dans le jeu', () => {
     await waitFor(async () => {
       expect((await placedState(repo)).document.inventory[0]?.quantity).toBe(0);
     });
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir les propriétés' })),
+    );
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Vers la droite' })),
     );

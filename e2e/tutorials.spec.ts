@@ -76,8 +76,9 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
     await choose(page, label);
     const { position, rotation } = placement.transform;
     await tapWorldPoint(page, position.x, position.y);
-    // Selecting the new object opens its property panel automatically. Wait
-    // for that stable state instead of tapping the transient open button.
+    // Placement leaves the panel closed; open it explicitly to configure the
+    // tutorial's reference object.
+    await page.getByRole('button', { name: 'Ouvrir les propriétés' }).tap();
     await expect(page.getByRole('region', { name: /^Propriétés de /u })).toBeVisible();
     if (placement.placementId !== undefined) positions.set(placement.placementId, position);
     const steps = Math.round(rotation / (Math.PI / 12));

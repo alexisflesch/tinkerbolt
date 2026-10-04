@@ -1600,6 +1600,54 @@ select:focus-visible {
   align-self: flex-end;
 }
 
+.inspector-scene-list {
+  flex: 0 0 auto;
+}
+
+.inspector-scene-toggle {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-m);
+  color: var(--muted-ink);
+  background: var(--panel-bg-raised);
+  font-weight: 700;
+  text-align: left;
+}
+
+.inspector-scene-toggle[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+
+.inspector-scene-list ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inspector-scene-list ul[hidden] {
+  display: none;
+}
+
+.inspector-scene-list li button {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-m);
+  color: var(--muted-ink);
+  background: var(--panel-bg-raised);
+  text-align: left;
+}
+
+.inspector-scene-list li button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
 /*
  * U8 : l'aide du niveau 1 se loge dans l'emplacement réservé, au-dessus du
  * résultat, jamais par-dessus le plateau ni la barre d'actions ; elle reprend

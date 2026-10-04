@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type PointerEvent, type RefObject } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+  type RefObject,
+} from 'react';
 
 import { addAuthoredPlacement } from '../application/construction/authoring-commands';
 import {
@@ -136,8 +143,10 @@ const isActivePointer = (
   activePointer !== null && (activePointer.id === null || activePointer.id === pointerId);
 
 type DivPointerHandler = (event: PointerEvent<HTMLDivElement>) => void;
+type DivClickHandler = (event: MouseEvent<HTMLDivElement>) => void;
 
 export interface BoardPointerHandlers {
+  readonly onClick: DivClickHandler;
   readonly onPointerDown: DivPointerHandler;
   readonly onPointerUp: DivPointerHandler;
   readonly onPointerMove: DivPointerHandler;
@@ -161,6 +170,7 @@ interface UseBoardPointersOptions {
    */
   readonly isWiringRef: RefObject<boolean>;
   readonly onWiringTap: (placementId: string) => void;
+  readonly onRequestOpenProperties: () => void;
 }
 
 interface BoardPointersController {
@@ -196,12 +206,14 @@ export function useBoardPointers({
   readCanvasSizeInCss,
   isWiringRef,
   onWiringTap,
+  onRequestOpenProperties,
 }: UseBoardPointersOptions): BoardPointersController {
   const [placementTool, setPlacementTool] = useState<PlacementTool | null>(null);
   const nextPlacementNumber = useRef(1);
   const placementToolRef = useRef<PlacementTool | null>(placementTool);
   const hasValidPlacementPreview = useRef(false);
   const activePointer = useRef<{ readonly id: number | null } | null>(null);
+  const suppressNextBoardClick = useRef(false);
   const capturedPointerId = useRef<number | null>(null);
   const activeMovePointer = useRef<{
     readonly id: number | null;
@@ -530,6 +542,7 @@ export function useBoardPointers({
     if (!activeMove.hasDragged) {
       if (distanceBetweenPoints(activeMove.startPoint, point) < DIRECT_DRAG_THRESHOLD_CSS_PIXELS)
         return;
+      suppressNextBoardClick.current = true;
       const started = beginEditorManipulation(sessionRef.current, {
         kind: 'move',
         placementId: activeMove.placementId,
@@ -641,13 +654,50 @@ export function useBoardPointers({
   }, [sessionRef, setFeedback, updateSession]);
 
   const boardPointerHandlers: BoardPointerHandlers = {
+    onClick: (event) => {
+      if (event.detail === 0) return;
+      if (suppressNextBoardClick.current) {
+        suppressNextBoardClick.current = false;
+        return;
+      }
+
+      const session = sessionRef.current;
+      if (
+        placementToolRef.current !== null ||
+        isWiringRef.current ||
+        session.phase !== 'construction'
+      ) {
+        return;
+      }
+
+      const boardRect = readCanvasRect();
+      if (boardRect === null) return;
+      const viewport: BoardViewport = {
+        cssWidth: boardRect.width,
+        cssHeight: boardRect.height,
+        origin: cameraRef.current.origin,
+        pixelsPerWorldUnit: cameraRef.current.pixelsPerWorldUnit,
+        devicePixelRatio: 1,
+      };
+      const projection = projectLevel(currentEditorAttempt(session).document);
+      const objects =
+        session.mode === 'creation' ? withAuthorRotation(projection.objects) : projection.objects;
+      const target = hitTestBoard(
+        { x: event.clientX - boardRect.left, y: event.clientY - boardRect.top },
+        objects,
+        viewport,
+      );
+      if (target !== null) onRequestOpenProperties();
+    },
     onPointerDown: (event) => {
+      suppressNextBoardClick.current = false;
       const pointerId = pointerIdFromEvent(event.pointerId);
       const point = { x: event.clientX, y: event.clientY };
 
       if (placementToolRef.current !== null) {
         if (activePointer.current !== null) {
           if (activePointer.current.id !== pointerId) {
+            suppressNextBoardClick.current = true;
             cancelPlacementProjection();
             setFeedback('Placement annulé : un second doigt a interrompu le geste.');
           }
@@ -686,6 +736,7 @@ export function useBoardPointers({
 
       if (activeMovePointer.current !== null && activeMovePointer.current.id !== pointerId) {
         const interrupted = activeMovePointer.current;
+        suppressNextBoardClick.current = true;
         cancelDirectMove();
         if (interrupted.id !== null) {
           boardGesturePointers.current.set(interrupted.id, interrupted.startPoint);
@@ -729,6 +780,7 @@ export function useBoardPointers({
         if (rotationTarget !== undefined) {
           const selected = selectEditorPlacement(sessionRef.current, rotationTarget.id);
           updateSession(selected);
+          suppressNextBoardClick.current = true;
           const placement = currentEditorAttempt(selected).document.objects.find(
             (object) => object.id === rotationTarget.id,
           );
@@ -808,12 +860,15 @@ export function useBoardPointers({
       if (placementToolRef.current !== null) {
         if (!isActivePointer(activePointer.current, pointerId)) return;
         activePointer.current = null;
+        suppressNextBoardClick.current = true;
         if (pointerId !== null) releasePointerCapture(event.currentTarget, pointerId);
         commitPlacement();
         return;
       }
 
       if (activeMovePointer.current !== null) {
+        suppressNextBoardClick.current =
+          activeMovePointer.current.kind === 'rotation' || activeMovePointer.current.hasDragged;
         if (pointerId !== null) releasePointerCapture(event.currentTarget, pointerId);
         commitDirectMove(pointerId);
         return;
@@ -851,6 +906,7 @@ export function useBoardPointers({
       if (placementToolRef.current !== null) {
         if (!isActivePointer(activePointer.current, pointerId)) return;
         activePointer.current = null;
+        suppressNextBoardClick.current = true;
         if (pointerId !== null) releasePointerCapture(event.currentTarget, pointerId);
         cancelPlacementProjection();
         setFeedback('Placement annulé : le geste tactile a été interrompu.');
@@ -858,6 +914,7 @@ export function useBoardPointers({
       }
 
       if (activeMovePointer.current !== null) {
+        suppressNextBoardClick.current = true;
         if (pointerId !== null) releasePointerCapture(event.currentTarget, pointerId);
         cancelDirectMove();
         return;
@@ -872,6 +929,7 @@ export function useBoardPointers({
       if (placementToolRef.current !== null) {
         capturedPointerId.current = null;
         if (!isActivePointer(activePointer.current, pointerId)) return;
+        suppressNextBoardClick.current = true;
         cancelPlacementProjection();
         setFeedback('Placement annulé : le geste tactile a été interrompu.');
         return;
@@ -879,6 +937,7 @@ export function useBoardPointers({
 
       if (activeMovePointer.current !== null) {
         capturedPointerId.current = null;
+        suppressNextBoardClick.current = true;
         cancelDirectMove();
         return;
       }

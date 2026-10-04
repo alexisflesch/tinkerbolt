@@ -80,6 +80,7 @@ const placeAndSelectMediumBeam = async (page: Page): Promise<Locator> => {
     position: { x: boardBounds.width / 2, y: boardBounds.height / 2 },
   });
 
+  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).click();
   const properties = page.getByRole('region', { name: 'Propriétés de Poutre' });
   await expect(properties).toBeVisible();
   return properties;
