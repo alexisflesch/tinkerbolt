@@ -9,6 +9,7 @@ import {
   type EditorSession,
 } from '../application/editor-session/editor-session';
 import type { LevelDocument } from '../domain/level-document';
+import type { ConstructionAttempt } from '../application/construction';
 
 /** Translates an `EditorActionResult` rejection reason into user-facing feedback. */
 const refusalMessage = (reason: string): string =>
@@ -34,7 +35,7 @@ interface EditorSessionController {
   readonly setFeedback: (message: string | null) => void;
   /** Sets `feedback` from an `EditorActionResult`/`EditorTransitionResult` rejection reason. */
   readonly reportRefusal: (reason: string) => void;
-  readonly updateSession: (next: EditorSession) => void;
+  readonly updateSession: (next: EditorSession, notifyCommit?: boolean) => void;
   readonly currentScene: () => LevelDocument['scene'];
   readonly undo: () => void;
   readonly redo: () => void;
@@ -60,10 +61,13 @@ interface EditorSessionController {
  */
 export function useEditorSession(
   createInitialSession: () => EditorSession,
+  onCommitted?: (attempt: ConstructionAttempt) => void,
 ): EditorSessionController {
   const [session, setSession] = useState<EditorSession>(createInitialSession);
   const [feedback, setFeedback] = useState<string | null>(null);
   const sessionRef = useRef(session);
+  const onCommittedRef = useRef(onCommitted);
+  onCommittedRef.current = onCommitted;
 
   // Wrapped in `useCallback` (with only ref/setState-setter dependencies, both
   // stable) so every function this hook returns keeps its identity across
@@ -72,9 +76,12 @@ export function useEditorSession(
   // that read the latest session via `sessionRef.current`) list them
   // truthfully in dependency arrays without eslint's exhaustive-deps losing
   // track of them through this custom hook's boundary.
-  const updateSession = useCallback((nextSession: EditorSession): void => {
+  const updateSession = useCallback((nextSession: EditorSession, notifyCommit = true): void => {
+    const previous = sessionRef.current.history.state;
     sessionRef.current = nextSession;
     setSession(nextSession);
+    if (notifyCommit && previous !== nextSession.history.state)
+      onCommittedRef.current?.(nextSession.history.state);
   }, []);
 
   const reportRefusal = useCallback(

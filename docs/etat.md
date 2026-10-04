@@ -1,10 +1,11 @@
 # État du dépôt — TinkerBolt
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
-validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a et
-C3.1 livrés**. C3 reste en cours, C3.2 est la prochaine étape.
-C5 implémenté ; recette visuelle différée sur instruction de l’auteur.
-Dernière gate C3.1 verte : 1215 tests Vitest et 89 E2E. U3 reste abandonnée.
+validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1 et
+C3.2 livrés**. La suite prioritaire demandée par l’auteur est C8, C9a–d, C7 puis
+C6, avant C4/C4a. C5 est implémenté ; recette visuelle différée sur instruction
+de l’auteur. Dernière gate C3.2 verte : 1 236 tests Vitest et 92 E2E v1. U3
+reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -22,13 +23,15 @@ données locales, reprise automatique de la construction avant simulation.
 C2a est livré : les quatre stockages utilisent désormais
 Dexie avec ports asynchrones. Aucun transfert des anciennes données locales.
 C3.1 ajoute l’enveloppe, le codec relationnel et le repository IndexedDB pour
-les constructions. Le jeu ne les charge et ne les sauvegarde pas encore : ce
-raccord et les parcours de reprise restent à faire en C3.2.
+les constructions. C3.2 charge et sauvegarde les tentatives de campagne et de
+niveaux reçus, y compris `/shared`, avec des barrières avant navigation,
+simulation, recommencement et reset de campagne. Les erreurs de stockage
+laissent jouer en mémoire sans écraser un état inconnu. La gate globale finale
+est verte : 1 236 Vitest et 92 Playwright v1.
 Le contrat C2 est accepté dans l’[ADR 0017](decisions/0017-player-construction-and-async-storage.md) :
 conserver après victoire, effacer progression et constructions de campagne au
 reset, supprimer une construction incompatible avec une source modifiée sans
-secours. Le raccord au jeu et les parcours de reprise restent à implémenter en
-C3.2.
+secours. C3.2 est terminé ; ses parcours sont consignés dans la feuille de route.
 Les [maquettes C4/C4a](maquettes/complements-desktop/c4-c4a.html) et leurs captures
 aux deux formats dans `tmp/c4/captures/` ont été examinées par l’auteur. Les
 positions demandées sont corrigées : rotation au coin haut gauche, taille à

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import type { DraftRepository } from '../application/drafts/draft-repository';
@@ -11,6 +11,13 @@ import { createIndexedDBProgressRepository } from '../infrastructure/storage/ind
 import { createIndexedDBReceivedLevelRepository } from '../infrastructure/storage/indexed-db-received-level-repository';
 
 import { createTinkerboltDatabase } from '../infrastructure/storage/tinkerbolt-database';
+import type { PlayerConstructionRepository } from '../application/construction/player-construction-repository';
+import { createPlayerConstructionWrites } from '../application/construction/player-construction-writes';
+import { createIndexedDBPlayerConstructionRepository } from '../infrastructure/storage/indexed-db-player-construction-repository';
+import {
+  PlayerConstructionContext,
+  unavailablePlayerConstructionRepository,
+} from './player-construction-context';
 
 import { BenchPage } from './BenchPage';
 import { BenchPlayPage } from './BenchPlayPage';
@@ -37,6 +44,7 @@ import {
 
 /** Route declarations only (ADR 0008); each route's screen lives in its own page module. */
 interface AppProps {
+  readonly playerConstructionRepository?: PlayerConstructionRepository;
   /** Injectable local progress port, primarily used by application tests. */
   readonly progressRepository?: ProgressRepository;
   /** Injectable local draft port (L26); defaults to IndexedDB. */
@@ -76,6 +84,7 @@ const browserRepositories = () => {
       received: unavailableReceivedLevelRepository,
       preferences: unavailablePreferencesRepository,
       progress: unavailableProgressRepository,
+      constructions: unavailablePlayerConstructionRepository,
     };
   const db = createTinkerboltDatabase({ indexedDB, IDBKeyRange });
   const clock = () => new Date();
@@ -84,10 +93,12 @@ const browserRepositories = () => {
     received: createIndexedDBReceivedLevelRepository(db, clock),
     preferences: createIndexedDBPreferencesRepository(db, clock),
     progress: createIndexedDBProgressRepository(db, clock),
+    constructions: createIndexedDBPlayerConstructionRepository(db, clock),
   };
 };
 
 export function App({
+  playerConstructionRepository,
   progressRepository,
   draftRepository,
   receivedLevelRepository,
@@ -98,34 +109,41 @@ export function App({
 }: AppProps = {}) {
   const [browser] = useState(browserRepositories);
   const repository = progressRepository ?? browser.progress;
+  const constructions = playerConstructionRepository ?? browser.constructions;
+  const constructionWrites = useMemo(
+    () => createPlayerConstructionWrites(constructions),
+    [constructions],
+  );
 
   return (
     <PwaUpdateProvider registerServiceWorker={registerServiceWorker}>
       <DevelopmentModeContext value={developmentMode}>
-        <CampaignProgressProvider repository={repository} unlockAllLevels={unlockAllLevels}>
-          <DraftRepositoryContext value={draftRepository ?? browser.drafts}>
-            <ReceivedLevelRepositoryContext value={receivedLevelRepository ?? browser.received}>
-              <PreferencesRepositoryContext value={preferencesRepository ?? browser.preferences}>
-                <BrowserRouter basename={import.meta.env.BASE_URL}>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/levels" element={<LevelsPage />} />
-                    <Route path="/levels/:levelId/play" element={<PlayLevelPage />} />
-                    <Route path="/editor" element={<EditorPage />} />
-                    <Route path="/my-levels" element={<MyLevelsPage />} />
-                    <Route path="/my-levels/:id/play" element={<ReceivedLevelPlayPage />} />
-                    <Route path="/import" element={<Navigate to="/my-levels" replace />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/shared" element={<SharedLevelPage />} />
-                    <Route path="/bench" element={<BenchPage />} />
-                    <Route path="/bench/play" element={<BenchPlayPage />} />
-                    <Route path="*" element={<Navigate to="/levels" replace />} />
-                  </Routes>
-                </BrowserRouter>
-              </PreferencesRepositoryContext>
-            </ReceivedLevelRepositoryContext>
-          </DraftRepositoryContext>
-        </CampaignProgressProvider>
+        <PlayerConstructionContext value={constructionWrites}>
+          <CampaignProgressProvider repository={repository} unlockAllLevels={unlockAllLevels}>
+            <DraftRepositoryContext value={draftRepository ?? browser.drafts}>
+              <ReceivedLevelRepositoryContext value={receivedLevelRepository ?? browser.received}>
+                <PreferencesRepositoryContext value={preferencesRepository ?? browser.preferences}>
+                  <BrowserRouter basename={import.meta.env.BASE_URL}>
+                    <Routes>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/levels" element={<LevelsPage />} />
+                      <Route path="/levels/:levelId/play" element={<PlayLevelPage />} />
+                      <Route path="/editor" element={<EditorPage />} />
+                      <Route path="/my-levels" element={<MyLevelsPage />} />
+                      <Route path="/my-levels/:id/play" element={<ReceivedLevelPlayPage />} />
+                      <Route path="/import" element={<Navigate to="/my-levels" replace />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/shared" element={<SharedLevelPage />} />
+                      <Route path="/bench" element={<BenchPage />} />
+                      <Route path="/bench/play" element={<BenchPlayPage />} />
+                      <Route path="*" element={<Navigate to="/levels" replace />} />
+                    </Routes>
+                  </BrowserRouter>
+                </PreferencesRepositoryContext>
+              </ReceivedLevelRepositoryContext>
+            </DraftRepositoryContext>
+          </CampaignProgressProvider>
+        </PlayerConstructionContext>
       </DevelopmentModeContext>
     </PwaUpdateProvider>
   );

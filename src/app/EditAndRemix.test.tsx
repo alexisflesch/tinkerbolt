@@ -345,6 +345,8 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
 
   it('dit discrètement qu’une victoire sur un niveau reçu n’a pas pu être enregistrée', async () => {
     const flush = createAnimationFrameHarness();
+    // La construction conserve un parent reçu réel ; seul l’enregistrement de victoire est refusé.
+    expect((await receivedStorage().save(entry())).status).toBe('ok');
     const repository: ReceivedLevelRepository = {
       receive: async (level) => {
         const result = await repository.save(level);

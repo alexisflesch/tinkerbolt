@@ -5,7 +5,7 @@ import { countObjectsUsed } from '../application/progression';
 import { recordReceivedVictory } from '../application/received/record-received-victory';
 import type { LevelDocument } from '../domain/level-document';
 import type { CampaignVictory } from '../ui/CampaignVictoryDialog';
-import { BoardShell } from './BoardShell';
+import { PlayerConstructionBoard } from './PlayerConstructionBoard';
 import { attributionLine } from './level-attribution';
 import { victoryNotKeptNotice } from './not-kept-notice';
 import { useReceivedLevelRepository } from './received-level-repository-context';
@@ -64,7 +64,9 @@ export function ReceivedLevelBoard({
   const shownNotice = isVictoryNotKept ? victoryNotKeptNotice : notice;
 
   return (
-    <BoardShell
+    <PlayerConstructionBoard
+      scope="received"
+      levelId={entryId}
       initialDocument={document}
       mode="resolution"
       title={title}

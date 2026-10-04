@@ -27,7 +27,12 @@ type PlayerConstructionLoadResult =
       readonly attempt: ConstructionAttempt | null;
       readonly warning?: PlayerConstructionWarning;
     }
-  | { readonly status: 'error'; readonly code: PlayerConstructionErrorCode };
+  | {
+      readonly status: 'error';
+      readonly code: PlayerConstructionErrorCode;
+      /** A failed incompatible-source deletion must prevent mounting a new session. */
+      readonly operation?: 'delete-incompatible';
+    };
 
 /** Storage only; session write ordering and invalidation belong to the caller. */
 export interface PlayerConstructionRepository {

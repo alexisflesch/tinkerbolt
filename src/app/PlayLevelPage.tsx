@@ -6,7 +6,7 @@ import { countObjectsUsed, evaluateTier } from '../application/progression';
 import { embeddedLevels, nextCampaignLevel } from '../content/embedded-levels';
 import type { LevelDocument } from '../domain/level-document';
 import type { CampaignVictory } from '../ui/CampaignVictoryDialog';
-import { BoardShell } from './BoardShell';
+import { PlayerConstructionBoard } from './PlayerConstructionBoard';
 import { offersFirstLevelHint } from './first-level-hint';
 import { StorageLoading } from './StorageLoading';
 import { useStorageRead } from './use-storage-read';
@@ -89,7 +89,9 @@ function CampaignLevelBoard({ level, levelIndex }: CampaignLevelBoardProps) {
         };
 
   return (
-    <BoardShell
+    <PlayerConstructionBoard
+      scope="campaign"
+      levelId={level.id}
       initialDocument={level}
       mode="resolution"
       title={`Niveau ${String(levelIndex + 1)} · ${level.metadata.title}`}

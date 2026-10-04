@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 
 /** A route owns its read; an unmounted reader cannot replace the next route's state. */
-export function useStorageRead<T>(read: () => Promise<T>) {
+export function useStorageRead<T>(read: (signal?: AbortSignal) => Promise<T>) {
   const [result, setResult] = useState<
     T | { readonly status: 'error'; readonly code: 'storage-unavailable' } | null
   >(null);
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     setResult(null);
     void Promise.resolve()
-      .then(read)
+      .then(() => read(controller.signal))
       .then((value) => {
         if (active) setResult(value);
       })
@@ -18,6 +19,7 @@ export function useStorageRead<T>(read: () => Promise<T>) {
       });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [read]);
   return result;

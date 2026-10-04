@@ -1490,11 +1490,11 @@ describe('coque TinkerBolt', () => {
   });
 
   it('n’affiche ni palier de défi ni niveau suivant sur un niveau hors campagne (U4, U4b)', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const animationFrames = createAnimationFrameHarness();
     await openSelfSolvingReceivedLevel();
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     advanceSimulationToResult(animationFrames, 600);
     act(() => {
       vi.advanceTimersByTime(1_000);
@@ -1512,11 +1512,11 @@ describe('coque TinkerBolt', () => {
   });
 
   it('C5 synchronise les actions du résultat reçu et la modale après 600 ms', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const animationFrames = createAnimationFrameHarness();
     await openSelfSolvingReceivedLevel();
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     advanceSimulationToResult(animationFrames, 600);
 
     const result = screen.getByRole('region', { name: 'Résultat du niveau' });
@@ -1545,11 +1545,11 @@ describe('coque TinkerBolt', () => {
   });
 
   it('C5 garde les actions disponibles après fermeture de la modale', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const animationFrames = createAnimationFrameHarness();
     await openSelfSolvingReceivedLevel();
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     advanceSimulationToResult(animationFrames, 600);
     act(() => {
       vi.advanceTimersByTime(600);
@@ -1567,7 +1567,6 @@ describe('coque TinkerBolt', () => {
   });
 
   it('C5 affiche ensemble les actions et la modale sans délai si les animations sont réduites', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query === '(prefers-reduced-motion: reduce)',
     }));
@@ -1575,6 +1574,7 @@ describe('coque TinkerBolt', () => {
     await openSelfSolvingReceivedLevel();
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     advanceSimulationToResult(animationFrames, 600);
     act(() => {
       vi.advanceTimersByTime(0);
@@ -1608,11 +1608,11 @@ describe('coque TinkerBolt', () => {
   });
 
   it('C5 annule l’apparition différée lorsqu’on navigue vers la campagne', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const animationFrames = createAnimationFrameHarness();
     await openSelfSolvingReceivedLevel();
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     advanceSimulationToResult(animationFrames, 600);
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' })),
@@ -2566,7 +2566,6 @@ describe('coque TinkerBolt', () => {
     // mounts both inside one shared `.status-slot`, unconditionally, so the
     // exact same DOM node exists for the whole lifetime of the app, and only
     // one reservation exists, sized to the larger of the two contents.
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const animationFrames = createAnimationFrameHarness();
     await openSelfSolvingReceivedLevel();
 
@@ -2586,6 +2585,7 @@ describe('coque TinkerBolt', () => {
     expect(styles).not.toMatch(/\.context-panel-slot\s*\{/);
     expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
     // The moment a first, incomplete fix still got wrong: clicking "Lancer"
     // must not touch the slot or the camera either.
@@ -2616,6 +2616,8 @@ describe('coque TinkerBolt', () => {
       fireEvent.click(within(victoryDialog).getByRole('button', { name: 'Voir la scène' })),
     );
 
+    vi.useRealTimers();
+
     // Disparition: replaying returns to construction. The slot stays
     // mounted (same node) with its content cleared, and the camera — fit to
     // the same scene and the same canvas size throughout — never changed.
@@ -2624,7 +2626,9 @@ describe('coque TinkerBolt', () => {
     );
 
     expect(workspace.querySelector('.status-slot')).toBe(slotAtMount);
-    expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+    });
     expect(canvas.getAttribute('data-camera-zoom')).toBe(zoomAtMount);
   });
 

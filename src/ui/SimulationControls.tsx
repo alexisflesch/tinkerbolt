@@ -7,6 +7,7 @@ import { Pause, Play, Redo2, RotateCcw, Undo2, X } from 'lucide-react';
 import { Button } from './Button';
 
 interface SimulationControlsProps {
+  readonly isLaunching?: boolean;
   readonly session: EditorSession;
   readonly isCreation: boolean;
   readonly feedback: string | null;
@@ -28,6 +29,7 @@ interface SimulationControlsProps {
 
 /** The "tester / pause / reset" bar: construction commands while building, playback controls while simulating. */
 export function SimulationControls({
+  isLaunching = false,
   session,
   feedback,
   notice,
@@ -103,7 +105,12 @@ export function SimulationControls({
             <RotateCcw size={18} aria-hidden="true" />
             {isCreation ? 'Ràz atelier' : 'Recommencer le niveau'}
           </Button>
-          <Button tone="go" className="toolbar-primary" onClick={onLaunchSimulation}>
+          <Button
+            tone="go"
+            className="toolbar-primary"
+            disabled={isLaunching}
+            onClick={onLaunchSimulation}
+          >
             <Play size={18} aria-hidden="true" />
             Lancer
           </Button>

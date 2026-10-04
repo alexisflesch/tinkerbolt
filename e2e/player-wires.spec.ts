@@ -91,6 +91,10 @@ test('U21 — le joueur relie avec le fil de son inventaire, puis le délie, au 
 
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1 lever-1>conveyor-1');
   await expect(guide).toBeHidden();
+  // La tentative reprise garde le fil et sa provenance, mais aucun historique.
+  await page.reload();
+  await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1 lever-1>conveyor-1');
+  await expect(page.getByRole('button', { name: 'Annuler', exact: true })).toBeDisabled();
   await openCatalogue.tap();
   await expect(page.getByRole('button', { name: 'Fil de commande, quantité : 0' })).toBeDisabled();
   await page.getByRole('button', { name: 'Fermer le catalogue' }).tap();
@@ -113,8 +117,16 @@ test('U21 — le joueur relie avec le fil de son inventaire, puis le délie, au 
     .getByRole('button', { name: 'Délier le circuit B' })
     .tap();
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
+  await page.getByRole('button', { name: 'Annuler', exact: true }).tap();
+  await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1 lever-1>conveyor-1');
+  await page.getByRole('button', { name: 'Rétablir', exact: true }).tap();
+  await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
   const closeProperties = page.getByRole('button', { name: 'Fermer les propriétés' });
   if (await closeProperties.isVisible()) await closeProperties.tap();
+  await openCatalogue.tap();
+  await expect(page.getByRole('button', { name: 'Fil de commande, quantité : 1' })).toBeEnabled();
+  await page.reload();
+  await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
   await openCatalogue.tap();
   await expect(page.getByRole('button', { name: 'Fil de commande, quantité : 1' })).toBeEnabled();
 });

@@ -14,6 +14,7 @@ import type {
 } from '../application/progression/progress-repository';
 import { campaignChapters } from '../content/embedded-levels';
 import { CampaignProgressContext } from './campaign-progress-context';
+import { usePlayerConstructionWrites } from './player-construction-context';
 
 interface CampaignProgressProviderProps {
   readonly repository: ProgressRepository;
@@ -30,6 +31,7 @@ export function CampaignProgressProvider({
   unlockAllLevels = false,
   children,
 }: CampaignProgressProviderProps) {
+  const constructionWrites = usePlayerConstructionWrites();
   const [progress, setProgress] = useState<CampaignProgress>({});
   const progressRef = useRef(progress);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,7 @@ export function CampaignProgressProvider({
     await writes.current;
     let result: ProgressSaveResult;
     try {
-      result = await repository.clear();
+      result = await constructionWrites.resetCampaign(() => repository.clear());
     } catch {
       result = { status: 'error', code: 'storage-unavailable' };
     }
@@ -105,7 +107,7 @@ export function CampaignProgressProvider({
     } else setStorageError(result.code);
     resetting.current = false;
     return result;
-  }, [repository]);
+  }, [repository, constructionWrites]);
 
   const levels = useMemo(() => {
     const entries = campaignChapters.flatMap(({ levels: chapterLevels }) =>

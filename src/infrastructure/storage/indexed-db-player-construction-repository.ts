@@ -70,6 +70,7 @@ export const createIndexedDBPlayerConstructionRepository = (
     if (!parsed.success) return { status: 'error', code: 'invalid-construction' };
     const source = parsed.data;
     const canonicalSource = encodeLevelFile(source.document);
+    const context: { operation?: 'delete-incompatible' } = {};
     try {
       return await db.transaction(
         'rw',
@@ -85,6 +86,7 @@ export const createIndexedDBPlayerConstructionRepository = (
           if (checked.value === null)
             return { status: 'ok', attempt: null, ...warningPart(checked.warning) } as const;
           if (checked.value.data.sourceFingerprint !== source.sourceFingerprint) {
+            context.operation = 'delete-incompatible';
             await db.table('playerConstructions').delete([source.scope, source.levelId]);
             return { status: 'ok', attempt: null, warning: 'source-changed' } as const;
           }
@@ -95,7 +97,11 @@ export const createIndexedDBPlayerConstructionRepository = (
         },
       );
     } catch (error) {
-      return { status: 'error', code: storageErrorCode(error) };
+      return {
+        status: 'error',
+        code: storageErrorCode(error),
+        ...context,
+      };
     }
   },
   async save(candidate, attempt) {

@@ -40,6 +40,10 @@ import { useVictoryDialog } from './use-victory-dialog';
 import { useSimulationRunner } from './use-simulation-runner';
 
 interface BoardShellProps {
+  readonly initialAttempt?: ConstructionAttempt | undefined;
+  readonly onAttemptCommitted?: ((attempt: ConstructionAttempt) => void) | undefined;
+  readonly beforeSimulation?: ((attempt: ConstructionAttempt) => Promise<void>) | undefined;
+  readonly beforeRestart?: (() => Promise<boolean>) | undefined;
   readonly initialDocument: LevelDocument;
   readonly mode: EditorSession['mode'];
   readonly title: string;
@@ -66,7 +70,7 @@ interface BoardShellProps {
     readonly onExit: () => void;
   };
   /** A discreet status over the board until dismissed (M8: a shared level not kept). */
-  readonly notice?: string;
+  readonly notice?: string | undefined;
   readonly storageError?: string | undefined;
   readonly saveNotice?: string | undefined;
   readonly beforeLeave?: (() => Promise<void>) | undefined;
@@ -98,6 +102,10 @@ const ignoredWiresNotice = (count: number): string =>
  * changed `initialDocument` prop mid-life.
  */
 export function BoardShell({
+  initialAttempt,
+  onAttemptCommitted,
+  beforeSimulation,
+  beforeRestart,
   initialDocument,
   mode,
   title,
@@ -132,7 +140,13 @@ export function BoardShell({
     redo,
     executeCommand,
     selectPlacement,
-  } = useEditorSession(() => createEditorSession(mode, createConstructionAttempt(initialDocument)));
+  } = useEditorSession(
+    () => createEditorSession(mode, initialAttempt ?? createConstructionAttempt(initialDocument)),
+    (attempt) => {
+      onDocumentCommitted?.(attempt.document);
+      onAttemptCommitted?.(attempt);
+    },
+  );
   const boardCamera = useBoardCamera(currentScene);
   const clearSelection = useCallback((): void => {
     updateSession(selectEditorPlacement(sessionRef.current, null));
@@ -170,6 +184,15 @@ export function BoardShell({
 
   // U8: « Lancer » first, then the drawer once the machine has run.
   const [hasLaunched, setHasLaunched] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const launchGeneration = useRef(0);
+  const launchPending = useRef(false);
+  useEffect(
+    () => () => {
+      launchGeneration.current += 1;
+    },
+    [],
+  );
   const hasActed = session.history.past.length > 0;
   const hintStep =
     firstLevelHint === undefined
@@ -251,17 +274,6 @@ export function BoardShell({
 
   // Only committed history states are reported: gesture previews and the
   // simulation snapshot never reach the draft.
-  const committedDocument = session.history.state.document;
-  const reportedDocumentRef = useRef(committedDocument);
-  const onDocumentCommittedRef = useRef(onDocumentCommitted);
-  useEffect(() => {
-    onDocumentCommittedRef.current = onDocumentCommitted;
-  });
-  useEffect(() => {
-    if (reportedDocumentRef.current === committedDocument) return;
-    reportedDocumentRef.current = committedDocument;
-    onDocumentCommittedRef.current?.(committedDocument);
-  }, [committedDocument]);
 
   // While wiring, the selection only marks the chosen source: the compact
   // inspector stays shut so the devices remain reachable (U15).
@@ -269,17 +281,40 @@ export function BoardShell({
     if (hasSelection && !wiring.isWiringRef.current) setIsInspectorOpen(true);
   }, [hasSelection, wiring.isWiringRef]);
 
+  const [isRestarting, setIsRestarting] = useState(false);
   const resetToInitialAttempt = (): void => {
-    wiring.cancelWiring();
-    simulation.disposeSimulationSession();
-    updateSession(createEditorSession(mode, createConstructionAttempt(resetDocument)));
-    pointers.clearPlacementTool();
-    simulation.clearAttemptOutcome();
-    setIsDrawerOpen(false);
-    setIsInspectorOpen(false);
-    setIsResetDialogOpen(false);
-    setFeedback(null);
-    boardCamera.fitCameraToCurrentScene();
+    if (isRestarting) return;
+    launchGeneration.current += 1;
+    launchPending.current = false;
+    setIsLaunching(false);
+    const reset = (): void => {
+      wiring.cancelWiring();
+      simulation.disposeSimulationSession();
+      updateSession(
+        createEditorSession(mode, createConstructionAttempt(resetDocument)),
+        mode === 'creation',
+      );
+      pointers.clearPlacementTool();
+      simulation.clearAttemptOutcome();
+      setIsDrawerOpen(false);
+      setIsInspectorOpen(false);
+      setIsResetDialogOpen(false);
+      setFeedback(null);
+      boardCamera.fitCameraToCurrentScene();
+    };
+    if (beforeRestart === undefined) {
+      reset();
+      return;
+    }
+    setIsRestarting(true);
+    void beforeRestart()
+      .then((success) => {
+        if (success) reset();
+        else setFeedback('Le niveau n’a pas été recommencé : ta construction est conservée.');
+      })
+      .finally(() => {
+        setIsRestarting(false);
+      });
   };
 
   // ADR 0015 § Révéler: an author command, in the menu rather than the action bar.
@@ -475,6 +510,7 @@ export function BoardShell({
         aria-label="Espace de construction"
       >
         <SimulationControls
+          isLaunching={isLaunching}
           isCreation={mode === 'creation'}
           session={session}
           feedback={feedback}
@@ -496,13 +532,29 @@ export function BoardShell({
           onRedo={redo}
           onCancelPlacement={pointers.cancelPlacement}
           onLaunchSimulation={() => {
+            if (launchPending.current) return;
             wiring.cancelWiring();
             const launch = () => {
               setHasLaunched(true);
               simulation.launchSimulation();
             };
-            if (beforeLeave === undefined) launch();
-            else void beforeLeave().then(launch);
+            if (beforeSimulation === undefined && beforeLeave === undefined) {
+              launch();
+              return;
+            }
+            const generation = ++launchGeneration.current;
+            launchPending.current = true;
+            setIsLaunching(true);
+            setFeedback('Chargement de la simulation…');
+            void (async () => {
+              if (beforeSimulation !== undefined)
+                await beforeSimulation(sessionRef.current.history.state);
+              else await beforeLeave?.();
+              if (launchGeneration.current !== generation) return;
+              launchPending.current = false;
+              setIsLaunching(false);
+              launch();
+            })();
           }}
           onPause={simulation.pauseCurrentSimulation}
           onResume={simulation.resumeCurrentSimulation}
@@ -619,7 +671,7 @@ export function BoardShell({
             >
               Annuler
             </Button>
-            <Button tone="reset" onClick={resetToInitialAttempt}>
+            <Button tone="reset" disabled={isRestarting} onClick={resetToInitialAttempt}>
               {resetDialogCopy.confirmLabel}
             </Button>
           </div>

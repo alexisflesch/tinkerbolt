@@ -286,7 +286,11 @@ describe('persistance des constructions de joueur', () => {
       ...document,
       metadata: { ...document.metadata, title: 'Titre corrigé' },
     });
-    expect(await repo.load(current)).toEqual({ status: 'error', code: 'quota-exceeded' });
+    expect(await repo.load(current)).toEqual({
+      status: 'error',
+      code: 'quota-exceeded',
+      operation: 'delete-incompatible',
+    });
     expect(await repo.delete(source)).toEqual({ status: 'error', code: 'quota-exceeded' });
     expect(await db.table('playerConstructions').count()).toBe(1);
   });

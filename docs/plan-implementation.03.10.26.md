@@ -474,7 +474,7 @@ outils auteur et la compatibilité des niveaux existants. Exemples conservés du
 todo : balle à l’écran pendant 15 s, deux balles dans deux paniers, caisse à
 déplacer. Aucun de ces exemples n’est déjà un contrat technique.
 
-## 8. Méthode de réalisation — mise à jour du 3 octobre 2026
+## 8. Méthode et priorité de reprise — mise à jour du 4 octobre 2026
 
 Les [règles de la reprise active](feuille-de-route.md#règles-de-la-reprise-active)
 font autorité sur la méthode. Elles ont été allégées à la demande de l’auteur :
@@ -483,10 +483,12 @@ ciblés, et la gate globale précède la clôture de chaque lot. Red-Green-Refac
 et les invariants restent applicables. Aucune capture ni vérification d’image
 pendant l’implémentation actuelle ; la recette visuelle est différée.
 
-La prochaine tâche reste C3, après C2a livré. Son découpage de réalisation est
-maintenu dans [la tâche active C3](feuille-de-route.md#c3--conserver-et-retrouver-ce-qui-a-été-commencé) :
-**C3.1 validation/persistance**, puis **C3.2 raccord/sauvegarde/reprise**. La tâche
-entière n’est pas terminée à la livraison du premier lot.
+Le 4 octobre, l’auteur a demandé de terminer C3 avant de changer l’ordre de la
+suite ; **C3 est maintenant livré**. Pour essayer les nouvelles familles
+d’objets, la priorité devient **C8 → C9a–d → C7 → C6**, avant C4/C4a. L’ordre
+faisant autorité, les dépendances et le journal restent dans la [feuille de route
+active](feuille-de-route.md). Cette priorité ne vaut pas acceptation des contrats
+Q6 : chaque famille attend toujours son contrat validé avant le code.
 
 Les critères visuels des sections préparatoires décrivent la recette finale,
 avec le report ci-dessus. Le journal et les étapes réellement livrées restent

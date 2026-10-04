@@ -17,17 +17,18 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 **C0 et C1 terminés, gate globale verte.** C1 est corrigé dans le commit
 `6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
 C2 : [ADR 0017 acceptée](decisions/0017-player-construction-and-async-storage.md),
-avec les arbitrages de l’auteur intégrés. **C2a et C3.1 livrés ; suite : C3.2.**
-Le codec, la validation relationnelle et le repository des constructions sont
-prêts ; le jeu ne les raccorde pas encore aux sessions. Les maquettes
+avec les arbitrages de l’auteur intégrés. **C2a et C3 livrés.** À la demande de
+l’auteur, l’ordre restant est
+**C8 → C9a–d → C7 → C6 → C4 → C4a → C10**. C5 est déjà implémenté ; seule sa
+recette visuelle reste différée. C3.1 et C3.2 sont livrés ; la dernière gate
+globale passe avec 1 236 tests Vitest et 92 E2E v1. Le jeu reprend maintenant
+les constructions de campagne et reçues avant toute simulation.
 C4/C4a ont été examinées par l’auteur : rotation au coin haut gauche et taille
-au milieu du bord droit, puis poursuite autorisée. C5 est implémenté
-et vérifié lors de T2 (1206 tests Vitest, 89 E2E) ; recette visuelle différée
-sur instruction de l’auteur. La gate C3.1 passe avec 1215 Vitest et 89 E2E.
+au milieu du bord droit, puis poursuite autorisée.
 L’audit C8 est préparé, Q6 et la décision de version restent
 ouverts. Les ADR 0011/0015 et 0017 fixent désormais les
 contrats de stockage et de reprise. Les quatre stockages utilisent Dexie avec
-ports asynchrones ; le raccord et la reprise dans le jeu restent C3.2.
+ports asynchrones ; la suite active porte d’abord sur les familles d’objets.
 
 ## Règles de la reprise active
 
@@ -129,30 +130,33 @@ Les tâches indépendantes déjà définies restent réalisables pendant un arbi
 C0 est le préalable commun à toutes les tâches de ces compléments ; la table
 précise leurs dépendances supplémentaires.
 
-| Ordre | ID    | Livrable                                                                | Prérequis                                                       |
-| ----- | ----- | ----------------------------------------------------------------------- | --------------------------------------------------------------- |
-| 1     | C0    | Raccord avec les sources de vérité et démarrage de la nouvelle séquence | V1 clôturée (V9).                                               |
-| 2     | C1    | Bug de placement reproduit, testé et corrigé                            | C0.                                                             |
-| 3     | C2    | Contrats de reprise locale et de stockage asynchrone                    | Décisions de stockage et de reprise confirmées.                 |
-| 4     | C2a   | Stockage IndexedDB avec Dexie, sans reprise de l’ancien stockage        | C2.                                                             |
-| 5     | C3    | Conservation des constructions et vérification des brouillons           | C2a.                                                            |
-| 6     | C4    | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
-| 7     | C4a   | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
-| 8     | C5    | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 9     | C6    | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| 10    | C7    | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
-| 11    | C8    | Inventaire exact des assets et contrats des nouveaux objets             | C0.                                                             |
-| 12–15 | C9a–d | Nouvelles familles, une à la fois                                       | C8 ; contrat de chaque famille accepté.                         |
-| 16    | C10   | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
-| 17    | M0    | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
-| 18    | M1    | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
-| 19    | M2    | Interface portrait                                                      | M1.                                                             |
-| 20    | M3    | Interface paysage                                                       | M2.                                                             |
-| 21    | M4    | Recette téléphone et gate v2                                            | M1 à M3.                                                        |
-| 22    | F0    | Dépôt et hébergement Forge opérationnels                                | M4 ; destination et stratégie de bascule définies.              |
-| 23    | F1    | Contrat et prototype du parcours Grist                                  | F0 ; accès à l’instance et décision Q8.                         |
-| 24    | F2    | Proposition d’un niveau depuis l’application                            | F1.                                                             |
-| 25    | F3    | Récupération, modération et recette v3                                  | F2.                                                             |
+| Ordre actif           | ID    | Livrable                                                                | Prérequis                                                       |
+| --------------------- | ----- | ----------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Livré                 | C0    | Raccord avec les sources de vérité et démarrage de la nouvelle séquence | V1 clôturée (V9).                                               |
+| Livré                 | C1    | Bug de placement reproduit, testé et corrigé                            | C0.                                                             |
+| Livré                 | C2    | Contrats de reprise locale et de stockage asynchrone                    | Décisions de stockage et de reprise confirmées.                 |
+| Livré                 | C2a   | Stockage IndexedDB avec Dexie, sans reprise de l’ancien stockage        | C2.                                                             |
+| Livré                 | C3.1  | Validation et persistance des constructions                             | C2a.                                                            |
+| Livré                 | C3.2  | Raccord, sauvegarde et reprise des constructions dans le jeu            | C3.1.                                                           |
+| 1                     | C8    | Inventaire exact des assets et contrats des nouveaux objets             | C0.                                                             |
+| 2–5                   | C9a–d | Nouvelles familles, une à la fois                                       | C8 ; contrat de chaque famille accepté.                         |
+| 6                     | C7    | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
+| 7                     | C6    | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
+| 8                     | C4    | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
+| 9                     | C4a   | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Livré, visuel reporté | C5    | Résultat et modale de victoire synchronisés                             | C0.                                                             |
+| 10                    | C10   | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 11                    | M0    | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
+| 12                    | M1    | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
+| 13                    | M2    | Interface portrait                                                      | M1.                                                             |
+| 14                    | M3    | Interface paysage                                                       | M2.                                                             |
+| 15                    | M4    | Recette téléphone et gate v2                                            | M1 à M3.                                                        |
+| 16                    | F0    | Dépôt et hébergement Forge opérationnels                                | M4 ; destination et stratégie de bascule définies.              |
+| 17                    | F1    | Contrat et prototype du parcours Grist                                  | F0 ; accès à l’instance et décision Q8.                         |
+| 18                    | F2    | Proposition d’un niveau depuis l’application                            | F1.                                                             |
+| 19                    | F3    | Récupération, modération et recette v3                                  | F2.                                                             |
+
+La recette visuelle C5 reste différée sur instruction de l’auteur.
 
 ### C0 — Raccorder ce plan à la reprise
 
@@ -610,8 +614,28 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 - `pnpm check` vert : typecheck, lint, formatage, Knip, contenu (6 documents),
   1215 tests Vitest (94 fichiers), build (55 entrées de précache) et 89 E2E v1.
   Le fichier `tmp/check-levels.ts` auteur a été restauré à l’identique.
-- C3.2 reste à faire : raccord aux engagements de session, sauvegarde/reprise,
-  barrières d’écriture, victoire, « Recommencer » et vérification des ateliers.
+- C3.2 est livré dans le lot suivant ; voir son journal ci-dessous.
+
+### C3.2 — Raccord au jeu — livré (4 octobre 2026)
+
+- Raccord livré : reprise automatique de campagne et des niveaux reçus, y compris
+  `/shared`, avec provenance et inventaire ; chaque engagement validé est écrit
+  dans l’ordre. Les sauvegardes sont drainées avant navigation, lancement,
+  recommencement et reset de campagne. Une lecture impossible laisse jouer en
+  mémoire sans écraser une construction inconnue ; un échec d’effacement
+  incompatible bloque le plateau et permet une nouvelle tentative.
+- Le plateau reste monté pendant « Recommencer » ; les écritures de l’ancienne
+  session sont invalidées. Undo/redo, fils, simulation, victoire et Atelier
+  (pose, déplacement, rotation, propriétés et métadonnées) sont couverts.
+- Red-Green-Refactor : courses d’écriture, lecture concurrente au reset, attente
+  avant lancement, continuité de « Recommencer » et parcours N2 ont chacun eu
+  une régression rouge puis verte ; les assertions métier existantes sont
+  conservées.
+- `pnpm check` vert : typecheck, lint, formatage, Knip, contenu, **1 236 tests
+  Vitest** et **92 tests Playwright v1**. `tmp/check-levels.ts` a été restauré au
+  même SHA-256 (`1113625e…a92907`) ; `playwright.config.ts` identique à l’original.
+- Le travail différé peut reprendre par C8. La recette visuelle demeure
+  différée selon l’instruction active.
 
 ### C4 / C4a — Maquettes desktop — direction validée, positions corrigées
 
@@ -1696,7 +1720,7 @@ an accessible element with the role "heading" and name "Amène la balle jusqu’
   « Plateau de jeu » visible avant l'assertion du texte « Atelier », gardée
   identique. Aucun délai arbitraire, aucune assertion retirée.
   `pnpm build`, puis `playwright test e2e/editor-interactions.spec.ts
-  --project=v1 --grep 'U6 — remet l’atelier à zéro'` : **1 test réussi**.
+--project=v1 --grep 'U6 — remet l’atelier à zéro'` : **1 test réussi**.
   La première sélection, ancrée avec `^`, ne lançait aucun test (Playwright
   filtre le nom complet avec le fichier) ; sélection corrigée, vérifiée
   avec `--list` : un seul test. Gate globale non relancée, sur instruction

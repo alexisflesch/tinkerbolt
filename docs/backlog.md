@@ -19,20 +19,22 @@ Chaque tranche est verticale, commence par ses tests observables et se termine p
 
 Les dépendances de chaque tâche sont dans la feuille de route. Les contrats
 des nouvelles familles et la soumission Grist restent ouverts. C2 est accepté,
-C2a est livré ; C3 est la tâche courante ; les maquettes C4/C4a ont été examinées
-et leurs positions corrigées sur instruction de l’auteur. Les autres maquettes
-restent à valider. C0 ne constate ni remplacement du stockage ni livraison UI.
+C2a et C3 sont livrés. Sur instruction de l’auteur du 4 octobre, les tâches
+restantes commencent par C8, C9a–d, C7 puis C6, avant C4/C4a. Les maquettes
+C4/C4a ont été examinées et leurs positions corrigées sur instruction de
+l’auteur. Les autres maquettes restent à valider. C0 ne constate ni
+remplacement du stockage ni livraison UI.
 
 ## Tranches fondatrices — état livré à la clôture v1
 
-| Tranche | État                                                                                                  |
-| ------- | ----------------------------------------------------------------------------------------------------- |
-| T1      | ✅ Planck retenu après mesures sur téléphone (ADR 0002)                                               |
-| T2      | ✅                                                                                                    |
-| T3      | ✅ fantôme et fond suivant la caméra livrés ; ombres abandonnées (U3)                                 |
-| T4a     | ✅                                                                                                    |
-| T4b     | ✅ sélection, déplacement direct, poignée de rotation, propriétés                                     |
-| T5      | ✅ cinq tutoriels livrés et vérifiés en V1/N2 ; recette v1 clôturée (V9)                              |
+| Tranche | État                                                                                  |
+| ------- | ------------------------------------------------------------------------------------- |
+| T1      | ✅ Planck retenu après mesures sur téléphone (ADR 0002)                               |
+| T2      | ✅                                                                                    |
+| T3      | ✅ fantôme et fond suivant la caméra livrés ; ombres abandonnées (U3)                 |
+| T4a     | ✅                                                                                    |
+| T4b     | ✅ sélection, déplacement direct, poignée de rotation, propriétés                     |
+| T5      | ✅ cinq tutoriels livrés et vérifiés en V1/N2 ; recette v1 clôturée (V9)              |
 | T6      | ✅ progression, partage et PWA livrés ; stockage remplacé par Dexie asynchrone en C2a |
 
 Les descriptions T1 à T6 ci-dessous sont l’historique du découpage initial,

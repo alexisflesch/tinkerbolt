@@ -15,6 +15,7 @@ const tutorials = [1, 2, 3, 4, 5].map((number) =>
 );
 
 const choose = async (page: Page, label: string): Promise<void> => {
+  await expect(page.getByRole('img', { name: 'Rendu du plateau' })).toBeVisible();
   const open = page.getByRole('button', { name: 'Ouvrir le catalogue' });
   if (await open.isVisible()) await open.tap();
   await page.getByRole('button', { name: new RegExp(`^${label}`) }).tap();
@@ -121,6 +122,10 @@ for (const [index, level] of tutorials.entries()) {
     await page.clock.install({ time: new Date('2026-10-02T12:00:00Z') });
     await page.clock.pauseAt(new Date('2026-10-02T12:00:00Z'));
     await page.getByRole('button', { name: 'Lancer', exact: true }).tap();
+    await expect(page.getByRole('img', { name: 'Rendu du plateau' })).toHaveAttribute(
+      'data-simulation-step',
+      '0',
+    );
     await page.clock.runFor(10_000);
     const victory = page.getByRole('dialog', { name: 'Bravo !' });
     await expect(victory).toBeVisible();
