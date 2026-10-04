@@ -80,6 +80,22 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
     });
   });
 
+  it('affiche Bolt près des actions d’accueil comme illustration décorative', async () => {
+    const { container } = await renderStorageReady(<App progressRepository={createRepository()} />);
+
+    const illustration = await waitFor(() => {
+      const element = container.querySelector<HTMLElement>('.home-bolt');
+      if (element === null) throw new Error('Illustration de Bolt introuvable.');
+      return element;
+    });
+    const image = illustration.querySelector('img');
+
+    expect(illustration).toHaveAttribute('aria-hidden', 'true');
+    expect(illustration.closest('.home-hero-actions')).not.toBeNull();
+    expect(image).toHaveAttribute('alt', '');
+    expect(image?.getAttribute('src')).toBe('/assets/bolt/bolt-explaining.webp');
+  });
+
   it('ouvre les trois destinations illustrées par un sprite, puis Paramètres en pied de page', async () => {
     await renderStorageReady(<App progressRepository={createRepository()} />);
 

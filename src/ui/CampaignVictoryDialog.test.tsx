@@ -55,6 +55,19 @@ describe('CampaignVictoryDialog — victoire de campagne (U4b)', () => {
     expect(dialog).not.toHaveAttribute('aria-label');
   });
 
+  it('affiche Bolt à côté du résumé sans ajouter de texte décoratif aux commandes', () => {
+    const dialog = renderDialog(victory());
+    const illustration = dialog.querySelector<HTMLElement>('.victory-bolt');
+    const image = illustration?.querySelector('img');
+
+    expect(illustration).not.toBeNull();
+    expect(illustration).toHaveAttribute('aria-hidden', 'true');
+    expect(illustration?.previousElementSibling).toHaveClass('victory-summary');
+    expect(image).toHaveAttribute('alt', '');
+    expect(image?.getAttribute('src')).toBe('/assets/bolt/bolt-victory.webp');
+    expect(within(dialog).getByRole('button', { name: 'Recommencer' })).toBeVisible();
+  });
+
   it('annonce le palier résolu et le nombre d’objets, sans objectif chiffré sans défi', () => {
     const dialog = renderDialog(victory({ objectsUsed: 1 }));
 

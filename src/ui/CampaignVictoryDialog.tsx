@@ -117,9 +117,14 @@ export function CampaignVictoryDialog({ campaign, onReplay, onClose }: CampaignV
       initialFocusRef={primaryRef}
     >
       <TierRow campaign={campaign} />
-      <div className="victory-summary">
-        <p className="victory-count">{objectCountLabel(campaign.objectsUsed)}</p>
-        {challenge !== null && <p className="victory-challenge">{challenge}</p>}
+      <div className="victory-summary-row">
+        <div className="victory-summary">
+          <p className="victory-count">{objectCountLabel(campaign.objectsUsed)}</p>
+          {challenge !== null && <p className="victory-challenge">{challenge}</p>}
+        </div>
+        <figure className="victory-bolt" aria-hidden="true">
+          <img src="/assets/bolt/bolt-victory.webp" alt="" draggable={false} />
+        </figure>
       </div>
       {campaign.remixError !== undefined && (
         <p className="panel-note victory-remix-error" role="alert">

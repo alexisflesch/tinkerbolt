@@ -71,6 +71,9 @@ export function HomePage() {
               <Link className="home-create" to="/editor">
                 ou créer un niveau
               </Link>
+              <figure className="home-bolt" aria-hidden="true">
+                <img src="/assets/bolt/bolt-explaining.webp" alt="" draggable={false} />
+              </figure>
             </div>
           </div>
           {heroLevel !== undefined && (

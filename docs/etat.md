@@ -2,9 +2,9 @@
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
-C3.2, C8 et C9a à C9d livrés**. La suite prioritaire demandée par l’auteur est
-C7 puis C6, avant C4/C4a et C10. C5 est implémenté ; sa recette visuelle reste
-différée. Dernière gate globale verte : 1 338 tests Vitest et 93 E2E v1. U3
+C3.2, C8, C9a à C9d et C7 livrés**. La suite prioritaire demandée par l’auteur
+est C6, puis C4/C4a et C10. C5 est implémenté ; sa recette visuelle reste
+différée. Dernière gate globale verte : 1 340 tests Vitest et 94 E2E v1. U3
 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
@@ -58,6 +58,12 @@ C9d ajoute le minuteur à délai entier de 1 à 10 s, 3 s par défaut. Un fil
 logique unique passe par lui et retarde l’activation comme la désactivation au
 pas fixe. L’aiguille tourne autour du moyeu du cadran ; les secondes et
 dixièmes apparaissent en segments ambrés. La bille en acier reste hors C9.
+
+C7 ajoute Bolt sur l’accueil et la victoire, dans des illustrations décoratives
+à texte alternatif vide ; les deux poses convenues sont exportées en WebP 324 ×
+324 et incluses au précache PWA. Les maquettes et captures sont dans
+`maquettes/complements-desktop/`. L’auteur valide C7 et prévoit une passe
+esthétique ultérieure avec Opus.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Le todo auteur reste intact ; le contenu des niveaux existants ne
 change que par `schemaVersion: 3`. C9a ajoute les sprites et vignettes des deux

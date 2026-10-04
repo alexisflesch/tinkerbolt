@@ -48,9 +48,18 @@ Dexie avec ports asynchrones.
 fil logique unique avec minuteur intermédiaire, transmission retardée de chaque
 transition et affichage à sept segments des secondes/dixièmes. Le cadran utilise
 le moyeu de l’asset comme pivot ; la vignette affiche `03.0`. La capture desktop
-de référence est dans `test-results/c9d/timer-desktop.png`. Gate complète :
+de référence est dans `tmp/c9d/timer-desktop.png`. Gate complète :
 1 338 Vitest et 93 E2E v1, 6 niveaux embarqués valides. La validation visuelle
-de l’auteur sera regroupée à C10. Suite : C7, C6, C4, C4a et C10.
+de l’auteur sera regroupée à C10.
+
+**C7, Bolt, est livré** après validation des maquettes par l’auteur : pose
+explicative près des actions sur l’accueil, pose de victoire à droite du résumé.
+Les deux illustrations sont décoratives (`alt=""`) et leur WebP 324 × 324 est
+exporté depuis `art/assets/bolt/` par `art/build-bolt-illustrations.py` ; les
+exports sont précachés par la PWA. Les captures de l’application aux deux
+formats desktop sont dans `docs/maquettes/complements-desktop/captures/`.
+L’auteur prévoit une passe esthétique ultérieure avec Opus. Gate complète :
+1 340 Vitest et 94 E2E v1. Suite : C6, C4, C4a et C10.
 
 ## Règles de la reprise active
 
@@ -163,13 +172,13 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C9a  | Famille `box`, variante bois/métal                                      | C8 ; contrats acceptés dans ADR 0018/0019 et ADR 0009.          |
 | Livré                 | C9b  | Électroaimant                                                           | C9a ; comportement accepté dans ADR 0019.                       |
 | Livré                 | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
-| 1                     | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
-| 2                     | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
-| 3                     | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| 4                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
-| 5                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Livré                 | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
+| Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
+| 1                     | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
+| 2                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
+| 3                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5   | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 6                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 4                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
 | 9                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
 | 10                    | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
 | 11                    | M2   | Interface portrait                                                      | M1.                                                             |
