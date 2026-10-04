@@ -40,6 +40,8 @@ const portOffset = (placement: Placement): WorldPoint | undefined => {
     case 'button':
       // Edge of the base plate.
       return { x: 0.4, y: 0.17 };
+    case 'electro-magnet':
+      return { x: 0.5, y: 0.3 };
     case 'fan':
       // Foot of the frame; it turns with the fan.
       return { x: 0.6, y: 0.4 };

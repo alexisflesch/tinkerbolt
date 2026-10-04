@@ -32,6 +32,9 @@ const polygon = (points: readonly (readonly [number, number])[]): WorldPolygon =
 /** C9a gameplay footprint: a box fits the belt and presses a button. */
 export const boxGeometry = { footprint: centeredRect(0.8, 0.8) } as const;
 
+/** C9b gameplay footprint and radial field; independent of source pixels. */
+export const electroMagnetGeometry = { footprint: centeredRect(1, 0.8), range: 2.8 } as const;
+
 const BALL_RADIUS = 0.3;
 
 export const ballGeometry = {

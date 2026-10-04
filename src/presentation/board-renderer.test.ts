@@ -379,6 +379,8 @@ const createPendingSpriteLoader = (): {
     'mass-10kg': fakeSprite('mass-10kg'),
     'box-wood': fakeSprite('box-wood'),
     'box-metal': fakeSprite('box-metal'),
+    'electro-magnet-off': fakeSprite('electro-magnet-off'),
+    'electro-magnet-on': fakeSprite('electro-magnet-on'),
     'lever-base': fakeSprite('lever-base'),
     'lever-handle': fakeSprite('lever-handle'),
     'conveyor-belt': fakeSprite('conveyor-belt'),

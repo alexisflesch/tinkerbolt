@@ -207,3 +207,18 @@ Le document évolue en v3 suivant l’[ADR 0018](0018-level-document-v3.md).
 - Le tracé est un calcul pur, testé sans navigateur.
 - Un besoin futur de réseau (jonctions, dérivations, logique) rouvre cette ADR :
   il n'est pas anticipé par le minuteur en série.
+
+## Amendement C9b — état initial de l’électroaimant (4 octobre 2026)
+
+L’électroaimant `electro-magnet` est une cible de fil, avec **le bouton seul**
+comme source autorisée ; le levier est refusé à l’édition et à l’import.
+L’[ADR 0019](0019-c9-object-contracts.md) fixe sa propriété initiale persistée
+`state: 'on' | 'off'`.
+
+Il partage la règle du ventilateur et de la barrière livrés : sans fil ou avec
+un signal inactif, l’appareil conserve son état initial ; un signal actif
+inverse cet état ; son relâchement rétablit l’état initial. Pour l’électroaimant,
+`off` devient actif sous appui puis retourne à `off`, et `on` devient inactif
+sous appui puis retourne à `on`. Aucun état de simulation n’est persisté.
+La règle de direction du convoyeur commandé par levier reste distincte : son
+sens initial est ignoré lorsqu’il est relié.

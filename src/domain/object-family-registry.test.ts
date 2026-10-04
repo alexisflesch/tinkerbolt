@@ -19,6 +19,7 @@ describe('registre des familles d’objet', () => {
       'conveyor',
       'button',
       'fan',
+      'electro-magnet',
       'barrier',
       'springboard',
     ]);

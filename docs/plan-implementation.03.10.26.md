@@ -317,20 +317,20 @@ et catalogue. Distinguer variantes d’une famille existante et nouvelles famill
 
 | Sources repérées                                      | Famille candidate                  | Contrat confirmé et détails restants                                                                                       |
 | ----------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `art/assets/boxes/wooden-box.png`, `metallic-box.png` | Famille `box`, matériau bois/métal | Seule la métallique est attirée ; choisir et tester forme, dimensions et masses.                                           |
-| `art/assets/electro-magnet/`                          | Électroaimant                      | Caisse métallique seule, commandé par bouton (pas le levier), portée comparable ou un peu inférieure au ventilateur.       |
+| `art/assets/boxes/wooden-box.png`, `metallic-box.png` | Famille `box`, matériau bois/métal | Géométrie commune 0,8 × 0,8 unité monde, masses 1/3 kg ; seule la métallique est attirée par l’électroaimant.             |
+| `art/assets/electro-magnet/`                          | Électroaimant                      | Caisse métallique seule, bouton uniquement, état initial `on/off` (actif par défaut au catalogue), portée légèrement sous le ventilateur. |
 | `art/assets/piston/`                                  | Piston                             | Bouton maintenu : sorti ; relâché : retour à la position de départ en propulsant les objets. Course/vitesse à régler.      |
 | `art/assets/timer/`                                   | Minuteur                           | Inséré dans un fil unique, retarde chaque changement d’état ; 1–10 s réglables en Atelier, fixés par niveau en résolution. |
 
-- Comportements confirmés par l’auteur et consignés dans l’[ADR 0019](decisions/0019-c9-object-contracts.md) ; version v3 et migrations dans l’[ADR 0018](decisions/0018-level-document-v3.md). Confirmer encore l’ordre C9 et les valeurs initiales non fixées.
+- Comportements et ordre confirmés par l’auteur, consignés dans l’[ADR 0019](decisions/0019-c9-object-contracts.md) ; version v3 et migrations dans l’[ADR 0018](decisions/0018-level-document-v3.md). Les valeurs physiques restent à équilibrer par famille.
 - Une image seule ne suffit pas à inventer un comportement physique.
 - **Sortie :** liste exhaustive rapprochée du code, contrats acceptés et tâches
   C9 dimensionnées. Tout objet différé est nommé avec la décision de report.
 
 ### C9a à C9d — Intégrer une famille complète à la fois
 
-Ordre proposé, à confirmer par l’auteur : **C9a caisses → C9b électroaimant →
-C9c piston → C9d minuteur**. Les contrats sont dans l’ADR 0019 ; le minuteur
+Ordre accepté par l’auteur : **C9a caisses → C9b électroaimant → C9c piston →
+C9d minuteur**. Les contrats sont dans l’ADR 0019 ; le minuteur
 en série complète l’ADR 0009.
 
 Pour chacune :
@@ -489,13 +489,13 @@ et les invariants restent applicables. Aucune capture ni vérification d’image
 pendant l’implémentation actuelle ; la recette visuelle est différée.
 
 Le 4 octobre, l’auteur a demandé de terminer C3 avant de changer l’ordre de la
-suite ; **C3 est maintenant livré**. C8 et C9a sont clôturés après l’audit, les
-arbitrages et l’intégration complète de la famille `box`. L’ordre prioritaire
-courant est **C9b–d → C7 → C6 → C4/C4a**, comme consigné dans la
-[feuille de route active](feuille-de-route.md). L’auteur a confirmé l’ordre des
-familles, `box` avec variante matériau, le délai initial du minuteur et ses
-règles ; voir les ADR 0018, 0019 et l’amendement de 0009. Les constantes
-physiques des trois familles restantes sont équilibrées dans leurs tâches.
+suite ; **C3 est maintenant livré**. C8, C9a et C9b sont clôturés après l’audit,
+les arbitrages et l’intégration complète des caisses et de l’électroaimant.
+L’ordre prioritaire courant est **C9c–d → C7 → C6 → C4/C4a → C10**, comme
+consigné dans la [feuille de route active](feuille-de-route.md). L’auteur a
+confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
+du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.
+Les constantes physiques des familles restantes sont équilibrées dans leurs tâches.
 La feuille de route reste seule propriétaire de la séquence, des dépendances et
 du journal.
 

@@ -20,6 +20,7 @@ const spriteAssetsByFamily = {
   seesaw: ['seesaw-fulcrum', 'seesaw-beam'],
   mass: ['mass-10kg'],
   box: ['box-wood', 'box-metal'],
+  'electro-magnet': ['electro-magnet-off', 'electro-magnet-on'],
   lever: ['lever-base', 'lever-handle'],
   // Both belts are loaded: which one is drawn depends on the belt's direction.
   conveyor: ['conveyor-belt', 'conveyor-belt-left', 'conveyor-frame'],

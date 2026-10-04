@@ -11,7 +11,7 @@ ajoutent avec leurs assets : la **masse**, le **levier** et le **convoyeur**,
 reliés par des fils de commande ([ADR 0009](decisions/0009-control-wires.md)).
 Le 26 septembre 2026, quatre autres arrivent avec leurs assets : le **bouton**,
 le **ventilateur**, la **barrière** et le **tremplin**. Le catalogue compte donc
-douze familles après C9a :
+treize familles après C9b :
 
 - balle ;
 - panier ;
@@ -23,6 +23,7 @@ douze familles après C9a :
 - convoyeur ;
 - bouton ;
 - ventilateur ;
+- électroaimant ;
 - barrière ;
 - tremplin.
 
@@ -167,7 +168,7 @@ l’[ADR 0019](decisions/0019-c9-object-contracts.md).
   réglable en Atelier, fixé par l’inventaire en résolution ;
 - deux sprites et deux choix visibles dans le catalogue ; même géométrie pour
   les collisions, le rendu, la sélection et l’aperçu de pose ;
-- attraction de la variante métallique réservée à C9b.
+- seule la variante métallique est attirée par l’électroaimant (C9b).
 
 ## Levier
 
@@ -210,7 +211,7 @@ tout.
 
 ### Rôle
 
-Un contrôleur momentané : il commande un ventilateur ou une barrière tant
+Un contrôleur momentané : il commande un ventilateur, une barrière ou un électroaimant tant
 qu'un objet appuie dessus.
 
 ### Modèle
@@ -237,8 +238,8 @@ chute.
   miroir, pour ne jamais le mettre la tête en bas. « Retourner » le met en
   miroir de gauche à droite (rotation θ → 180° − θ) ;
 - propriété `state` (`on`, `off`) : son état quand aucun contrôleur ne le
-  commande ; relié, il tourne quand le levier est d'un côté ou le bouton
-  enfoncé ;
+  commande ; relié, son état initial est inversé quand le levier est d’un
+  côté ou le bouton enfoncé, puis rétabli quand le signal redevient inactif ;
 - souffle : cône de 3 unités depuis la bouche, évasé de 15°, force décroissant
   linéairement avec la distance et proportionnelle à la largeur que le corps
   présente au souffle (9 N par unité à la bouche) — une balle flotte à environ
@@ -247,6 +248,31 @@ chute.
 - les pales tournent derrière le corps, vues par l'ouverture de la virole et
   écrasées horizontalement ; leur angle vient de la simulation, dessin
   seulement.
+
+## Électroaimant
+
+### Rôle
+
+Attire uniquement les caisses `box` de matériau `metal`, afin de déplacer ou
+retenir une pièce de la machine. Le bois, les balles et les masses ne sont pas
+magnétiques dans cette tranche ([ADR 0019](decisions/0019-c9-object-contracts.md)).
+
+### Modèle livré en C9b
+
+- corps statique rectangulaire de 1 × 0,8 unité monde, centré sur sa pose ;
+- type `electro-magnet`, propriété initiale persistée `state: 'on' | 'off'`
+  obligatoire dans le format v3, réglable en Atelier et fixée en résolution ;
+- sans fil, conserve son état initial ; relié uniquement à un bouton,
+  inverse cet état pendant l’appui puis le reprend au relâchement, comme
+  le ventilateur livré ; une nouvelle pose commence en marche ;
+- champ radial de 2,8 unités depuis son centre, légèrement inférieur aux
+  3 unités du ventilateur ; force centrale de 90 N maximum, décroissant
+  linéairement jusqu’à zéro à la limite, sans couple appliqué ;
+- force et dimensions vérifiées par attraction sur une poutre et un puzzle
+  où la caisse métallique déplacée libère une chute vers le panier ;
+- déplacement, rotation et retrait selon les permissions du niveau ;
+- deux sprites on/off cadrés ensemble et une vignette en marche ; le collider,
+  la sélection et le rendu gardent la même empreinte dans les deux états.
 
 ## Barrière
 
@@ -262,8 +288,8 @@ ou un passage qui s'ouvre.
   la gauche de la verticale, elle est dessinée en miroir, barre à gauche ;
   « Retourner » la met en miroir de gauche à droite ;
 - propriété `state` (`closed`, `open`) : son état quand aucun contrôleur ne la
-  commande ; reliée, elle s'ouvre quand le levier est d'un côté ou le bouton
-  enfoncé ;
+  commande ; reliée, son état initial est inversé quand le levier est d’un
+  côté ou le bouton enfoncé, puis rétabli quand le signal redevient inactif ;
 - la barre coulisse à 2,5 unités/s ; son collider est la seule partie sortie du
   fût, reconstruite à chaque pas de coulissement, et ce qu'elle portait est
   réveillé pour tomber ;
@@ -306,6 +332,7 @@ interface InventoryEntry {
     | 'conveyor'
     | 'button'
     | 'fan'
+    | 'electro-magnet'
     | 'barrier'
     | 'springboard';
   props:
@@ -352,6 +379,10 @@ La progression de la campagne et la géométrie mesurée de chaque niveau sont d
 - une caisse de chaque matériau tombe, repose sur une face et revient à sa pose au reset ;
 - les deux variantes suivent le convoyeur et ouvrent une barrière par un bouton ;
 - la caisse en bois est plus facile à pousser par un ventilateur que la caisse métallique ;
+- l’électroaimant n’accepte qu’un bouton et ne touche qu’aux caisses métalliques ;
+- sa portée, l’inversion sous appui, le retour à l’état initial et son reset
+  sont testés au pas fixe ;
+- un puzzle retire une caisse métallique qui bouche la chute vers le panier ;
 - une masse posée sur une poutre repose à la hauteur de son empreinte ;
 - une masse lâchée sur une bascule catapulte la balle posée à l'autre bout ;
 - un levier tient chacun de ses trois crans, sans dépasser ses butées ;

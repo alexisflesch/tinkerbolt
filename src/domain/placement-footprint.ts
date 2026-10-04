@@ -1,6 +1,7 @@
 import {
   ballGeometry,
   boxGeometry,
+  electroMagnetGeometry,
   barrierFootprint,
   basketGeometry,
   beamGeometry,
@@ -38,6 +39,8 @@ const localFootprintFor = (placement: FootprintSource): WorldRect => {
       return beamGeometry.footprints[placement.props.size];
     case 'seesaw':
       return seesawGeometry.footprint;
+    case 'electro-magnet':
+      return electroMagnetGeometry.footprint;
     case 'box':
       return boxGeometry.footprint;
     case 'mass':

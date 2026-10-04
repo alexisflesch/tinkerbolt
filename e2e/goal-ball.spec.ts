@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { installPageClock, pausePageClock } from './page-clock';
 
 import { levelDocumentSchema } from '../src/domain/level-document';
 import { encodeShareFragment } from '../src/infrastructure/level-share/level-share-codec';
@@ -110,10 +111,9 @@ const openLevel = async (page: Page): Promise<Locator> => {
 const launchAndPause = async (page: Page, canvas: Locator): Promise<Point> => {
   // Under load, polling and then clicking could pause after the balls had
   // fallen out of the scene. Advance a known duration with the browser clock.
-  const time = new Date('2026-10-02T12:00:00Z');
-  await page.clock.install({ time });
-  await page.clock.pauseAt(time);
+  await pausePageClock(page);
   await page.getByRole('button', { name: 'Lancer' }).click();
+  await expect(page.getByRole('button', { name: 'Mettre en pause' })).toBeVisible();
   await page.clock.runFor(400);
   await expect
     .poll(async () => Number((await canvas.getAttribute('data-simulation-step')) ?? '0'))
@@ -161,6 +161,7 @@ const selectGoalBall = async (page: Page, canvas: Locator): Promise<void> => {
 test('R1 — la balle cible et la bleue gardent leurs sprites sans anneau ni carré, même sélectionnées et en simulation', async ({
   page,
 }) => {
+  await installPageClock(page);
   await page.setViewportSize({ width: 390, height: 844 });
   const canvas = await openLevel(page);
   await expect(canvas).not.toHaveAttribute('data-goal-ball-marker');
@@ -186,9 +187,10 @@ test('R1 — la balle cible et la bleue gardent leurs sprites sans anneau ni car
 test('R1 — captures sans surcharge, au repos, après sélection et en simulation, aux trois formats', async ({
   page,
 }) => {
+  await installPageClock(page);
   await mkdir('test-results/goal-ball', { recursive: true });
 
-  for (const viewport of formats) {
+  for (const [index, viewport] of formats.entries()) {
     const size = `${String(viewport.width)}x${String(viewport.height)}`;
     const shot = (name: string) =>
       page.screenshot({
@@ -208,5 +210,6 @@ test('R1 — captures sans surcharge, au repos, après sélection et en simulati
     const paused = await launchAndPause(page, canvas);
     await expectNoDecoration(canvas, paused);
     await shot('simulation');
+    if (index < formats.length - 1) await page.clock.resume();
   }
 });

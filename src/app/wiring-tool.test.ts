@@ -71,7 +71,8 @@ describe('outil fil : une commande et un appareil, dans n’importe quel ordre (
   it('refuse un second objet qui ne complète pas le fil, avec la règle du domaine', () => {
     expect(wiringTap(fromSource('lever-1'), objects, 'ball-1')).toEqual({
       kind: 'refused',
-      message: 'Un fil doit arriver sur un convoyeur, un ventilateur ou une barrière placés.',
+      message:
+        'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière ou un électroaimant placés.',
     });
     expect(wiringTap(fromSource('button-1'), objects, 'conveyor-1')).toEqual({
       kind: 'refused',

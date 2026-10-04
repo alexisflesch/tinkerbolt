@@ -19,7 +19,7 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 C2 : [ADR 0017 acceptée](decisions/0017-player-construction-and-async-storage.md),
 avec les arbitrages de l’auteur intégrés. **C2a et C3 livrés.** À la demande de
 l’auteur, l’ordre restant est
-**C9b–d → C7 → C6 → C4 → C4a → C10**. C5 est déjà implémenté ; seule sa
+**C9c–d → C7 → C6 → C4 → C4a → C10**. C5 est déjà implémenté ; seule sa
 recette visuelle reste différée. C3.1 et C3.2 sont livrés ; la dernière gate
 globale passe avec 1 236 tests Vitest et 92 E2E v1. Le jeu reprend maintenant
 les constructions de campagne et reçues avant toute simulation.
@@ -29,10 +29,15 @@ C8 est livré après validation auteur : format v3, comportements, variante de
 caisse, délai du minuteur et ordre **caisses → électroaimant → piston → minuteur**
 sont consignés dans les ADR 0018/0019 et 0009. **C9a caisses est livré**, gate
 globale verte à 1 271 tests Vitest et 92 E2E v1 ; la recette visuelle reste
-différée selon l’instruction active. La prochaine tâche est C9b, électroaimant,
-puis C9c piston, C9d minuteur, C7, C6, C4, C4a et C10. Les ADR 0011/0015 et 0017 fixent les
-contrats de stockage et de reprise ; les quatre stockages utilisent Dexie avec
-ports asynchrones.
+différée selon l’instruction active. **C9b, électroaimant, est livré**. Il
+démarre actif sans fil par défaut dans le catalogue,
+garde son état initial `on/off` au niveau et l’inverse temporairement sous
+l’appui d’un bouton ; seule la caisse métallique est attirée, dans une portée
+de 2,8 unités. La gate globale passe à 1 296 Vitest et 92 E2E v1. La recette
+visuelle reste différée selon l’instruction active. Suite : C9c piston, C9d
+minuteur, C7, C6, C4, C4a et C10. Les ADR 0011/0015 et 0017 fixent les contrats
+de stockage et de reprise ; les quatre stockages utilisent Dexie avec ports
+asynchrones.
 
 ## Règles de la reprise active
 
@@ -143,15 +148,15 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C3.2 | Raccord, sauvegarde et reprise des constructions dans le jeu            | C3.1.                                                           |
 | Livré                 | C8   | Inventaire exact des assets et contrats des nouveaux objets             | C0.                                                             |
 | Livré                 | C9a  | Famille `box`, variante bois/métal                                      | C8 ; contrats acceptés dans ADR 0018/0019 et ADR 0009.          |
-| 1                     | C9b  | Électroaimant                                                           | C9a ; comportement accepté dans ADR 0019.                       |
-| 2                     | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
-| 3                     | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
-| 4                     | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
-| 5                     | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| 6                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
-| 7                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Livré                 | C9b  | Électroaimant                                                           | C9a ; comportement accepté dans ADR 0019.                       |
+| 1                     | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
+| 2                     | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
+| 3                     | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
+| 4                     | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
+| 5                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
+| 6                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5   | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 8                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 7                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
 | 9                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
 | 10                    | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
 | 11                    | M2   | Interface portrait                                                      | M1.                                                             |
@@ -764,6 +769,31 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   `git diff --check` vert.
 - Aucune capture ni vérification d’image selon l’instruction de l’auteur pour
   cette session ; validation visuelle différée. Prochaine tâche : C9b.
+
+### C9b — Électroaimant — livré le 4 octobre 2026
+
+- Famille v3 `electro-magnet`, état initial requis `on/off`, modifiable en
+  Atelier et fixé en résolution. Le catalogue auteur le propose actif, comme
+  le ventilateur. Sans fil, l’appareil garde son état ; un bouton inverse cet
+  état pendant l’appui puis le rétablit au relâchement. Le schéma rejette le
+  levier.
+- Attraction radiale de la seule caisse métallique, portée de 2,8 unités monde
+  (ventilateur : 3) et force de 90 N diminuant linéairement jusqu’à la portée.
+  Bois, balles et masses ne sont pas attirés. Sprite de rendu et miniature
+  produits par le pipeline d’art ; variante active visible pendant la
+  simulation.
+- Couvertures : schéma et codecs fichier/URL, inventaire, outils d’auteur,
+  câblage, géométrie, rendu, portée, force, état sans commande et inversion par
+  bouton, course jouable qui libère une bille vers le panier, reset et
+  déterminisme.
+- Les courses E2E préexistantes autour des panneaux compacts et de la simulation
+  sont synchronisées sur leurs états d’interface. Les assertions de résultat
+  n’ont pas été affaiblies.
+- `pnpm check` vert : **1 296 Vitest, 92 E2E v1**, 6 documents embarqués
+  valides, build et précache vert. Le fichier d’essai de l’auteur a été restauré
+  à son SHA-256 attendu ; `git diff --check` passe.
+- Aucune capture ni vérification d’image selon l’instruction de l’auteur pour
+  cette session ; validation visuelle différée. Prochaine tâche : C9c.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

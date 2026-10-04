@@ -194,6 +194,15 @@ for material, source in (("wood", "wooden-box"), ("metal", "metallic-box")):
     box_sprite = export(box_image, opaque_box(box_image), 0.8, 0.8, f"box-{material}")
     save(box_sprite, THUMBS / f"box-{material}.png")
 
+# C9b: both states share a crop frame and the same gameplay footprint.
+magnet_states = [(state, load(f"electro-magnet/{source}.png")) for state, source in (("off", "magnet-off"), ("on", "magnett-on"))]
+magnet_boxes = [opaque_box(image) for _, image in magnet_states]
+magnet_frame = (min(box[0] for box in magnet_boxes), min(box[1] for box in magnet_boxes), max(box[2] for box in magnet_boxes), max(box[3] for box in magnet_boxes))
+for state, image in magnet_states:
+    magnet_sprite = export(image, magnet_frame, 1.0, 0.8, f"electro-magnet-{state}")
+    if state == "on":
+        save(magnet_sprite, THUMBS / "electro-magnet.png")
+
 # Le collider sépare le corps trapézoïdal de l'anneau de levage, un cercle :
 # une seule enveloppe convexe en ferait une pointe.
 mass_origin = ((mass_box[0] + mass_box[2]) / 2, (mass_box[1] + mass_box[3]) / 2)

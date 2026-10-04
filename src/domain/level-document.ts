@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   ballPropertiesSchema,
   boxPropertiesSchema,
+  electroMagnetPropertiesSchema,
   barrierPropertiesSchema,
   basketPropertiesSchema,
   beamPropertiesSchema,
@@ -126,6 +127,12 @@ const objectPlacementSchema = z.discriminatedUnion('type', [
     type: z.literal('box'),
     props: boxPropertiesSchema,
   }),
+  z.strictObject({
+    ...placementFields,
+    toPlace: z.literal(true).optional(),
+    type: z.literal('electro-magnet'),
+    props: electroMagnetPropertiesSchema,
+  }),
 ]);
 
 const inventoryFields = {
@@ -223,6 +230,11 @@ const inventoryEntrySchema = z.discriminatedUnion('type', [
   ...placementInventoryEntrySchemas,
   wireInventoryEntrySchema,
   z.strictObject({ ...inventoryFields, type: z.literal('box'), props: boxPropertiesSchema }),
+  z.strictObject({
+    ...inventoryFields,
+    type: z.literal('electro-magnet'),
+    props: electroMagnetPropertiesSchema,
+  }),
 ]);
 
 /**
@@ -555,17 +567,24 @@ type PlacementType = ObjectPlacement['type'];
 
 /**
  * ADR 0009: whether a `source` may command a `target`. Levers and buttons
- * command; conveyors, fans and barriers obey. A button has two states and a
- * conveyor three: a button never commands a conveyor.
+ * command; conveyors, fans, barriers and electro-magnets obey. A button has two states and a
+ * conveyor three: a button never commands a conveyor. Electro-magnets accept
+ * only a button (ADR 0019).
  */
 const canCommand = (source: PlacementType, target: PlacementType): boolean => {
   if (source === 'lever') return target === 'conveyor' || target === 'fan' || target === 'barrier';
-  if (source === 'button') return target === 'fan' || target === 'barrier';
+  if (source === 'button')
+    return target === 'fan' || target === 'barrier' || target === 'electro-magnet';
   return false;
 };
 
 const controlSources: ReadonlySet<PlacementType> = new Set(['lever', 'button']);
-const controlTargets: ReadonlySet<PlacementType> = new Set(['conveyor', 'fan', 'barrier']);
+const controlTargets: ReadonlySet<PlacementType> = new Set([
+  'conveyor',
+  'fan',
+  'barrier',
+  'electro-magnet',
+]);
 
 /** Why `type` cannot start a wire, or `null` when it can (ADR 0009). */
 export const controlWireSourceIssue = (type: PlacementType | undefined): string | null =>
@@ -583,9 +602,10 @@ export const controlWireTargetIssue = (
   target: PlacementType | undefined,
 ): string | null => {
   if (target === undefined || !controlTargets.has(target)) {
-    return 'Un fil doit arriver sur un convoyeur, un ventilateur ou une barrière placés.';
+    return 'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière ou un électroaimant placés.';
   }
   if (source !== undefined && controlSources.has(source) && !canCommand(source, target)) {
+    if (target === 'electro-magnet') return 'Seul un bouton commande un électroaimant.';
     return 'Un bouton ne commande pas de convoyeur : seul un levier en donne le sens.';
   }
   return null;
@@ -593,7 +613,7 @@ export const controlWireTargetIssue = (
 
 /**
  * ADR 0009: a wire goes from a placed controller (lever, button) to a placed
- * device (conveyor, fan, barrier) it can command, and a device obeys at
+ * device it can command, and a device obeys at
  * most one controller, so that its state is never ambiguous.
  */
 const addControlWireIssues = (

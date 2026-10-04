@@ -49,6 +49,9 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
       case 'fan':
         label = 'Ventilateur';
         break;
+      case 'electro-magnet':
+        label = 'Électroaimant';
+        break;
       case 'springboard':
         label = 'Tremplin';
         break;

@@ -5,6 +5,8 @@ export const basketPropertiesSchema = z.strictObject({});
 export const beamPropertiesSchema = z.strictObject({
   size: z.enum(['short', 'medium', 'long']),
 });
+/** Initial state, inverted while the wired button is pressed (ADR 0019). */
+export const electroMagnetPropertiesSchema = z.strictObject({ state: z.enum(['on', 'off']) });
 export const boxPropertiesSchema = z.strictObject({ material: z.enum(['wood', 'metal']) });
 export const seesawPropertiesSchema = z.strictObject({});
 /** One sprite and one physical mass per weight; a new weight extends the enum. */
@@ -199,6 +201,16 @@ export const initialObjectFamilyRegistry = createObjectFamilyRegistry([
     },
     capabilities: ['movable', 'rotatable'],
     propertiesSchema: fanPropertiesSchema,
+  },
+  {
+    id: 'electro-magnet',
+    dataVersion: 1,
+    catalogue: {
+      label: 'Électroaimant',
+      description: 'Attire les caisses métalliques lorsqu’il est en marche',
+    },
+    capabilities: ['movable', 'rotatable'],
+    propertiesSchema: electroMagnetPropertiesSchema,
   },
   {
     id: 'barrier',

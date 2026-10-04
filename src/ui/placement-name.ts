@@ -7,6 +7,7 @@ const placementNames: Readonly<Record<LevelDocument['objects'][number]['type'], 
   seesaw: 'Bascule',
   mass: 'Masse',
   box: 'Caisse',
+  'electro-magnet': 'Électroaimant',
   lever: 'Levier',
   conveyor: 'Convoyeur',
   button: 'Bouton',
@@ -34,4 +35,6 @@ export const placementName = (object: LevelDocument['objects'][number]): string 
 
 /** « la poutre », « le panier » : the name with its definite article, in lower case. */
 export const placementNameWithArticle = (object: LevelDocument['objects'][number]): string =>
-  `${masculineTypes.has(object.type) ? 'le' : 'la'} ${placementName(object).toLowerCase()}`;
+  object.type === 'electro-magnet'
+    ? 'l’électroaimant'
+    : `${masculineTypes.has(object.type) ? 'le' : 'la'} ${placementName(object).toLowerCase()}`;

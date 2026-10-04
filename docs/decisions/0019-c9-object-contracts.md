@@ -17,6 +17,13 @@ Date : 2026-10-04
   acier est reportée hors de C9.
 - L’électroaimant est commandé par le bouton uniquement, comme le ventilateur ;
   le levier ne le commande pas.
+- L’électroaimant conserve un état initial `state: 'on' | 'off'`, choisi en
+  Atelier et fixé dans l’inventaire en résolution. Sans fil, il conserve cet
+  état ; un aimant peut donc commencer actif sans bouton ni commande.
+- Comme le ventilateur livré, un bouton enfoncé inverse l’état initial ;
+  au relâchement, l’appareil reprend son état initial. `off` devient actif
+  sous appui ; `on` devient inactif sous appui. Le levier reste exclu pour
+  l’électroaimant. Le convoyeur conserve sa commande de direction par levier.
 - La portée de l’électroaimant est comparable à celle du ventilateur, voire un
   peu inférieure. La portée du ventilateur existante sert de référence ; la
   force magnétique est à régler par essais de jeu.

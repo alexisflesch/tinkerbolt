@@ -15,6 +15,7 @@ import {
 import {
   ballGeometry,
   boxGeometry,
+  electroMagnetGeometry,
   barrierGeometry,
   basketGeometry,
   beamGeometry,
@@ -102,6 +103,11 @@ type SimulationDeviceState =
       readonly placementId: string;
       readonly kind: 'button';
       readonly pressed: boolean;
+    }
+  | {
+      readonly placementId: string;
+      readonly kind: 'electro-magnet';
+      readonly active: boolean;
     }
   | {
       readonly placementId: string;
@@ -215,6 +221,14 @@ interface ButtonRecord {
   /** Whether the cap's collider currently stands sunk. */
   sunk: boolean;
   cap: Fixture;
+}
+
+interface ElectroMagnetRecord {
+  readonly ownActive: boolean;
+  readonly placementId: string;
+  readonly body: Body;
+  readonly sourceId: string | undefined;
+  active: boolean;
 }
 
 interface FanRecord {
@@ -487,6 +501,8 @@ class PlanckSimulationSession implements SimulationSession {
   #buttons: ButtonRecord[] = [];
   #buttonSensors = new Map<Fixture, ButtonRecord>();
   #fans: FanRecord[] = [];
+  #electroMagnets: ElectroMagnetRecord[] = [];
+  #metalBoxes: Body[] = [];
   #barriers: BarrierRecord[] = [];
   #springboards: SpringboardRecord[] = [];
   #springboardPlatforms = new Map<Fixture, SpringboardRecord>();
@@ -598,6 +614,13 @@ class PlanckSimulationSession implements SimulationSession {
             placementId,
             kind: 'button',
             pressed: contacts > 0,
+          }),
+        ),
+        ...this.#electroMagnets.map(
+          ({ placementId, active }): SimulationDeviceState => ({
+            placementId,
+            kind: 'electro-magnet',
+            active,
           }),
         ),
         ...this.#fans.map(
@@ -784,6 +807,14 @@ class PlanckSimulationSession implements SimulationSession {
             placement.transform.rotation,
           );
           break;
+        case 'electro-magnet':
+          this.#createElectroMagnet(
+            placement.id,
+            placement.transform.position,
+            placement.transform.rotation,
+            placement.props.state === 'on',
+          );
+          break;
         case 'fan':
           this.#createFan(
             placement.id,
@@ -939,6 +970,7 @@ class PlanckSimulationSession implements SimulationSession {
     this.#bodies.push({ placementId, role: 'primary', handle: body });
     const { width, height } = boxGeometry.footprint;
     // Gameplay masses, balanced independently of the source illustrations.
+    if (material === 'metal') this.#metalBoxes.push(body);
     const kilograms = material === 'wood' ? 1 : 3;
     this.#createFixture(body, {
       shape: new Box(width / 2, height / 2),
@@ -1104,6 +1136,10 @@ class PlanckSimulationSession implements SimulationSession {
   /** Reads every controller and sets the state of the devices it commands. */
   #commandDevices(): void {
     this.#commandConveyors();
+    for (const magnet of this.#electroMagnets) {
+      const button = this.#buttons.find(({ placementId }) => placementId === magnet.sourceId);
+      magnet.active = magnet.ownActive !== (button !== undefined && button.contacts > 0);
+    }
     // A commanded device starts in its own state and switches to the other
     // while its controller is active (decision of 1st October 2026).
     for (const fan of this.#fans) {
@@ -1187,6 +1223,29 @@ class PlanckSimulationSession implements SimulationSession {
         friction: 0.5,
       });
     }
+  }
+
+  #createElectroMagnet(
+    placementId: string,
+    position: SimulationVector,
+    rotation: number,
+    ownActive: boolean,
+  ): void {
+    const body = this.#requireWorld().createBody({
+      type: 'static',
+      position: new Vec2(position.x, position.y),
+      angle: rotation,
+    });
+    this.#bodies.push({ placementId, role: 'primary', handle: body });
+    const { width, height } = electroMagnetGeometry.footprint;
+    this.#createFixture(body, { shape: new Box(width / 2, height / 2), friction: 0.5 });
+    this.#electroMagnets.push({
+      placementId,
+      body,
+      sourceId: this.#level.wires.find(({ targetId }) => targetId === placementId)?.sourceId,
+      ownActive,
+      active: ownActive,
+    });
   }
 
   #createFan(
@@ -1338,6 +1397,23 @@ class PlanckSimulationSession implements SimulationSession {
     }
   }
 
+  /** Central force, in newtons, falling linearly to zero at the radial boundary. */
+  #attractMetalBoxes(): void {
+    for (const magnet of this.#electroMagnets) {
+      if (!magnet.active) continue;
+      const centre = magnet.body.getPosition();
+      for (const box of this.#metalBoxes) {
+        const position = box.getWorldCenter();
+        const dx = centre.x - position.x;
+        const dy = centre.y - position.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance < 1e-6 || distance >= electroMagnetGeometry.range) continue;
+        const force = 90 * (1 - distance / electroMagnetGeometry.range);
+        box.applyForceToCenter(new Vec2((force * dx) / distance, (force * dy) / distance), true);
+      }
+    }
+  }
+
   /** Pushes every dynamic body inside a running fan's cone of air. */
   #blowFans(): void {
     const world = this.#requireWorld();
@@ -1484,6 +1560,7 @@ class PlanckSimulationSession implements SimulationSession {
     this.#pullLeversToNotches();
     this.#applyRollingResistance();
     this.#blowFans();
+    this.#attractMetalBoxes();
     world.step(this.#fixedStepSeconds);
     for (const conveyor of this.#conveyors) {
       conveyor.beltOffset += conveyor.direction * CONVEYOR_SPEED * this.#fixedStepSeconds;
@@ -1605,6 +1682,8 @@ class PlanckSimulationSession implements SimulationSession {
     this.#buttons = [];
     this.#buttonSensors.clear();
     this.#fans = [];
+    this.#electroMagnets = [];
+    this.#metalBoxes = [];
     this.#barriers = [];
     this.#springboards = [];
     this.#springboardPlatforms.clear();

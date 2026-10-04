@@ -53,7 +53,7 @@ const leverPositionFromValue = (value: string): 'left' | 'center' | 'right' | nu
 const conveyorDirectionFromValue = (value: string): 'left' | 'stopped' | 'right' | null =>
   value === 'left' || value === 'stopped' || value === 'right' ? value : null;
 
-const fanStateFromValue = (value: string): 'on' | 'off' | null =>
+const binaryApplianceStateFromValue = (value: string): 'on' | 'off' | null =>
   value === 'on' || value === 'off' ? value : null;
 
 const barrierStateFromValue = (value: string): 'closed' | 'open' | null =>
@@ -331,29 +331,30 @@ export function ContextPanel({ session, onExecuteCommand, onClose }: ContextPane
           </select>
         </label>
       )}
-      {selectedPlacement.type === 'fan' && canEdit && (
-        <label className="context-size-control">
-          État de départ
-          <select
-            aria-label="État de départ"
-            value={selectedPlacement.props.state}
-            onChange={(event) => {
-              const state = fanStateFromValue(event.target.value);
-              if (state === null) return;
-              onExecuteCommand(
-                updatePlacementProperties({
-                  context: 'author',
-                  placementId: selectedPlacement.id,
-                  props: { state },
-                }),
-              );
-            }}
-          >
-            <option value="on">En marche</option>
-            <option value="off">Arrêté</option>
-          </select>
-        </label>
-      )}
+      {(selectedPlacement.type === 'fan' || selectedPlacement.type === 'electro-magnet') &&
+        canEdit && (
+          <label className="context-size-control">
+            État de départ
+            <select
+              aria-label="État de départ"
+              value={selectedPlacement.props.state}
+              onChange={(event) => {
+                const state = binaryApplianceStateFromValue(event.target.value);
+                if (state === null) return;
+                onExecuteCommand(
+                  updatePlacementProperties({
+                    context: 'author',
+                    placementId: selectedPlacement.id,
+                    props: { state },
+                  }),
+                );
+              }}
+            >
+              <option value="on">En marche</option>
+              <option value="off">Arrêté</option>
+            </select>
+          </label>
+        )}
       {selectedPlacement.type === 'barrier' && canEdit && (
         <label className="context-size-control">
           État de départ

@@ -44,6 +44,8 @@ const simulationView = (simulation: SimulationSnapshot): BoardSimulationView => 
       switch (device.kind) {
         case 'button':
           return [[device.placementId, { kind: 'button', pressed: device.pressed }]];
+        case 'electro-magnet':
+          return [[device.placementId, { kind: 'electro-magnet', active: device.active }]];
         case 'fan':
           return [[device.placementId, { kind: 'fan', bladeAngle: device.bladeAngle }]];
         case 'barrier':

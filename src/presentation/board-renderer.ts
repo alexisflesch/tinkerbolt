@@ -1,6 +1,7 @@
 import {
   ballGeometry,
   boxGeometry,
+  electroMagnetGeometry,
   barrierFootprint,
   barrierGeometry,
   basketGeometry,
@@ -166,6 +167,7 @@ export type BoardConveyorBelt = Readonly<{
 export type BoardDeviceView =
   | Readonly<{ readonly kind: 'button'; readonly pressed: boolean }>
   | Readonly<{ readonly kind: 'fan'; readonly bladeAngle: number }>
+  | Readonly<{ readonly kind: 'electro-magnet'; readonly active: boolean }>
   | Readonly<{ readonly kind: 'barrier'; readonly retraction: number }>
   | Readonly<{ readonly kind: 'springboard'; readonly compression: number }>;
 
@@ -265,6 +267,8 @@ const layerPoseSources: Record<SpriteAsset, LayerPoseSource> = {
   'mass-10kg': 'body',
   'box-wood': 'body',
   'box-metal': 'body',
+  'electro-magnet-off': 'body',
+  'electro-magnet-on': 'body',
   'lever-base': 'placement',
   'lever-handle': 'body',
   'conveyor-belt': 'placement',
@@ -341,6 +345,11 @@ const layerAssetsFor = (
   if (object.type === 'ball') {
     return object.id === goalBallId ? GOAL_BALL_LAYERS : OTHER_BALL_LAYERS;
   }
+  if (object.type === 'electro-magnet') {
+    const device = deviceAt(object, view);
+    const active = device?.kind === 'electro-magnet' ? device.active : object.props.state === 'on';
+    return [active ? 'electro-magnet-on' : 'electro-magnet-off'];
+  }
   if (object.type === 'box') return [object.props.material === 'wood' ? 'box-wood' : 'box-metal'];
   if (object.type === 'beam') return [BEAM_LAYERS[object.props.size]];
   if (object.type !== 'conveyor') return spriteAssetsForFamily(object.type);
@@ -359,6 +368,8 @@ const footprintForObject = (object: Placement): BoardDestination => {
       return beamGeometry.footprints[object.props.size];
     case 'seesaw':
       return seesawGeometry.footprint;
+    case 'electro-magnet':
+      return electroMagnetGeometry.footprint;
     case 'box':
       return boxGeometry.footprint;
     case 'mass':
@@ -554,6 +565,8 @@ const drawOrderByAsset: Record<SpriteAsset, number> = {
   'mass-10kg': 0,
   'box-wood': 0,
   'box-metal': 0,
+  'electro-magnet-off': 0,
+  'electro-magnet-on': 0,
   'lever-base': 0,
   'lever-handle': 0,
   'conveyor-belt': 0,

@@ -48,12 +48,19 @@ const screenPointForWorld = async (
 };
 
 const closeCompactProperties = async (page: Page): Promise<void> => {
+  const isCompact = await page.evaluate(() => window.matchMedia('(max-width: 999px)').matches);
+  if (!isCompact) return;
+
   const close = page.getByRole('button', { name: 'Fermer les propriétés' });
-  if ((await close.count()) > 0 && (await close.first().isVisible())) {
-    await close.first().click();
+  const open = page.getByRole('button', { name: 'Ouvrir les propriétés' });
+  // Placing/selecting may open the compact sheet on the same touch. Wait for
+  // either stable state so a late-opening sheet cannot cover the next target.
+  await expect(close.or(open)).toBeVisible();
+  if (await close.isVisible()) {
+    await close.tap();
     await expect(close.first()).toBeHidden();
     await expect(page.locator('.context-panel')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+    await expect(open).toBeVisible();
   }
 };
 

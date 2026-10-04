@@ -61,6 +61,13 @@ describe('ObjectDrawer', () => {
     );
   });
 
+  it('propose l’électroaimant avec sa vignette en marche', () => {
+    const drawer = renderDrawer('creation');
+    expect(thumbnailOf(within(drawer).getByRole('button', { name: 'Électroaimant' }))).toMatch(
+      /\/thumbs\/electro-magnet\.png$/,
+    );
+  });
+
   it('montre en bleu la balle de l’inventaire du joueur : elle n’est jamais l’objectif', () => {
     const drawer = renderDrawer('resolution');
 
@@ -75,7 +82,7 @@ describe('ObjectDrawer', () => {
     expect(thumbnailOf(blue)).toMatch(/\/thumbs\/second-ball\.png$/);
     expect(within(drawer).queryByRole('button', { name: /Balle rouge/ })).toBeNull();
     expect(within(drawer).queryByRole('button', { name: /Panier/ })).toBeNull();
-    expect(within(drawer).getByText('12 objets')).toBeTruthy();
+    expect(within(drawer).getByText('13 objets')).toBeTruthy();
   });
 
   it('propose à l’auteur la carte Fil, qui lance le câblage (U15)', () => {
@@ -87,7 +94,7 @@ describe('ObjectDrawer', () => {
     expect(wire.querySelector('svg')).not.toBeNull();
     fireEvent.click(wire);
     expect(onSelectWire).toHaveBeenCalledOnce();
-    expect(within(drawer).getByText('12 objets')).toBeTruthy();
+    expect(within(drawer).getByText('13 objets')).toBeTruthy();
   });
 
   it('ne montre pas de carte Fil au joueur dont l’inventaire n’a pas de fil', () => {

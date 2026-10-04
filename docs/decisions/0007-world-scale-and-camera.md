@@ -258,6 +258,7 @@ face à la lumière).
 | poutre     | `beam-short`, `beam-medium` ou `beam-long` (U12)          | 2, 4 ou 6 × 0,25 (centre)                     |
 | bascule    | `seesaw-fulcrum` (immobile), `seesaw-beam` (pivote)       | ensemble 3 × 0,82 (pivot)                     |
 | masse      | `mass-10kg`                                               | 0,8 × 0,772 (centre)                          |
+| électroaimant C9b | `electro-magnet-off` ou `electro-magnet-on` (même cadre) | 1 × 0,8 (centre) |
 | caisse C9a | `box-wood` ou `box-metal` (corps dynamique)               | 0,8 × 0,8 (centre)                            |
 | levier     | `lever-base` (immobile), `lever-handle` (pivote)          | socle 0,8 × 0,414, poignée 0,35 × 1,0 (pivot) |
 | convoyeur  | `conveyor-belt` ou `conveyor-belt-left`, `conveyor-frame` | 3 × 0,58 (centre)                             |

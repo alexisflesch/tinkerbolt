@@ -89,6 +89,13 @@ const everyFamily = levelDocumentSchema.parse({
       transform: { position: { x: 7, y: 6 }, rotation: 0 },
     })),
     {
+      id: 'magnet',
+      type: 'electro-magnet',
+      props: { state: 'off' },
+      permissions,
+      transform: { position: { x: 7, y: 6 }, rotation: 0 },
+    },
+    {
       id: 'mass-1',
       type: 'mass',
       transform: { position: { x: 7, y: 7 }, rotation: 0 },
@@ -153,7 +160,14 @@ const everyFamily = levelDocumentSchema.parse({
 });
 
 describe('sprites du plateau', () => {
-  const layers = projectLevel(everyFamily).objects;
+  const layers = [
+    ...projectLevel(everyFamily).objects,
+    ...projectLevel(everyFamily, {
+      bodyPoses: new Map(),
+      conveyorBelts: new Map(),
+      devices: new Map([['magnet', { kind: 'electro-magnet', active: true }]]),
+    }).objects.filter((layer) => layer.assetKey === 'electro-magnet-on'),
+  ];
 
   it.each(layers.map((layer) => [layer.assetKey, layer] as const))(
     '%s mesure exactement son empreinte à 128 px par unité monde',
@@ -189,6 +203,7 @@ describe('sprites du plateau', () => {
     'conveyor',
     'button',
     'fan',
+    'electro-magnet',
     'barrier',
     'springboard',
   ] as const)('fournit une vignette et tous les calques de la famille %s', (family) => {

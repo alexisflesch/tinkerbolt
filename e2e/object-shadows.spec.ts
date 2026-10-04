@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { installPageClock, pausePageClock } from './page-clock';
 
 import { levelDocumentSchema } from '../src/domain/level-document';
 import { encodeShareFragment } from '../src/infrastructure/level-share/level-share-codec';
@@ -123,6 +124,7 @@ for (const viewport of formats) {
     page,
   }, testInfo) => {
     test.skip(!['mobile', 'v1'].includes(testInfo.project.name), 'Captures sur le profil tactile.');
+    await installPageClock(page);
     await page.setViewportSize(viewport);
     await page.goto(`/shared${await encodeShareFragment(shadowLevel)}`);
     const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
@@ -182,10 +184,9 @@ for (const viewport of formats) {
     await shot('fantome-invalide');
     await page.getByRole('button', { name: 'Annuler le placement' }).tap();
 
-    const time = new Date('2026-10-02T12:00:00Z');
-    await page.clock.install({ time });
-    await page.clock.pauseAt(time);
+    await pausePageClock(page);
     await page.getByRole('button', { name: 'Lancer', exact: true }).tap();
+    await expect(page.getByRole('button', { name: 'Mettre en pause' })).toBeVisible();
     await page.clock.runFor(400);
     await page.getByRole('button', { name: 'Mettre en pause' }).tap();
     await expect(page.getByText('Simulation en pause')).toBeVisible();
