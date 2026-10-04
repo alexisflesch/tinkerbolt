@@ -492,9 +492,11 @@ La capture corrigée est produite avec C9d ; la validation visuelle finale reste
 
 Le 4 octobre, l’auteur a demandé de terminer C3 avant de changer l’ordre de la
 suite ; **C3 est maintenant livré**. C8 et C9a à C9d sont clôturés après
-l’audit, les arbitrages et l’intégration des quatre familles. L’ordre prioritaire
-courant est **C7 → C6 → C4/C4a → C10**, comme consigné dans la
-[feuille de route active](feuille-de-route.md). L’auteur a
+l’audit, les arbitrages et l’intégration des quatre familles. L’ordre demandé
+par l’auteur, **C7 → C6 → C4/C4a → C10**, est consigné dans la
+[feuille de route active](feuille-de-route.md) : C7 et C6 sont livrés, la
+prochaine tâche est C4, puis C4a et C10. La disposition du splash et ses
+captures responsive ont été validées par l’auteur pour C6. L’auteur a
 confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
 du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.
 Après le retour de test sur le minuteur, C9d ajoute un pivot d’aiguille centré

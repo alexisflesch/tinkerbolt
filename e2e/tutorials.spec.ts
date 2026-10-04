@@ -150,6 +150,9 @@ for (const [index, level] of tutorials.entries()) {
     else await expect(next).toHaveCount(0);
     await page.screenshot({ path: `test-results/tutorials/${level.id}-victoire-390x844.png` });
     await page.goto('/levels');
+    // A full navigation starts the static splash again; release its minimum
+    // duration on this test's paused clock before checking the campaign card.
+    await page.clock.runFor(1_200);
     await expect(
       page.getByRole('region', { name: `Niveau ${String(index + 1)}`, exact: true }),
     ).toContainText('Résolu');

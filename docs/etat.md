@@ -2,10 +2,10 @@
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
-C3.2, C8, C9a à C9d et C7 livrés**. La suite prioritaire demandée par l’auteur
-est C6, puis C4/C4a et C10. C5 est implémenté ; sa recette visuelle reste
-différée. Dernière gate globale verte : 1 340 tests Vitest et 94 E2E v1. U3
-reste abandonnée.
+C3.2, C8, C9a à C9d, C7 et C6 livrés**. La suite prioritaire est C4, puis
+C4a et C10. C5 est implémenté ; sa recette visuelle reste différée. Dernière
+gate globale verte après C6 : 1 340 tests Vitest et 97 E2E v1. U3 reste
+abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -64,6 +64,14 @@ C7 ajoute Bolt sur l’accueil et la victoire, dans des illustrations décorativ
 324 et incluses au précache PWA. Les maquettes et captures sont dans
 `maquettes/complements-desktop/`. L’auteur valide C7 et prévoit une passe
 esthétique ultérieure avec Opus.
+**C6 ajoute les icônes du navigateur, Apple Touch et PWA** depuis les sources
+fournies, plus un splash statique avec images portrait/tablette/desktop WebP
+précachées. Le splash précède React et ne libère l’application qu’après son
+premier rendu et 1,2 s ; le démarrage affiche une alerte avec bouton de reprise
+en cas d’échec. Les tests PWA isolés couvrent le lien direct, l’échec simulé,
+le cache hors ligne et les icônes ; le chemin de base `/tinkerbolt/` répond
+avec les assets et types attendus. L’auteur a validé la disposition du splash ;
+captures et aperçu des icônes sont dans `maquettes/complements-desktop/captures/c6/`.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Le todo auteur reste intact ; le contenu des niveaux existants ne
 change que par `schemaVersion: 3`. C9a ajoute les sprites et vignettes des deux
@@ -987,6 +995,14 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après C6 (4 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu (6 documents), 1 340 tests Vitest (102 fichiers),
+build (77 entrées de précache, 2 861,52 Kio) et 97 E2E v1 réussis. La première
+gate a révélé un `overflow: hidden` conservé après le splash ; il est désormais
+limité au calque. Les cinq parcours tutoriels avancent aussi leur horloge
+figée après le rechargement simulé. Le fichier d’essai de l’auteur a été
+restauré avec son SHA-256 attendu `1113625e…a92907`.
 
 `pnpm check` après C3.1 (4 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu (6 documents), 1215 tests Vitest (94 fichiers), build

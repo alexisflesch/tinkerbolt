@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import type { DraftRepository } from '../application/drafts/draft-repository';
@@ -44,6 +44,8 @@ import {
 
 /** Route declarations only (ADR 0008); each route's screen lives in its own page module. */
 interface AppProps {
+  /** Called after the first application tree has committed to the DOM. */
+  readonly onReady?: () => void;
   readonly playerConstructionRepository?: PlayerConstructionRepository;
   /** Injectable local progress port, primarily used by application tests. */
   readonly progressRepository?: ProgressRepository;
@@ -98,6 +100,7 @@ const browserRepositories = () => {
 };
 
 export function App({
+  onReady,
   playerConstructionRepository,
   progressRepository,
   draftRepository,
@@ -107,6 +110,10 @@ export function App({
   developmentMode = false,
   registerServiceWorker,
 }: AppProps = {}) {
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
+
   const [browser] = useState(browserRepositories);
   const repository = progressRepository ?? browser.progress;
   const constructions = playerConstructionRepository ?? browser.constructions;

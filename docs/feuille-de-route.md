@@ -59,7 +59,11 @@ exporté depuis `art/assets/bolt/` par `art/build-bolt-illustrations.py` ; les
 exports sont précachés par la PWA. Les captures de l’application aux deux
 formats desktop sont dans `docs/maquettes/complements-desktop/captures/`.
 L’auteur prévoit une passe esthétique ultérieure avec Opus. Gate complète :
-1 340 Vitest et 94 E2E v1. Suite : C6, C4, C4a et C10.
+1 340 Vitest et 94 E2E v1.
+
+**C6, icônes et splash, est livré** après validation par l’auteur de la
+disposition du splash : image adaptée au format, barre et crédit centrés en bas.
+La prochaine tâche est C4, puis C4a et C10.
 
 ## Règles de la reprise active
 
@@ -137,7 +141,8 @@ L’auteur prévoit une passe esthétique ultérieure avec Opus. Gate complète 
 - Boutons de résultat et modale apparaissent ensemble, au délai actuel (C5).
 - Splash une seule fois au démarrage de l’application, y compris par lien
   direct, avec barre de chargement et minimum de 1,2 s. « Créé par Alexis
-  Flesch » en petit sous la barre, en bas ; maquette à valider (C6).
+  Flesch » en petit sous la barre, en bas ; disposition validée le 4 octobre
+  pour C6.
 - Bolt sur l’accueil et la victoire ; expression, emplacement et taille à
   valider sur maquettes (C7).
 - Proposition Grist entièrement dans TinkerBolt, avec consentement, licence
@@ -174,20 +179,20 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
 | Livré                 | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
 | Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
-| 1                     | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| 2                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
-| 3                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Livré                 | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
+| 1                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
+| 2                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5   | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 4                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
-| 9                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
-| 10                    | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
-| 11                    | M2   | Interface portrait                                                      | M1.                                                             |
-| 12                    | M3   | Interface paysage                                                       | M2.                                                             |
-| 14                    | M4   | Recette téléphone et gate v2                                            | M1 à M3.                                                        |
-| 15                    | F0   | Dépôt et hébergement Forge opérationnels                                | M4 ; destination et stratégie de bascule définies.              |
-| 16                    | F1   | Contrat et prototype du parcours Grist                                  | F0 ; accès à l’instance et décision Q8.                         |
-| 17                    | F2   | Proposition d’un niveau depuis l’application                            | F1.                                                             |
-| 18                    | F3   | Récupération, modération et recette v3                                  | F2.                                                             |
+| 3                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 4                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
+| 5                     | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
+| 6                     | M2   | Interface portrait                                                      | M1.                                                             |
+| 7                     | M3   | Interface paysage                                                       | M2.                                                             |
+| 8                     | M4   | Recette téléphone et gate v2                                            | M1 à M3.                                                        |
+| 9                     | F0   | Dépôt et hébergement Forge opérationnels                                | M4 ; destination et stratégie de bascule définies.              |
+| 10                    | F1   | Contrat et prototype du parcours Grist                                  | F0 ; accès à l’instance et décision Q8.                         |
+| 11                    | F2   | Proposition d’un niveau depuis l’application                            | F1.                                                             |
+| 12                    | F3   | Récupération, modération et recette v3                                  | F2.                                                             |
 
 La recette visuelle C5 reste différée sur instruction de l’auteur.
 
@@ -860,7 +865,37 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   build et précache verts. Le fichier d’essai de l’auteur est restauré à son
   SHA-256 attendu ; `git diff --check` passe.
 - La capture corrigée est disponible pour la validation visuelle de l’auteur à
-  C10. Prochaine tâche : C7, puis C6, C4, C4a et C10.
+  C10. C7 et C6 sont maintenant livrés ; prochaine tâche : C4, puis C4a et C10.
+
+### C6 — Icônes et écran de démarrage — livré le 4 octobre 2026
+
+- Exports PNG locaux : favicon 16/32/48 depuis `favicon.png`, Apple Touch
+  180 et PWA 512 depuis `pwa-icon.png`, PWA 192 depuis `small-icon.png`, et
+  variante maskable 512 depuis le visage de `favicon.png`, centré avec marge
+  sûre sur le jaune de marque. Le manifeste décrit les tailles et usages ; les
+  fichiers locaux répondent avec le type PNG attendu.
+- Le splash statique de `index.html` s’affiche avant le bundle React. Il choisit
+  les illustrations portrait, tablette ou desktop locales en WebP, précachées
+  par la PWA. La racine de l’app reste inerte jusqu’au premier rendu React et
+  aux 1,2 s minimum écoulées ; le splash disparaît ensuite et ne revient pas
+  pendant les changements de route. Échec de rendu, de module ou démarrage
+  bloqué : alerte de reprise avec bouton de rechargement.
+- Le test Playwright rouge initial échoue sans splash au lien direct. Les
+  six tests PWA v1 passent ensuite : manifeste et icônes, précache, mode hors
+  ligne, lien direct, délai et écran d’échec. Build sous `/tinkerbolt/` : le
+  lien profond, le manifeste, les icônes et les images renvoient les types et
+  statuts attendus sur le chemin de base.
+- Disposition validée par l’auteur. Maquettes et captures aux formats 1440 ×
+  900, 1280 × 720, 1024 × 768 et 390 × 844, ainsi que l’aperçu des icônes :
+  `docs/maquettes/complements-desktop/captures/c6/`.
+- La première gate a trouvé le débordement global du splash après sa fermeture
+  et le blocage de son délai sur l’horloge figée des tests N2. Le débordement
+  est maintenant limité au calque ; les tests font avancer l’horloge lors du
+  rechargement direct. Accueil, C7 et les cinq tutoriels passent isolément.
+- `pnpm check` passe : typecheck, lint, formatage, Knip, contenu (6 documents),
+  1 340 Vitest (102 fichiers), build (77 entrées de précache, 2 861,52 Kio) et
+  97 E2E v1. Le fichier d’essai de l’auteur est restauré avec son SHA-256
+  attendu `1113625e…a92907`. Commit local créé ; hash consultable dans `git log`.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

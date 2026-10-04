@@ -32,21 +32,21 @@ export default defineConfig({
         theme_color: '#101923',
         icons: [
           {
-            src: 'icons/tinkerbolt-192.svg',
+            src: 'icons/tinkerbolt-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'icons/tinkerbolt-512.svg',
+            src: 'icons/tinkerbolt-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'icons/tinkerbolt-maskable-512.svg',
+            src: 'icons/tinkerbolt-maskable-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'maskable',
           },
         ],
