@@ -1,9 +1,10 @@
 # État du dépôt — TinkerBolt
 
-Dernière mise à jour : 3 octobre 2026. V1 desktop clôturée (V0 à V9), core
-validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2 et C2a livrés**.
+Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
+validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a et
+C3.1 livrés**. C3 reste en cours, C3.2 est la prochaine étape.
 C5 implémenté ; recette visuelle différée sur instruction de l’auteur.
-Dernière gate C2a verte : 1164 tests Vitest et 89 E2E. U3 reste abandonnée.
+Dernière gate C3.1 verte : 1215 tests Vitest et 89 E2E. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -20,11 +21,14 @@ décisions confirmées : Dexie asynchrone, base vide sans transfert des ancienne
 données locales, reprise automatique de la construction avant simulation.
 C2a est livré : les quatre stockages utilisent désormais
 Dexie avec ports asynchrones. Aucun transfert des anciennes données locales.
-La construction de joueur n’est pas encore persistée (C3).
+C3.1 ajoute l’enveloppe, le codec relationnel et le repository IndexedDB pour
+les constructions. Le jeu ne les charge et ne les sauvegarde pas encore : ce
+raccord et les parcours de reprise restent à faire en C3.2.
 Le contrat C2 est accepté dans l’[ADR 0017](decisions/0017-player-construction-and-async-storage.md) :
 conserver après victoire, effacer progression et constructions de campagne au
 reset, supprimer une construction incompatible avec une source modifiée sans
-secours. La reprise de constructions reste à implémenter dans C3.
+secours. Le raccord au jeu et les parcours de reprise restent à implémenter en
+C3.2.
 Les [maquettes C4/C4a](maquettes/complements-desktop/c4-c4a.html) et leurs captures
 aux deux formats dans `tmp/c4/captures/` ont été examinées par l’auteur. Les
 positions demandées sont corrigées : rotation au coin haut gauche, taille à
@@ -957,6 +961,13 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après C3.1 (4 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu (6 documents), 1215 tests Vitest (94 fichiers), build
+(55 entrées de précache) et 89 E2E v1, aucun ignoré. Le fichier d’essai auteur
+a été déplacé temporairement pour la gate puis restauré identique
+(SHA-256 `1113625e…a92907`). Le validateur de construction ajoute un contrôle
+de rotation fixe après une régression rouge repérée en revue.
 
 `pnpm check` après T2 (3 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu (6 documents), 1206 tests Vitest (90 fichiers), build

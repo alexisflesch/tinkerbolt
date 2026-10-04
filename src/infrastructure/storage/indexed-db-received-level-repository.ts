@@ -23,6 +23,7 @@ import {
   warningPart,
 } from './indexed-db-common';
 import { encodeLevelFile } from '../level-file/level-file-codec';
+import { decodePlayerConstructionRow } from '../player-construction/player-construction-codec';
 
 const levelSchema = z
   .strictObject({
@@ -49,7 +50,7 @@ const rowSchema = z.strictObject({
   envelope: envelopeSchema,
 });
 
-const decodeRow = (raw: unknown, id: string): ReceivedLevel | null => {
+export const decodeReceivedLevelRow = (raw: unknown, id: string): ReceivedLevel | null => {
   const parsed = rowSchema.safeParse(raw);
   if (
     !parsed.success ||
@@ -121,7 +122,7 @@ export const createIndexedDBReceivedLevelRepository = (
               db,
               'receivedLevels',
               key,
-              (value) => (typeof key === 'string' ? decodeRow(value, key) : null),
+              (value) => (typeof key === 'string' ? decodeReceivedLevelRow(value, key) : null),
               1,
               clock,
             );
@@ -154,7 +155,7 @@ export const createIndexedDBReceivedLevelRepository = (
             db,
             'receivedLevels',
             id,
-            (raw) => decodeRow(raw, id),
+            (raw) => decodeReceivedLevelRow(raw, id),
             1,
             clock,
           );
@@ -180,7 +181,7 @@ export const createIndexedDBReceivedLevelRepository = (
             db,
             'receivedLevels',
             level.id,
-            (raw) => decodeRow(raw, level.id),
+            (raw) => decodeReceivedLevelRow(raw, level.id),
             1,
             clock,
           );
@@ -209,7 +210,7 @@ export const createIndexedDBReceivedLevelRepository = (
             db,
             'receivedLevels',
             level.id,
-            (raw) => decodeRow(raw, level.id),
+            (raw) => decodeReceivedLevelRow(raw, level.id),
             1,
             clock,
           );
@@ -260,7 +261,7 @@ export const createIndexedDBReceivedLevelRepository = (
             db,
             'receivedLevels',
             id,
-            (raw) => decodeRow(raw, id),
+            (raw) => decodeReceivedLevelRow(raw, id),
             1,
             clock,
           );
@@ -307,15 +308,28 @@ export const createIndexedDBReceivedLevelRepository = (
             db,
             'receivedLevels',
             id,
-            (raw) => decodeRow(raw, id),
+            (raw) => decodeReceivedLevelRow(raw, id),
             1,
             clock,
           );
           if (checked.status === 'future')
             return { status: 'error', code: 'unsupported-version' } as const;
+          const checkedConstruction = await checkedRow(
+            db,
+            'playerConstructions',
+            ['received', id],
+            (raw) => decodePlayerConstructionRow(raw, 'received', id),
+            1,
+            clock,
+          );
+          if (checkedConstruction.status === 'future')
+            return { status: 'error', code: 'unsupported-version' } as const;
           await db.table('receivedLevels').delete(id);
           await db.table('playerConstructions').delete(['received', id]);
-          return { status: 'ok', ...warningPart(checked.warning) } as const;
+          return {
+            status: 'ok',
+            ...warningPart(checked.warning ?? checkedConstruction.warning),
+          } as const;
         },
       );
     } catch (error) {

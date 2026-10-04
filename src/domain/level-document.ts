@@ -31,10 +31,10 @@ const MAX_DESCRIPTION_LENGTH = 2_000;
 const MAX_AUTHOR_LENGTH = 40;
 /** ADR 0016 - Champs du format: sources kept, the most recent first. */
 export const MAX_BASED_ON_ENTRIES = 16;
-const MAX_OBJECTS = 512;
+export const MAX_OBJECTS = 512;
 const MAX_INVENTORY_ENTRIES = 128;
 const MAX_BUILD_ZONES = 64;
-const MAX_WIRES = 128;
+export const MAX_WIRES = 128;
 const MAX_INVENTORY_QUANTITY = 999;
 const MAX_CHALLENGE_OBJECT_COUNT = 999;
 const MAX_WORLD_COORDINATE = 1_000_000;

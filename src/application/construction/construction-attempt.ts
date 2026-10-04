@@ -133,7 +133,7 @@ const deepFreeze = <Value>(value: Value): Value => {
   return value;
 };
 
-const freezeAttempt = (
+export const freezeAttempt = (
   document: LevelDocument,
   provenance: Readonly<Record<string, string>>,
 ): ConstructionAttempt => deepFreeze({ document, provenance: { ...provenance } });
@@ -156,7 +156,7 @@ const isCoordinateInside = (value: number, min: number, max: number): boolean =>
  * A full object footprint must fit in one build zone; shared edges are
  * inclusive. A zone covering the whole scene restricts nothing.
  */
-const isFootprintInsideBuildZone = (
+export const isFootprintInsideBuildZone = (
   document: LevelDocument,
   corners: ReturnType<typeof placementFootprintCorners>,
 ): boolean =>
@@ -175,7 +175,7 @@ const samePropertyValues = (
   Object.keys(left).length === Object.keys(right).length &&
   Object.entries(left).every(([key, value]) => right[key] === value);
 
-const definitionsMatch = (placement: Placement, inventoryEntry: InventoryEntry): boolean => {
+export const definitionsMatch = (placement: Placement, inventoryEntry: InventoryEntry): boolean => {
   if (placement.type !== inventoryEntry.type) return false;
 
   const propertiesMatch = samePropertyValues(placement.props, inventoryEntry.props);

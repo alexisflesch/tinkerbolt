@@ -6,7 +6,7 @@ retenues du [plan préparatoire du 3 octobre](plan-implementation.03.10.26.md).
 Le [todo de l’auteur](todo.03.10.26.md) reste intact ; il exprime la demande,
 pas un second ordre d’exécution. L’état réellement livré reste dans `etat.md`.
 
-## Point de reprise — 3 octobre 2026
+## Point de reprise — 4 octobre 2026
 
 La v1 est clôturée : V0 à V9, core validé par l’auteur et dernière gate verte
 (1200 tests Vitest, 89 E2E). Son journal et ses règles de session sont conservés
@@ -17,14 +17,17 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 **C0 et C1 terminés, gate globale verte.** C1 est corrigé dans le commit
 `6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
 C2 : [ADR 0017 acceptée](decisions/0017-player-construction-and-async-storage.md),
-avec les arbitrages de l’auteur intégrés. **C2a livré ; suite : C3.** Les maquettes
+avec les arbitrages de l’auteur intégrés. **C2a et C3.1 livrés ; suite : C3.2.**
+Le codec, la validation relationnelle et le repository des constructions sont
+prêts ; le jeu ne les raccorde pas encore aux sessions. Les maquettes
 C4/C4a ont été examinées par l’auteur : rotation au coin haut gauche et taille
 au milieu du bord droit, puis poursuite autorisée. C5 est implémenté
 et vérifié lors de T2 (1206 tests Vitest, 89 E2E) ; recette visuelle différée
-sur instruction de l’auteur. La gate C2a passe avec 1164 Vitest et 89 E2E. L’audit C8 est préparé, Q6 et la décision de version restent
+sur instruction de l’auteur. La gate C3.1 passe avec 1215 Vitest et 89 E2E.
+L’audit C8 est préparé, Q6 et la décision de version restent
 ouverts. Les ADR 0011/0015 et 0017 fixent désormais les
 contrats de stockage et de reprise. Les quatre stockages utilisent Dexie avec
-ports asynchrones ; la reprise des constructions de joueur reste C3.
+ports asynchrones ; le raccord et la reprise dans le jeu restent C3.2.
 
 ## Règles de la reprise active
 
@@ -590,6 +593,25 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   d’image. Le todo auteur est préservé. Suite : C3.
 - Arrêt de session demandé par l’auteur après clôture et commit de C2a.
   Aucun travail C3 commencé ; la prochaine reprise commence par C3.
+
+### C3.1 — Validation et persistance — livré, C3 en cours — commit C3.1 (4 octobre 2026)
+
+- Enveloppe et codec stricts pour la tentative consommée ; compatibilité avec
+  la source, inventaire restant, provenance, décor déplaçable, zones et fils
+  validés sans ajouter la provenance au document partageable.
+- Empreinte SHA-256 complète, port asynchrone et repository IndexedDB ajoutés.
+  La source reçue est vérifiée dans la transaction ; une source changée est
+  supprimée sans secours, les versions futures restent intactes.
+- Suppression reçue et reset de campagne secourent les constructions
+  corrompues dans la même transaction ; un échec du secours annule l’opération.
+- Tests rouges observés sur l’enveloppe, le repository, les opérations liées,
+  la provenance héritée et une rotation initiale impossible ; tests ciblés verts.
+  Correction locale de l’orchestrateur sur la vérification des rotations.
+- `pnpm check` vert : typecheck, lint, formatage, Knip, contenu (6 documents),
+  1215 tests Vitest (94 fichiers), build (55 entrées de précache) et 89 E2E v1.
+  Le fichier `tmp/check-levels.ts` auteur a été restauré à l’identique.
+- C3.2 reste à faire : raccord aux engagements de session, sauvegarde/reprise,
+  barrières d’écriture, victoire, « Recommencer » et vérification des ateliers.
 
 ### C4 / C4a — Maquettes desktop — direction validée, positions corrigées
 

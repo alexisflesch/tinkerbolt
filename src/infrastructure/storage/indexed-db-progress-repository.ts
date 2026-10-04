@@ -14,6 +14,7 @@ import {
   storageErrorCode,
   warningPart,
 } from './indexed-db-common';
+import { decodePlayerConstructionRow } from '../player-construction/player-construction-codec';
 
 const levelProgressSchema = z
   .strictObject({
@@ -116,9 +117,26 @@ export const createIndexedDBProgressRepository = (
           const checked = await checkedRow(db, 'progress', 'campaign', decodeRow, 1, clock);
           if (checked.status === 'future')
             return { status: 'error', code: 'unsupported-version' } as const;
+          let warning = checked.warning;
+          for (const row of constructions) {
+            const levelId =
+              typeof row === 'object' && row !== null && 'levelId' in row ? row.levelId : undefined;
+            if (typeof levelId !== 'string') throw new Error('Invalid construction key');
+            const checkedConstruction = await checkedRow(
+              db,
+              'playerConstructions',
+              ['campaign', levelId],
+              (raw) => decodePlayerConstructionRow(raw, 'campaign', levelId),
+              1,
+              clock,
+            );
+            if (checkedConstruction.status === 'future')
+              return { status: 'error', code: 'unsupported-version' } as const;
+            warning ??= checkedConstruction.warning;
+          }
           await db.table('progress').delete('campaign');
           await db.table('playerConstructions').where('scope').equals('campaign').delete();
-          return { status: 'ok', ...warningPart(checked.warning) } as const;
+          return { status: 'ok', ...warningPart(warning) } as const;
         },
       );
     } catch (error) {
