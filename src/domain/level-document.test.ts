@@ -82,6 +82,14 @@ const conveyor = (id: string, direction: 'left' | 'stopped' | 'right' = 'stopped
   permissions: lockedPermissions,
 });
 
+const timer = (id: string, delaySeconds = 3) => ({
+  id,
+  type: 'timer',
+  transform: { position: { x: 0, y: 6 }, rotation: 0 },
+  props: { delaySeconds },
+  permissions: lockedPermissions,
+});
+
 const withWires = (objects: readonly unknown[], wires: readonly unknown[]): unknown => ({
   ...validLevel,
   objects: [...validLevel.objects, ...objects],
@@ -1328,5 +1336,163 @@ describe('auteur et sources d’un niveau (M1, ADR 0016)', () => {
 
     expect(issuePaths(withMetadata({ basedOn: sources(16) }))).toEqual([]);
     expect(issuePaths(withMetadata({ basedOn: sources(17) }))).toEqual(['metadata.basedOn']);
+  });
+});
+
+describe('C9d — minuteur en série', () => {
+  const button = {
+    id: 'button-1',
+    type: 'button',
+    transform: { position: { x: -2, y: 6 }, rotation: 0 },
+    props: {},
+    permissions: lockedPermissions,
+  };
+  const fan = {
+    id: 'fan-1',
+    type: 'fan',
+    transform: { position: { x: 2, y: 6 }, rotation: 0 },
+    props: { state: 'off' },
+    permissions: lockedPermissions,
+  };
+
+  it('accepte un minuteur réglé entre 1 et 10 secondes dans le niveau v3', () => {
+    const candidate = {
+      ...validLevel,
+      objects: [...validLevel.objects, timer('timer-1')],
+      inventory: [
+        ...validLevel.inventory,
+        {
+          id: 'inventory-timer',
+          type: 'timer',
+          props: { delaySeconds: 3 },
+          quantity: 1,
+          permissions: { move: true, rotate: true, remove: true },
+        },
+      ],
+    };
+
+    expect(levelDocumentSchema.safeParse(candidate).success).toBe(true);
+    for (const delaySeconds of [0, 1.5, 11]) {
+      expect(
+        levelDocumentSchema.safeParse({
+          ...candidate,
+          objects: [...validLevel.objects, timer('timer-1', delaySeconds)],
+        }).success,
+      ).toBe(false);
+    }
+  });
+
+  it('insère un minuteur par son identifiant dans une liaison contrôleur-appareil', () => {
+    const candidate = {
+      ...validLevel,
+      objects: [...validLevel.objects, button, timer('timer-1'), fan],
+      wires: [{ id: 'wire-1', sourceId: 'button-1', timerId: 'timer-1', targetId: 'fan-1' }],
+    };
+
+    expect(levelDocumentSchema.safeParse(candidate).success).toBe(true);
+    expect(
+      levelDocumentSchema.safeParse({
+        ...candidate,
+        wires: [{ ...candidate.wires[0], timerId: 'ball-1' }],
+      }).success,
+    ).toBe(false);
+    expect(
+      levelDocumentSchema.safeParse({
+        ...candidate,
+        wires: [{ ...candidate.wires[0], timerId: 'missing' }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('réserve chaque minuteur à une seule liaison', () => {
+    const candidate = {
+      ...validLevel,
+      objects: [
+        ...validLevel.objects,
+        button,
+        timer('timer-1'),
+        fan,
+        {
+          id: 'barrier-1',
+          type: 'barrier',
+          transform: { position: { x: 4, y: 6 }, rotation: 0 },
+          props: { state: 'closed' },
+          permissions: lockedPermissions,
+        },
+      ],
+      wires: [
+        { id: 'wire-1', sourceId: 'button-1', timerId: 'timer-1', targetId: 'fan-1' },
+        { id: 'wire-2', sourceId: 'button-1', timerId: 'timer-1', targetId: 'barrier-1' },
+      ],
+    };
+
+    expect(levelDocumentSchema.safeParse(candidate).success).toBe(false);
+  });
+
+  it('ne change pas le schéma strict des documents v2', () => {
+    const candidate = {
+      ...validLevel,
+      schemaVersion: 2,
+      objects: [...validLevel.objects, timer('timer-1')],
+      wires: [{ id: 'wire-1', sourceId: 'button-1', timerId: 'timer-1', targetId: 'fan-1' }],
+    };
+
+    expect(levelDocumentV2Schema.safeParse(candidate).success).toBe(false);
+  });
+
+  it('refuse le champ timerId dans les fils v2 et dans les fils de solution v2', () => {
+    const button = {
+      id: 'button-1',
+      type: 'button',
+      transform: { position: { x: -2, y: 6 }, rotation: 0 },
+      props: {},
+      permissions: lockedPermissions,
+    };
+    const fan = {
+      id: 'fan-1',
+      type: 'fan',
+      transform: { position: { x: 2, y: 6 }, rotation: 0 },
+      props: { state: 'off' },
+      permissions: lockedPermissions,
+    };
+    const v2 = {
+      ...validLevel,
+      schemaVersion: 2,
+      objects: [...validLevel.objects, button, fan],
+      inventory: [
+        ...validLevel.inventory,
+        {
+          id: 'wires',
+          type: 'wire',
+          props: {},
+          quantity: 1,
+          permissions: { move: false, rotate: false, remove: true },
+        },
+      ],
+    };
+
+    expect(
+      levelDocumentV2Schema.safeParse({
+        ...v2,
+        wires: [{ id: 'wire-1', sourceId: 'button-1', timerId: 'timer-1', targetId: 'fan-1' }],
+      }).success,
+    ).toBe(false);
+    expect(
+      levelDocumentV2Schema.safeParse({
+        ...v2,
+        solution: {
+          placements: [],
+          wires: [
+            {
+              id: 'wire-1',
+              inventoryId: 'wires',
+              sourceId: 'button-1',
+              timerId: 'timer-1',
+              targetId: 'fan-1',
+            },
+          ],
+        },
+      }).success,
+    ).toBe(false);
   });
 });

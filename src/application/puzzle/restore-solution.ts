@@ -59,6 +59,9 @@ export const restoreSolution = (
   const wires = (solution.wires ?? []).map((wire) => ({
     id: uniqueIdentifier(wire.id, usedIds),
     sourceId: restoredIdsByReference.get(wire.sourceId) ?? wire.sourceId,
+    ...(wire.timerId === undefined
+      ? {}
+      : { timerId: restoredIdsByReference.get(wire.timerId) ?? wire.timerId }),
     targetId: restoredIdsByReference.get(wire.targetId) ?? wire.targetId,
     toPlace: true as const,
   }));

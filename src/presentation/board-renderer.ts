@@ -17,6 +17,7 @@ import {
   pistonGeometry,
   seesawGeometry,
   springboardGeometry,
+  timerGeometry,
 } from '../domain/family-geometry';
 import {
   isPlacementUnconstrained,
@@ -124,6 +125,10 @@ export type BoardCanvasContext = {
     destinationWidth: number,
     destinationHeight: number,
   ) => void;
+  font?: string;
+  textAlign?: CanvasTextAlign;
+  textBaseline?: CanvasTextBaseline;
+  readonly fillText?: (text: string, x: number, y: number) => void;
 } & Partial<Omit<WireCanvas, 'save' | 'restore' | 'lineWidth' | 'fillStyle'>>;
 
 /** A context able to draw wires: every optional path and text operation is there. */
@@ -170,7 +175,12 @@ export type BoardDeviceView =
   | Readonly<{ readonly kind: 'fan'; readonly bladeAngle: number }>
   | Readonly<{ readonly kind: 'electro-magnet'; readonly active: boolean }>
   | Readonly<{ readonly kind: 'barrier'; readonly retraction: number }>
-  | Readonly<{ readonly kind: 'springboard'; readonly compression: number }>;
+  | Readonly<{ readonly kind: 'springboard'; readonly compression: number }>
+  | Readonly<{
+      readonly kind: 'timer';
+      readonly remainingSeconds: number | null;
+      readonly handAngle: number;
+    }>;
 
 /** What a running simulation adds to the document when it is drawn. */
 export type BoardSimulationView = Readonly<{
@@ -229,6 +239,12 @@ type BoardProjection = Readonly<{
   readonly objects: readonly ProjectedBoardObject[];
   /** Derived segments of the control wires (ADR 0009), drawn under the objects. */
   readonly wires: readonly ProjectedWire[];
+  readonly timerDisplays: readonly {
+    readonly id: string;
+    readonly position: BoardPoint;
+    readonly rotation: number;
+    readonly seconds: number;
+  }[];
   /** While a simulation runs, wires almost vanish so they do not clutter the machine. */
   readonly wiresDimmed: boolean;
   /** U22: workshop objects the player will have to place, outlined with dashes while building. */
@@ -273,6 +289,8 @@ const layerPoseSources: Record<SpriteAsset, LayerPoseSource> = {
   'piston-rod': 'body',
   'piston-housing': 'placement',
   'piston-plate': 'body',
+  'timer-background': 'placement',
+  'timer-hand': 'placement',
   'lever-base': 'placement',
   'lever-handle': 'body',
   'conveyor-belt': 'placement',
@@ -392,6 +410,8 @@ const footprintForObject = (object: Placement): BoardDestination => {
       return barrierFootprint(object.props.state);
     case 'springboard':
       return springboardGeometry.footprint;
+    case 'timer':
+      return timerGeometry.footprint;
   }
 };
 
@@ -414,6 +434,7 @@ const partialLayerDestinations: Partial<Record<SpriteAsset, BoardDestination>> =
   'piston-rod': pistonGeometry.rod.footprint,
   'piston-housing': pistonGeometry.housing.footprint,
   'piston-plate': pistonGeometry.plate.footprint,
+  'timer-hand': timerGeometry.handFootprint,
 };
 
 /** The bar's sprite, in pixels: the renderer shows only the part out of the pillar. */
@@ -568,6 +589,21 @@ const projectLayer = (
     const turned = { ...projected, rotation: angle, mirrored };
     return asset === 'barrier-bar' ? { ...turned, ...barrierBarLayer(object, view) } : turned;
   }
+  if (object.type === 'timer' && asset === 'timer-hand') {
+    const { dialCenter } = timerGeometry;
+    const cosine = Math.cos(object.transform.rotation);
+    const sine = Math.sin(object.transform.rotation);
+    const device = deviceAt(object, view);
+    return {
+      ...projected,
+      position: {
+        x: object.transform.position.x + dialCenter.x * cosine - dialCenter.y * sine,
+        y: object.transform.position.y + dialCenter.x * sine + dialCenter.y * cosine,
+      },
+      rotation: object.transform.rotation,
+      spin: { angle: device?.kind === 'timer' ? device.handAngle : 0, squash: 1 },
+    };
+  }
   return asset === 'conveyor-belt' || asset === 'conveyor-belt-left'
     ? { ...projected, source: conveyorBeltSource(conveyorBeltAt(object, view).offset) }
     : projected;
@@ -596,6 +632,8 @@ const drawOrderByAsset: Record<SpriteAsset, number> = {
   'piston-rod': 0,
   'piston-housing': 1,
   'piston-plate': 2,
+  'timer-background': 0,
+  'timer-hand': 1,
   'lever-base': 0,
   'lever-handle': 0,
   'conveyor-belt': 0,
@@ -716,6 +754,21 @@ export const projectLevel = (
     scene: document.scene,
     objects,
     wires: projectWires(document),
+    timerDisplays: document.objects.flatMap((object) => {
+      if (object.type !== 'timer') return [];
+      const device = simulation?.devices.get(object.id);
+      return [
+        {
+          id: object.id,
+          position: { ...object.transform.position },
+          rotation: object.transform.rotation,
+          seconds:
+            device?.kind === 'timer' && device.remainingSeconds !== null
+              ? device.remainingSeconds
+              : object.props.delaySeconds,
+        },
+      ];
+    }),
     wiresDimmed: simulation !== undefined,
     // The outline follows the placement pose: a running machine moves away from it.
     toPlaceIds:
@@ -896,6 +949,148 @@ const drawBuildZones = (
     const height = bottomRight.y - topLeft.y;
     context.fillRect(topLeft.x, topLeft.y, width, height);
     context.strokeRect?.(topLeft.x, topLeft.y, width, height);
+  }
+  context.restore();
+};
+
+const TIMER_DIGIT_WIDTH = 0.09;
+const TIMER_DIGIT_HEIGHT = 0.17;
+const TIMER_SEGMENT_THICKNESS = 0.018;
+const TIMER_CHARACTER_GAP = 0.024;
+const TIMER_POINT_WIDTH = 0.025;
+const TIMER_DIGIT_SEGMENTS: Readonly<Record<string, readonly string[]>> = {
+  '0': ['a', 'b', 'c', 'd', 'e', 'f'],
+  '1': ['b', 'c'],
+  '2': ['a', 'b', 'd', 'e', 'g'],
+  '3': ['a', 'b', 'c', 'd', 'g'],
+  '4': ['b', 'c', 'f', 'g'],
+  '5': ['a', 'c', 'd', 'f', 'g'],
+  '6': ['a', 'c', 'd', 'e', 'f', 'g'],
+  '7': ['a', 'b', 'c'],
+  '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+  '9': ['a', 'b', 'c', 'd', 'f', 'g'],
+};
+
+const timerDigitRectangles = (
+  digit: string,
+  left: number,
+  top: number,
+): readonly BoardDestination[] => {
+  const segments = TIMER_DIGIT_SEGMENTS[digit];
+  if (segments === undefined) return [];
+
+  const thickness = TIMER_SEGMENT_THICKNESS;
+  const halfHeight = TIMER_DIGIT_HEIGHT / 2;
+  const middleY = top + halfHeight - thickness / 2;
+  const verticalHeight = halfHeight - thickness;
+  const rectangles: Readonly<Record<string, BoardDestination>> = {
+    a: { x: left + thickness, y: top, width: TIMER_DIGIT_WIDTH - 2 * thickness, height: thickness },
+    b: {
+      x: left + TIMER_DIGIT_WIDTH - thickness,
+      y: top + thickness / 2,
+      width: thickness,
+      height: verticalHeight,
+    },
+    c: {
+      x: left + TIMER_DIGIT_WIDTH - thickness,
+      y: middleY + thickness,
+      width: thickness,
+      height: verticalHeight,
+    },
+    d: {
+      x: left + thickness,
+      y: top + TIMER_DIGIT_HEIGHT - thickness,
+      width: TIMER_DIGIT_WIDTH - 2 * thickness,
+      height: thickness,
+    },
+    e: { x: left, y: middleY + thickness, width: thickness, height: verticalHeight },
+    f: { x: left, y: top + thickness / 2, width: thickness, height: verticalHeight },
+    g: {
+      x: left + thickness,
+      y: middleY,
+      width: TIMER_DIGIT_WIDTH - 2 * thickness,
+      height: thickness,
+    },
+  };
+  return segments.flatMap((segment) => {
+    const rectangle = rectangles[segment];
+    return rectangle === undefined ? [] : [rectangle];
+  });
+};
+
+const timerReadoutRectangles = (
+  seconds: number,
+  center: BoardPoint,
+): readonly BoardDestination[] => {
+  const characters = seconds.toFixed(1).padStart(4, '0').split('');
+  const totalWidth =
+    characters.reduce(
+      (width, character) => width + (character === '.' ? TIMER_POINT_WIDTH : TIMER_DIGIT_WIDTH),
+      0,
+    ) +
+    TIMER_CHARACTER_GAP * Math.max(0, characters.length - 1);
+  let cursor = center.x - totalWidth / 2;
+  const top = center.y - TIMER_DIGIT_HEIGHT / 2;
+  const rectangles: BoardDestination[] = [];
+
+  for (const character of characters) {
+    if (character === '.') {
+      rectangles.push({
+        x: cursor,
+        y: top + TIMER_DIGIT_HEIGHT - TIMER_SEGMENT_THICKNESS,
+        width: TIMER_POINT_WIDTH,
+        height: TIMER_SEGMENT_THICKNESS,
+      });
+      cursor += TIMER_POINT_WIDTH + TIMER_CHARACTER_GAP;
+      continue;
+    }
+    rectangles.push(...timerDigitRectangles(character, cursor, top));
+    cursor += TIMER_DIGIT_WIDTH + TIMER_CHARACTER_GAP;
+  }
+  return rectangles;
+};
+
+const drawTimerDisplays = (
+  context: BoardCanvasContext,
+  timers: BoardProjection['timerDisplays'],
+  viewport: BoardViewport,
+): void => {
+  if (context.fillRect === undefined) return;
+
+  context.save();
+  for (const timer of timers) {
+    const position = worldToPixels(timer.position, viewport);
+    const { displayCenter } = timerGeometry;
+    const rectangles = timerReadoutRectangles(timer.seconds, displayCenter);
+    const scale = viewport.pixelsPerWorldUnit;
+    context.save();
+    context.translate(position.x, position.y);
+    context.rotate(timer.rotation);
+    const previousAlpha = context.globalAlpha;
+    if (previousAlpha !== undefined) {
+      context.globalAlpha = previousAlpha * 0.24;
+      context.fillStyle = '#ff9f25';
+      for (const rectangle of rectangles) {
+        const glow = TIMER_SEGMENT_THICKNESS * scale * 0.55;
+        context.fillRect(
+          rectangle.x * scale - glow,
+          rectangle.y * scale - glow,
+          rectangle.width * scale + 2 * glow,
+          rectangle.height * scale + 2 * glow,
+        );
+      }
+      context.globalAlpha = previousAlpha;
+    }
+    context.fillStyle = '#ffc54d';
+    for (const rectangle of rectangles) {
+      context.fillRect(
+        rectangle.x * scale,
+        rectangle.y * scale,
+        rectangle.width * scale,
+        rectangle.height * scale,
+      );
+    }
+    context.restore();
   }
   context.restore();
 };
@@ -1161,6 +1356,7 @@ export const createBoardRenderer = ({
     if (wireContext !== undefined) {
       drawWireLabels(wireContext, projection.wires, toScreen, wireOptions);
     }
+    drawTimerDisplays(context, projection.timerDisplays, viewport);
 
     drawToPlaceOutlines(context, projection, viewport);
 

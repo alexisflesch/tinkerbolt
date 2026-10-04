@@ -573,6 +573,7 @@ interface WiringScene {
   readonly leverRotation?: number;
   /** Where a ball is dropped from, if any; otherwise it waits far away. */
   readonly ballDrop?: { readonly x: number; readonly y: number };
+  readonly timerDelaySeconds?: number;
 }
 
 /**
@@ -585,6 +586,7 @@ const createWiringLevelDocument = ({
   lever,
   leverRotation = 0,
   ballDrop,
+  timerDelaySeconds,
 }: WiringScene): LevelDocument =>
   levelDocumentSchema.parse({
     schemaVersion: 3,
@@ -624,13 +626,33 @@ const createWiringLevelDocument = ({
               permissions,
             },
           ]),
+      ...(timerDelaySeconds === undefined
+        ? []
+        : [
+            {
+              id: 'timer-1',
+              type: 'timer',
+              transform: { position: { x: 8, y: 0 }, rotation: 0 },
+              props: { delaySeconds: timerDelaySeconds },
+              permissions,
+            },
+          ]),
     ],
     inventory: [],
     goal: { type: 'basket', ballId: 'ball-1', basketId: 'basket-1' },
     buildZones: [],
     scene: { min: { x: -30, y: -30 }, max: { x: 30, y: 30 } },
     wires:
-      lever === undefined ? [] : [{ id: 'wire-1', sourceId: 'lever-1', targetId: 'conveyor-1' }],
+      lever === undefined
+        ? []
+        : [
+            {
+              id: 'wire-1',
+              sourceId: 'lever-1',
+              ...(timerDelaySeconds === undefined ? {} : { timerId: 'timer-1' }),
+              targetId: 'conveyor-1',
+            },
+          ],
   });
 
 const massXAfter = (scene: WiringScene, steps: number): number => {
@@ -804,7 +826,7 @@ const placed = (
   id: string,
   type: string,
   position: { readonly x: number; readonly y: number },
-  props: Readonly<Record<string, string>> = {},
+  props: Readonly<Record<string, unknown>> = {},
   rotation = 0,
 ) => ({ id, type, transform: { position, rotation }, props, permissions });
 
@@ -1508,6 +1530,119 @@ describe('port physique candidat-neutre', () => {
   it('fait obéir un convoyeur relié au levier plutôt qu’à son propre sens', () => {
     expect(massXAfter({ conveyor: 'left', lever: 'right' }, 60)).toBeGreaterThan(0.4);
     expectCloseTo(massXAfter({ conveyor: 'right', lever: 'center' }, 60), 0);
+  });
+
+  it('retarde de la durée réglée le changement de position du levier', () => {
+    withSession(
+      createWiringLevelDocument({ conveyor: 'stopped', lever: 'left', timerDelaySeconds: 1 }),
+      (session) => {
+        expect(device(session.readState(), 'conveyor-1')).toMatchObject({ direction: 0 });
+        expect(device(session.readState(), 'timer-1')).toMatchObject({
+          kind: 'timer',
+          delaySeconds: 1,
+          remainingSeconds: 1,
+          handAngle: 0,
+        });
+
+        session.advanceFixedSteps(30);
+        expect(device(session.readState(), 'timer-1')).toMatchObject({
+          remainingSeconds: 0.5,
+          handAngle: Math.PI,
+        });
+        session.advanceFixedSteps(29);
+        expect(device(session.readState(), 'conveyor-1')).toMatchObject({ direction: 0 });
+        expect(device(session.readState(), 'timer-1')).toMatchObject({
+          remainingSeconds: FIXED_STEP_SECONDS,
+        });
+
+        session.advanceFixedSteps(1);
+        expect(device(session.readState(), 'conveyor-1')).toMatchObject({ direction: -1 });
+        expect(device(session.readState(), 'timer-1')).toMatchObject({ remainingSeconds: null });
+      },
+    );
+  });
+
+  it('retransmet aussi le changement de cran provoqué plus tard par une balle', () => {
+    const level = createWiringLevelDocument({
+      conveyor: 'stopped',
+      lever: 'center',
+      ballDrop: { x: 5.88, y: -3 },
+      timerDelaySeconds: 1,
+    });
+
+    withSession(level, (session) => {
+      let changeStep: number | undefined;
+      let checkedDelay = false;
+      for (let step = 0; step < SETTLING_FIXED_STEPS; step += 1) {
+        session.advanceFixedSteps(1);
+        const state = session.readState();
+        const leverState = device(state, 'lever-1');
+        if (
+          changeStep === undefined &&
+          leverState.kind === 'lever' &&
+          leverState.position === 'right'
+        ) {
+          changeStep = state.fixedStep;
+        }
+        if (changeStep !== undefined && state.fixedStep === changeStep + 59) {
+          expect(device(state, 'conveyor-1')).toMatchObject({ direction: 0 });
+        }
+        if (changeStep !== undefined && state.fixedStep === changeStep + 60) {
+          expect(device(state, 'conveyor-1')).toMatchObject({ direction: 1 });
+          checkedDelay = true;
+          break;
+        }
+      }
+
+      expect(changeStep).toBeDefined();
+      expect(checkedDelay).toBe(true);
+    });
+  });
+
+  it('retarde séparément l’activation et la désactivation après un appui bref', () => {
+    const level = createDeviceLevelDocument(
+      [
+        piston(),
+        placed('timer-1', 'timer', { x: 2, y: 2 }, { delaySeconds: 1 }),
+        placed('button-1', 'button', { x: 0.5, y: 0.45 }),
+        placed('press-ball', 'ball', { x: 0.75, y: -0.1 }),
+      ],
+      [{ id: 'wire-1', sourceId: 'button-1', timerId: 'timer-1', targetId: 'piston-1' }],
+    );
+
+    withSession(level, (session) => {
+      let pressedAt: number | undefined;
+      let releasedAt: number | undefined;
+      let pistonExtended = false;
+      let delayedReleaseChecked = false;
+      for (let step = 0; step < 360; step += 1) {
+        session.advanceFixedSteps(1);
+        const state = session.readState();
+        const buttonState = device(state, 'button-1');
+        const pistonState = device(state, 'piston-1');
+        if (buttonState.kind === 'button' && buttonState.pressed) {
+          pressedAt ??= state.fixedStep;
+        } else if (pressedAt !== undefined) {
+          releasedAt ??= state.fixedStep;
+        }
+        if (pistonState.kind === 'piston' && pistonState.extension > 0.95) {
+          pistonExtended = true;
+        }
+        if (releasedAt !== undefined && state.fixedStep === releasedAt + 59) {
+          expect(pistonState).toMatchObject({ extension: 1 });
+        }
+        if (releasedAt !== undefined && state.fixedStep === releasedAt + 61) {
+          expect(pistonState.kind === 'piston' && pistonState.extension).toBeLessThan(1);
+          delayedReleaseChecked = true;
+        }
+      }
+
+      expect(pressedAt).toBeDefined();
+      expect(releasedAt).toBeDefined();
+      expect(pistonExtended).toBe(true);
+      expect(delayedReleaseChecked).toBe(true);
+      expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 0 });
+    });
   });
 
   it('tient la poignée du levier dans sa position de départ', () => {

@@ -2,10 +2,10 @@
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
-C3.2, C8, C9a, C9b et C9c livrés**. La suite prioritaire demandée par l’auteur est
-C9d, C7 puis C6, avant C4/C4a et C10. C5 est implémenté ; recette visuelle
-différée sur instruction de l’auteur. Dernière gate globale verte : 1 315 tests
-Vitest et 92 E2E v1. U3 reste abandonnée.
+C3.2, C8 et C9a à C9d livrés**. La suite prioritaire demandée par l’auteur est
+C7 puis C6, avant C4/C4a et C10. C5 est implémenté ; sa recette visuelle reste
+différée. Dernière gate globale verte : 1 338 tests Vitest et 93 E2E v1. U3
+reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -54,9 +54,10 @@ complète ; il reste sorti tant que le bouton est maintenu, puis se rétracte
 automatiquement. Après le test de jeu, son gabarit est de 1,248 × 0,643 unité et
 sa tête se déplace à 18 unités/s ; une balle dépasse l’écran vertical et le
 puzzle de démonstration reste solvable. Sa plaque propulse les corps dynamiques.
-Le minuteur reste à
-intégrer en C9d : son délai est un entier de 1 à 10 s, 3 s par défaut, avec
-affichage possible au dixième. La bille en acier reste hors C9.
+C9d ajoute le minuteur à délai entier de 1 à 10 s, 3 s par défaut. Un fil
+logique unique passe par lui et retarde l’activation comme la désactivation au
+pas fixe. L’aiguille tourne autour du moyeu du cadran ; les secondes et
+dixièmes apparaissent en segments ambrés. La bille en acier reste hors C9.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Le todo auteur reste intact ; le contenu des niveaux existants ne
 change que par `schemaVersion: 3`. C9a ajoute les sprites et vignettes des deux

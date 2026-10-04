@@ -74,8 +74,11 @@ export const puzzleFromWorkshop = (workshop: LevelDocument): PuzzleConversion =>
   const toPlaceIds = new Set(toPlace.map(({ id }) => id));
   const decor = workshop.objects.filter((placement) => !isToPlace(placement));
   const wiresToPlace = workshop.wires.filter(
-    ({ sourceId, targetId, toPlace }) =>
-      toPlace === true || toPlaceIds.has(sourceId) || toPlaceIds.has(targetId),
+    ({ sourceId, targetId, timerId, toPlace }) =>
+      toPlace === true ||
+      toPlaceIds.has(sourceId) ||
+      toPlaceIds.has(targetId) ||
+      (timerId !== undefined && toPlaceIds.has(timerId)),
   );
   const decorWires = workshop.wires.filter((wire) => !wiresToPlace.includes(wire));
   const usedIds = new Set([...decor.map(({ id }) => id), ...workshop.wires.map(({ id }) => id)]);
@@ -92,7 +95,11 @@ export const puzzleFromWorkshop = (workshop: LevelDocument): PuzzleConversion =>
     });
   }
   const wiredPlacementIds = new Set(
-    wiresToPlace.flatMap(({ sourceId, targetId }) => [sourceId, targetId]),
+    wiresToPlace.flatMap(({ sourceId, targetId, timerId }) => [
+      sourceId,
+      targetId,
+      ...(timerId === undefined ? [] : [timerId]),
+    ]),
   );
   const placements: SolutionPlacement[] = toPlace.map((placement) => {
     let entry = inventory.find(
@@ -128,6 +135,7 @@ export const puzzleFromWorkshop = (workshop: LevelDocument): PuzzleConversion =>
           id: wire.id,
           inventoryId: wireEntryId,
           sourceId: wire.sourceId,
+          ...(wire.timerId === undefined ? {} : { timerId: wire.timerId }),
           targetId: wire.targetId,
         }));
 
@@ -214,6 +222,9 @@ export const playSolution = (
       wireId: wire.id,
       inventoryEntryId: wire.inventoryId,
       sourceId: placementIdsByReference.get(wire.sourceId) ?? wire.sourceId,
+      ...(wire.timerId === undefined
+        ? {}
+        : { timerId: placementIdsByReference.get(wire.timerId) ?? wire.timerId }),
       targetId: placementIdsByReference.get(wire.targetId) ?? wire.targetId,
     }).execute(attempt);
     if (outcome.status === 'rejected') return null;

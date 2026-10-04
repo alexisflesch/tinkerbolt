@@ -103,6 +103,13 @@ const everyFamily = levelDocumentSchema.parse({
       transform: { position: { x: 7, y: 6 }, rotation: 0 },
     },
     {
+      id: 'timer-1',
+      type: 'timer',
+      props: { delaySeconds: 3 },
+      permissions,
+      transform: { position: { x: 7, y: 6 }, rotation: 0 },
+    },
+    {
       id: 'mass-1',
       type: 'mass',
       transform: { position: { x: 7, y: 7 }, rotation: 0 },
@@ -212,6 +219,7 @@ describe('sprites du plateau', () => {
     'fan',
     'electro-magnet',
     'piston',
+    'timer',
     'barrier',
     'springboard',
   ] as const)('fournit une vignette et tous les calques de la famille %s', (family) => {

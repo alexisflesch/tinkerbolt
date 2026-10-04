@@ -384,6 +384,8 @@ const createPendingSpriteLoader = (): {
     'piston-rod': fakeSprite('piston-rod'),
     'piston-housing': fakeSprite('piston-housing'),
     'piston-plate': fakeSprite('piston-plate'),
+    'timer-background': fakeSprite('timer-background'),
+    'timer-hand': fakeSprite('timer-hand'),
     'lever-base': fakeSprite('lever-base'),
     'lever-handle': fakeSprite('lever-handle'),
     'conveyor-belt': fakeSprite('conveyor-belt'),
@@ -449,7 +451,7 @@ const simulationView = (
 /** One object of the given family at (3, 3), next to the goal pair. */
 const createDeviceDocument = (
   type: string,
-  props: Readonly<Record<string, string>> = {},
+  props: Readonly<Record<string, unknown>> = {},
   rotation = 0,
 ) =>
   levelDocumentSchema.parse({
@@ -680,6 +682,37 @@ describe('projection du plateau', () => {
     expect(blades.spin).toEqual({ angle: 1.2, squash: 0.53 });
     expect(blades.position.x).toBeCloseTo(3 + 0.1986);
     expect(blades.destination.x).toBeCloseTo(-blades.destination.width / 2);
+  });
+
+  it('fait tourner l’aiguille du minuteur et affiche les dixièmes de seconde', async () => {
+    const document = createDeviceDocument('timer', { delaySeconds: 3 });
+    const simulation = simulationView(
+      [],
+      [],
+      [['device-1', { kind: 'timer', remainingSeconds: 1.26, handAngle: Math.PI / 2 }]],
+    );
+    const projection = projectLevel(document, simulation);
+    const hand = layerOf(projection, 'timer-hand');
+    const { context, operations, fillRectStyles } = createContext();
+    const spriteLoader = createPendingSpriteLoader();
+    spriteLoader.setReady();
+    const renderer = createBoardRenderer({
+      canvas: { width: 0, height: 0 },
+      context,
+      viewport,
+      spriteLoader: spriteLoader.loader,
+    });
+
+    expect(hand.spin).toEqual({ angle: Math.PI / 2, squash: 1 });
+    expect(hand.position.x).toBeCloseTo(3 - 0.511);
+    expect(hand.position.y).toBeCloseTo(3 + 0.033);
+    expect(hand.destination.x).toBeCloseTo(-0.0981);
+    expect(hand.destination.y).toBeCloseTo(-0.1067);
+    expect(hand.destination.width).toBeCloseTo(0.14);
+    await renderer.render(projection);
+
+    expect(operations.some((operation) => operation.kind === 'fillText')).toBe(false);
+    expect(fillRectStyles.filter((style) => style === '#ffc54d').length).toBeGreaterThanOrEqual(14);
   });
 
   it('retourne en miroir le ventilateur tourné d’un demi-tour, et tourne celui qui souffle en hauteur', () => {

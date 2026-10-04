@@ -485,19 +485,22 @@ Les [règles de la reprise active](feuille-de-route.md#règles-de-la-reprise-act
 font autorité sur la méthode. Elles ont été allégées à la demande de l’auteur :
 un agent à la fois réalise tests et code, les lectures et comptes rendus sont
 ciblés, et la gate globale précède la clôture de chaque lot. Red-Green-Refactor
-et les invariants restent applicables. Aucune capture ni vérification d’image
-pendant l’implémentation actuelle ; la recette visuelle est différée.
+et les invariants restent applicables. L’auteur a fourni une référence visuelle
+du minuteur et demandé la correction de son cadran et de son affichage numérique.
+La capture corrigée est produite avec C9d ; la validation visuelle finale reste
+à faire dans la recette C10.
 
 Le 4 octobre, l’auteur a demandé de terminer C3 avant de changer l’ordre de la
-suite ; **C3 est maintenant livré**. C8, C9a, C9b et C9c sont clôturés après
-l’audit, les arbitrages et l’intégration des caisses, de l’électroaimant et du
-piston. L’ordre prioritaire courant est **C9d → C7 → C6 → C4/C4a → C10**, comme
-consigné dans la [feuille de route active](feuille-de-route.md). L’auteur a
+suite ; **C3 est maintenant livré**. C8 et C9a à C9d sont clôturés après
+l’audit, les arbitrages et l’intégration des quatre familles. L’ordre prioritaire
+courant est **C7 → C6 → C4/C4a → C10**, comme consigné dans la
+[feuille de route active](feuille-de-route.md). L’auteur a
 confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
 du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.
-Les constantes physiques des familles restantes sont équilibrées dans leurs tâches.
-La feuille de route reste seule propriétaire de la séquence, des dépendances et
-du journal.
+Après le retour de test sur le minuteur, C9d ajoute un pivot d’aiguille centré
+sur le moyeu illustré et un affichage ambré à sept segments, au format secondes
+et dixièmes. La feuille de route reste seule propriétaire de la séquence, des
+dépendances et du journal.
 
 Les critères visuels des sections préparatoires décrivent la recette finale,
 avec le report ci-dessus. Le journal et les étapes réellement livrées restent

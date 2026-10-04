@@ -10,6 +10,10 @@ export const electroMagnetPropertiesSchema = z.strictObject({ state: z.enum(['on
 export const boxPropertiesSchema = z.strictObject({ material: z.enum(['wood', 'metal']) });
 /** A piston always starts retracted; its transient stroke is runtime state (ADR 0019). */
 export const pistonPropertiesSchema = z.strictObject({});
+/** Fixed-step signal delay, editable only while authoring (ADR 0019). */
+export const timerPropertiesSchema = z.strictObject({
+  delaySeconds: z.int().min(1).max(10),
+});
 export const seesawPropertiesSchema = z.strictObject({});
 /** One sprite and one physical mass per weight; a new weight extends the enum. */
 export const massPropertiesSchema = z.strictObject({
@@ -223,6 +227,16 @@ export const initialObjectFamilyRegistry = createObjectFamilyRegistry([
     },
     capabilities: ['movable', 'rotatable'],
     propertiesSchema: pistonPropertiesSchema,
+  },
+  {
+    id: 'timer',
+    dataVersion: 1,
+    catalogue: {
+      label: 'Minuteur',
+      description: 'Retarde les changements du signal électrique',
+    },
+    capabilities: ['movable', 'rotatable'],
+    propertiesSchema: timerPropertiesSchema,
   },
   {
     id: 'barrier',

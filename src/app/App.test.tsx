@@ -3012,7 +3012,7 @@ describe('coque TinkerBolt', () => {
       ).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.getByText('Choisis l’appareil à commander')).toBeVisible();
+      expect(screen.getByText('Choisis le minuteur ou l’appareil à commander')).toBeVisible();
     });
     await waitFor(() => {
       expect(wires()).toHaveLength(0);
@@ -3664,7 +3664,7 @@ describe('coque TinkerBolt', () => {
     });
     tapWorldPoint(2, 3);
     await waitFor(() => {
-      expect(screen.getByText('Choisis l’appareil à commander')).toBeVisible();
+      expect(screen.getByText('Choisis le minuteur ou l’appareil à commander')).toBeVisible();
     });
     // Mêmes règles que l’auteur : l’appareil du niveau a déjà son contrôleur.
     tapWorldPoint(5.5, 1.2);

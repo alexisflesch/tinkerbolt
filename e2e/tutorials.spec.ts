@@ -55,6 +55,9 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
       case 'piston':
         label = 'Piston';
         break;
+      case 'timer':
+        label = 'Minuteur';
+        break;
       case 'springboard':
         label = 'Tremplin';
         break;
@@ -90,7 +93,11 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
   }
   for (const wire of level.solution.wires ?? []) {
     await choose(page, 'Fil de commande');
-    for (const id of [wire.sourceId, wire.targetId]) {
+    for (const id of [
+      wire.sourceId,
+      ...(wire.timerId === undefined ? [] : [wire.timerId]),
+      wire.targetId,
+    ]) {
       const point = positions.get(id);
       if (point === undefined) throw new Error('Extrémité de fil introuvable.');
       const controller = level.objects.find((object) => object.id === id);

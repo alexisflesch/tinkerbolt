@@ -14,6 +14,7 @@ export type ObjectKind =
   | 'Ventilateur'
   | 'Électroaimant'
   | 'Piston'
+  | 'Minuteur'
   | 'Barrière'
   | 'Tremplin';
 
@@ -37,6 +38,7 @@ export const objectKinds: readonly ObjectCatalogEntry[] = [
     description: 'Attire les caisses métalliques lorsqu’il est en marche',
   },
   { kind: 'Piston', description: 'Propulse les objets devant lui lorsqu’un bouton appuie' },
+  { kind: 'Minuteur', description: 'Retarde les changements du signal électrique' },
   { kind: 'Ventilateur', description: 'Souffle sur ce qui passe devant lui' },
   { kind: 'Barrière', description: 'Une barre qui rentre dans son poteau' },
   { kind: 'Tremplin', description: 'Renvoie vers le haut ce qui tombe dessus' },
@@ -55,6 +57,7 @@ export const inventoryTypeByObjectKind = {
   Ventilateur: 'fan',
   Électroaimant: 'electro-magnet',
   Piston: 'piston',
+  Minuteur: 'timer',
   Barrière: 'barrier',
   Tremplin: 'springboard',
 } as const satisfies Readonly<Record<ObjectKind, string>>;
@@ -131,6 +134,7 @@ export const authorCatalogue: readonly AuthorCatalogueEntry[] = [
   authorEntry('Bouton', 'button'),
   authorEntry('Électroaimant', 'electro-magnet', { state: 'on' }),
   authorEntry('Piston', 'piston'),
+  authorEntry('Minuteur', 'timer', { delaySeconds: 3 }),
   authorEntry('Ventilateur', 'fan', { state: 'on' }),
   authorEntry('Barrière', 'barrier', { state: 'closed' }),
   authorEntry('Tremplin', 'springboard'),

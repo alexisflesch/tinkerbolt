@@ -11,6 +11,7 @@ import type { LevelDocument } from '../domain/level-document';
 export interface ProjectedWire {
   readonly id: string;
   readonly sourceId: string;
+  readonly timerId?: string;
   readonly targetId: string;
   readonly label: string;
   /** Index of the circuit, mapped to a colour by the renderer. */
@@ -23,6 +24,14 @@ export interface ProjectedWire {
    * share an axis: a wire is drawn horizontal/vertical only, never
    * diagonal, so it reads as one L-shaped bend at most.
    */
+  readonly bend?: WorldPoint;
+  /** Two orthogonal legs when a timer is inserted in the logical wire. */
+  readonly segments?: readonly ProjectedWireSegment[];
+}
+
+interface ProjectedWireSegment {
+  readonly from: WorldPoint;
+  readonly to: WorldPoint;
   readonly bend?: WorldPoint;
 }
 
@@ -45,6 +54,9 @@ const portOffset = (placement: Placement): WorldPoint | undefined => {
     case 'piston':
       // Rear of the housing, clear of the moving rod and plate.
       return { x: -0.8, y: 0.3 };
+    case 'timer':
+      // One port at each end of the timer's case.
+      return { x: 0.75, y: 0 };
     case 'fan':
       // Foot of the frame; it turns with the fan.
       return { x: 0.6, y: 0.4 };
@@ -102,6 +114,11 @@ const bendOf = (source: Placement, from: WorldPoint, to: WorldPoint): WorldPoint
   return portAxis(source, from) === 'horizontal' ? { x: to.x, y: from.y } : { x: from.x, y: to.y };
 };
 
+const segmentOf = (source: Placement, from: WorldPoint, to: WorldPoint): ProjectedWireSegment => {
+  const bend = bendOf(source, from, to);
+  return { from, to, ...(bend !== undefined ? { bend } : {}) };
+};
+
 /**
  * Draws every wire of the document as a horizontal/vertical route between
  * the ports of its two objects, drawn behind the objects: it never goes
@@ -113,15 +130,45 @@ export const projectWires = (document: LevelDocument): readonly ProjectedWire[] 
     controlCircuits(document.wires).map((circuit) => [circuit.sourceId, circuit]),
   );
 
-  return document.wires.flatMap((wire) => {
+  return document.wires.flatMap((wire): ProjectedWire[] => {
     const source = placementsById.get(wire.sourceId);
     const target = placementsById.get(wire.targetId);
+    const timer = wire.timerId === undefined ? undefined : placementsById.get(wire.timerId);
     const circuit = circuitsBySource.get(wire.sourceId);
-    if (source === undefined || target === undefined || circuit === undefined) return [];
+    if (
+      source === undefined ||
+      target === undefined ||
+      circuit === undefined ||
+      (wire.timerId !== undefined && timer?.type !== 'timer')
+    )
+      return [];
 
-    const from = portFacing(source, target.transform.position.x);
-    const to = portFacing(target, source.transform.position.x);
+    const from = portFacing(source, timer?.transform.position.x ?? target.transform.position.x);
+    const to = portFacing(target, timer?.transform.position.x ?? source.transform.position.x);
     if (from === undefined || to === undefined) return [];
+
+    if (timer?.type === 'timer') {
+      const timerInput = portFacing(timer, source.transform.position.x);
+      if (timerInput === undefined) return [];
+      const timerOutput = {
+        x: timer.transform.position.x * 2 - timerInput.x,
+        y: timer.transform.position.y * 2 - timerInput.y,
+      };
+      const segments = [segmentOf(source, from, timerInput), segmentOf(timer, timerOutput, to)];
+      return [
+        {
+          id: wire.id,
+          sourceId: wire.sourceId,
+          ...(wire.timerId === undefined ? {} : { timerId: wire.timerId }),
+          targetId: wire.targetId,
+          label: circuit.label,
+          circuitIndex: circuit.index,
+          from,
+          to,
+          segments,
+        },
+      ];
+    }
 
     const bend = bendOf(source, from, to);
 

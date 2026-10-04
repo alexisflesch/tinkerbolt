@@ -66,7 +66,12 @@ const emphasisOf = (
   focusId: string | undefined,
 ): WireEmphasis => {
   if (dimmed) return 'simulation';
-  if (focusId === undefined || wire.sourceId === focusId || wire.targetId === focusId) {
+  if (
+    focusId === undefined ||
+    wire.sourceId === focusId ||
+    wire.timerId === focusId ||
+    wire.targetId === focusId
+  ) {
     return 'construction';
   }
   return 'unrelated';
@@ -85,9 +90,7 @@ export const drawWires = (
   options: { readonly dimmed: boolean; readonly focusId: string | undefined },
 ): void => {
   for (const wire of wires) {
-    const from = toScreen(wire.from);
-    const to = toScreen(wire.to);
-    const bend = wire.bend === undefined ? undefined : toScreen(wire.bend);
+    const segments = wire.segments ?? [wire];
     context.save();
     context.globalAlpha = WIRE_ALPHA[emphasisOf(wire, options.dimmed, options.focusId)];
     context.lineCap = 'round';
@@ -96,9 +99,14 @@ export const drawWires = (
       [circuitColour(wire.circuitIndex), CORE_WIDTH],
     ] as const) {
       context.beginPath();
-      context.moveTo(from.x, from.y);
-      if (bend !== undefined) context.lineTo(bend.x, bend.y);
-      context.lineTo(to.x, to.y);
+      for (const segment of segments) {
+        const from = toScreen(segment.from);
+        const to = toScreen(segment.to);
+        const bend = segment.bend === undefined ? undefined : toScreen(segment.bend);
+        context.moveTo(from.x, from.y);
+        if (bend !== undefined) context.lineTo(bend.x, bend.y);
+        context.lineTo(to.x, to.y);
+      }
       context.strokeStyle = colour;
       context.lineWidth = width;
       context.stroke();
@@ -130,15 +138,20 @@ export const drawWireLabels = (
   options: { readonly dimmed: boolean; readonly focusId: string | undefined },
 ): void => {
   for (const wire of wires) {
-    const from = toScreen(wire.from);
-    const to = toScreen(wire.to);
-    const bend = wire.bend === undefined ? undefined : toScreen(wire.bend);
+    const segments = wire.segments ?? [wire];
+    const first = segments[0];
+    const last = segments.at(-1);
+    if (first === undefined || last === undefined) continue;
+    const from = toScreen(first.from);
+    const fromTowards = toScreen(first.bend ?? first.to);
+    const to = toScreen(last.to);
+    const toTowards = toScreen(last.bend ?? last.from);
     context.save();
     context.globalAlpha = LABEL_ALPHA[emphasisOf(wire, options.dimmed, options.focusId)];
     context.font = LABEL_FONT;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    for (const centre of [insetAlong(from, bend ?? to), insetAlong(to, bend ?? from)]) {
+    for (const centre of [insetAlong(from, fromTowards), insetAlong(to, toTowards)]) {
       context.beginPath();
       context.arc(centre.x, centre.y, LABEL_RADIUS, 0, 2 * Math.PI);
       context.fillStyle = circuitColour(wire.circuitIndex);

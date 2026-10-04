@@ -13,6 +13,7 @@ import {
   pistonGeometry,
   seesawGeometry,
   springboardGeometry,
+  timerGeometry,
   type WorldPoint,
   type WorldPolygon,
   type WorldRect,
@@ -60,6 +61,8 @@ const localFootprintFor = (placement: FootprintSource): WorldRect => {
       return barrierFootprint(placement.props.state);
     case 'springboard':
       return springboardGeometry.footprint;
+    case 'timer':
+      return timerGeometry.footprint;
     default:
       return assertNever(placement);
   }

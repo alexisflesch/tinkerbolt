@@ -59,6 +59,11 @@ const binaryApplianceStateFromValue = (value: string): 'on' | 'off' | null =>
 const barrierStateFromValue = (value: string): 'closed' | 'open' | null =>
   value === 'closed' || value === 'open' ? value : null;
 
+const timerDelayFromValue = (value: string): number | null => {
+  const delay = Number(value);
+  return Number.isInteger(delay) && delay >= 1 && delay <= 10 ? delay : null;
+};
+
 /**
  * The panel for the currently selected placement: move; rotate beams freely,
  * levers within their supported range, and fans, barriers, pistons or springboards by
@@ -92,8 +97,10 @@ export function ContextPanel({ session, onExecuteCommand, onClose }: ContextPane
   const circuitLabel = (sourceId: string): string =>
     circuits.find((circuit) => circuit.sourceId === sourceId)?.label ?? '';
   const connectedWires = wires.filter(
-    ({ sourceId, targetId }) =>
-      sourceId === selectedPlacement.id || targetId === selectedPlacement.id,
+    ({ sourceId, targetId, timerId }) =>
+      sourceId === selectedPlacement.id ||
+      targetId === selectedPlacement.id ||
+      timerId === selectedPlacement.id,
   );
   // U21: the player unlinks only a wire he laid from the inventory, when
   // its entry lets him take it back; the level's wires stay.
@@ -378,6 +385,32 @@ export function ContextPanel({ session, onExecuteCommand, onClose }: ContextPane
           </select>
         </label>
       )}
+      {selectedPlacement.type === 'timer' && canEdit && (
+        <label className="context-size-control">
+          Délai du minuteur
+          <select
+            aria-label="Délai du minuteur"
+            value={String(selectedPlacement.props.delaySeconds)}
+            onChange={(event) => {
+              const delaySeconds = timerDelayFromValue(event.target.value);
+              if (delaySeconds === null) return;
+              onExecuteCommand(
+                updatePlacementProperties({
+                  context: 'author',
+                  placementId: selectedPlacement.id,
+                  props: { delaySeconds },
+                }),
+              );
+            }}
+          >
+            {Array.from({ length: 10 }, (_, index) => index + 1).map((seconds) => (
+              <option key={seconds} value={String(seconds)}>
+                {seconds} s
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {connectedWires.length > 0 && (
         <ul className="context-circuits" aria-label="Circuits">
           {connectedWires.map((wire, index) => {
@@ -390,7 +423,11 @@ export function ContextPanel({ session, onExecuteCommand, onClose }: ContextPane
               <li key={wire.id}>
                 <span className="context-circuit-title">
                   Fil du circuit {label}
-                  {wire.targetId === selectedPlacement.id ? ' (commandé)' : ''}
+                  {wire.targetId === selectedPlacement.id
+                    ? ' (commandé)'
+                    : wire.timerId === selectedPlacement.id
+                      ? ' (minuteur)'
+                      : ''}
                 </span>
                 {canEdit && (
                   <div

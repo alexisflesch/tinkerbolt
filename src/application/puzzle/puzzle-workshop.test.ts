@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { levelDocumentSchema, type LevelDocument } from '../../domain/level-document';
 import {
+  playSolution,
   puzzleFromWorkshop,
   verifyPuzzle,
   workshopFromPuzzle,
@@ -148,6 +149,27 @@ const conveyor = {
   transform: { position: { x: 5, y: 4 }, rotation: 0 },
   permissions: locked,
 } as const;
+const timer = {
+  id: 'timer-1',
+  type: 'timer',
+  props: { delaySeconds: 3 },
+  transform: { position: { x: 4, y: 5 }, rotation: 0 },
+  permissions: locked,
+} as const;
+const button = {
+  id: 'button-1',
+  type: 'button',
+  props: {},
+  transform: { position: { x: 3, y: 5 }, rotation: 0 },
+  permissions: locked,
+} as const;
+const fan = {
+  id: 'fan-1',
+  type: 'fan',
+  props: { state: 'off' },
+  transform: { position: { x: 5, y: 5 }, rotation: 0 },
+  permissions: locked,
+} as const;
 
 describe('passage de l’atelier au puzzle (U22, ADR 0013)', () => {
   it('garde le décor fixe, met les objets à placer dans l’inventaire et leur pose dans la solution', () => {
@@ -261,6 +283,44 @@ describe('passage de l’atelier au puzzle (U22, ADR 0013)', () => {
         targetId: 'conveyor-1',
       },
     ]);
+  });
+
+  it('exporte, rejoue et rouvre un fil dont le minuteur est à placer', () => {
+    const source = workshop({
+      objects: [...workshop().objects, button, { ...timer, toPlace: true }, fan],
+      wires: [{ id: 'wire-timer', sourceId: 'button-1', timerId: 'timer-1', targetId: 'fan-1' }],
+    });
+
+    const result = puzzleFromWorkshop(source);
+
+    expect(result.status).toBe('ok');
+    if (result.status !== 'ok') return;
+    expect(result.puzzle.solution?.placements).toContainEqual({
+      inventoryId: 'timer-a-placer',
+      placementId: 'timer-1',
+      transform: timer.transform,
+    });
+    expect(result.puzzle.solution?.wires).toContainEqual({
+      id: 'wire-timer',
+      inventoryId: 'wire-a-placer',
+      sourceId: 'button-1',
+      timerId: 'timer-1',
+      targetId: 'fan-1',
+    });
+
+    const replayed =
+      result.puzzle.solution === undefined
+        ? null
+        : playSolution(result.puzzle, result.puzzle.solution);
+    expect(replayed).not.toBeNull();
+    if (replayed === null) return;
+    const placedTimer = replayed.document.objects.find(({ type }) => type === 'timer');
+    expect(placedTimer).toBeDefined();
+    expect(replayed.document.wires[0]?.timerId).toBe(placedTimer?.id);
+
+    const reopened = workshopFromPuzzle(result.puzzle);
+    const reopenedTimer = reopened.objects.find(({ type }) => type === 'timer');
+    expect(reopened.wires[0]?.timerId).toBe(reopenedTimer?.id);
   });
 
   it('rouvre les fils de la solution comme fils à placer dans l’atelier (U25)', () => {

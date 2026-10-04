@@ -80,6 +80,14 @@ interface SimulationJointState {
 }
 
 type ConveyorDirection = -1 | 0 | 1;
+type ControllerSignal =
+  | { readonly kind: 'lever'; readonly position: LeverPosition }
+  | { readonly kind: 'button'; readonly pressed: boolean };
+
+interface DelayedSignal {
+  readonly dueStep: number;
+  readonly signal: ControllerSignal;
+}
 
 /**
  * ADR 0009: the observable state of controllers and devices after a step.
@@ -135,6 +143,15 @@ type SimulationDeviceState =
       readonly kind: 'piston';
       /** 0 retracted, 1 fully extended. */
       readonly extension: number;
+    }
+  | {
+      readonly placementId: string;
+      readonly kind: 'timer';
+      readonly delaySeconds: number;
+      /** Time remaining before the next delayed signal change, or null when idle. */
+      readonly remainingSeconds: number | null;
+      /** The hand turns at one revolution per second while a change is queued. */
+      readonly handAngle: number;
     };
 
 interface SimulationSensorEventFields {
@@ -281,6 +298,16 @@ interface PistonRecord {
   extension: number;
 }
 
+interface TimerRecord {
+  readonly placementId: string;
+  readonly delaySeconds: number;
+  readonly delaySteps: number;
+  readonly sourceId: string | undefined;
+  observedSignal: ControllerSignal | undefined;
+  outputSignal: ControllerSignal | undefined;
+  readonly pending: DelayedSignal[];
+}
+
 interface SensorRecord {
   readonly targetId: string;
 }
@@ -383,6 +410,7 @@ const LEVER_NOTCH_STIFFNESS = 12;
 /** Past this angle either side of upright, the lever reads as left or right. */
 const LEVER_SWITCH_ANGLE = leverGeometry.tilt / 2;
 const CONVEYOR_SPEED = 1.5;
+const TIMER_HAND_SPEED = 2 * Math.PI;
 
 const shortestAngleDifference = (angle: number, reference: number): number =>
   Math.atan2(Math.sin(angle - reference), Math.cos(angle - reference));
@@ -529,6 +557,7 @@ class PlanckSimulationSession implements SimulationSession {
   #springboards: SpringboardRecord[] = [];
   #springboardPlatforms = new Map<Fixture, SpringboardRecord>();
   #pistons: PistonRecord[] = [];
+  #timers: TimerRecord[] = [];
   #sensors = new Map<Fixture, SensorRecord>();
   #activeSensorContacts = new Map<string, number>();
   #events: SimulationSensorEvent[] = [];
@@ -675,6 +704,25 @@ class PlanckSimulationSession implements SimulationSession {
             extension,
           }),
         ),
+        ...this.#timers.map(({ placementId, delaySeconds, pending }): SimulationDeviceState => {
+          const next = pending[0];
+          const remainingSeconds =
+            next === undefined
+              ? null
+              : Math.max(0, next.dueStep - this.#fixedStep) * this.#fixedStepSeconds;
+          const elapsedSeconds = remainingSeconds === null ? 0 : delaySeconds - remainingSeconds;
+          return {
+            placementId,
+            kind: 'timer',
+            delaySeconds,
+            remainingSeconds,
+            handAngle:
+              remainingSeconds === null
+                ? 0
+                : (((elapsedSeconds * TIMER_HAND_SPEED) % TIMER_HAND_SPEED) + TIMER_HAND_SPEED) %
+                  TIMER_HAND_SPEED,
+          };
+        }),
       ],
     };
   }
@@ -874,6 +922,9 @@ class PlanckSimulationSession implements SimulationSession {
             placement.transform.position,
             placement.transform.rotation,
           );
+          break;
+        case 'timer':
+          this.#createTimer(placement.id, placement.props.delaySeconds);
           break;
       }
     }
@@ -1159,33 +1210,78 @@ class PlanckSimulationSession implements SimulationSession {
     }
   }
 
-  /**
-   * ADR 0009: a controller is active while its lever stands to either side —
-   * centre means rest, as for a conveyor — or while its button is pressed.
-   */
-  #controllerActive(sourceId: string): boolean {
+  #controllerSignal(sourceId: string): ControllerSignal | undefined {
     const lever = this.#levers.find(({ placementId }) => placementId === sourceId);
-    if (lever !== undefined) return this.#leverPosition(lever) !== 'center';
+    if (lever !== undefined) return { kind: 'lever', position: this.#leverPosition(lever) };
     const button = this.#buttons.find(({ placementId }) => placementId === sourceId);
-    return button !== undefined && button.contacts > 0;
+    return button === undefined ? undefined : { kind: 'button', pressed: button.contacts > 0 };
+  }
+
+  #signalForTarget(targetId: string): ControllerSignal | undefined {
+    const wire = this.#level.wires.find(
+      ({ targetId: wiredTargetId }) => wiredTargetId === targetId,
+    );
+    if (wire === undefined) return undefined;
+    if (wire.timerId !== undefined) {
+      return this.#timers.find(({ placementId }) => placementId === wire.timerId)?.outputSignal;
+    }
+    return this.#controllerSignal(wire.sourceId);
+  }
+
+  #signalIsActive(signal: ControllerSignal | undefined): boolean {
+    return signal?.kind === 'button'
+      ? signal.pressed
+      : signal?.kind === 'lever' && signal.position !== 'center';
+  }
+
+  #commandTimers(): void {
+    for (const timer of this.#timers) {
+      if (timer.sourceId === undefined) continue;
+      const signal = this.#controllerSignal(timer.sourceId);
+      if (signal === undefined) continue;
+      if (timer.observedSignal === undefined) {
+        timer.observedSignal =
+          signal.kind === 'lever'
+            ? { kind: 'lever', position: 'center' }
+            : { kind: 'button', pressed: false };
+        timer.outputSignal = timer.observedSignal;
+      }
+      if (!this.#sameSignal(timer.observedSignal, signal)) {
+        timer.observedSignal = signal;
+        timer.pending.push({ dueStep: this.#fixedStep + timer.delaySteps, signal });
+      }
+      while (timer.pending[0] !== undefined && timer.pending[0].dueStep <= this.#fixedStep) {
+        const due = timer.pending.shift();
+        if (due !== undefined) timer.outputSignal = due.signal;
+      }
+    }
+  }
+
+  #sameSignal(left: ControllerSignal | undefined, right: ControllerSignal): boolean {
+    if (left === undefined) return false;
+    return left.kind === 'lever'
+      ? right.kind === 'lever' && left.position === right.position
+      : right.kind === 'button' && left.pressed === right.pressed;
   }
 
   /** Reads every controller and sets the state of the devices it commands. */
   #commandDevices(): void {
+    this.#commandTimers();
     this.#commandConveyors();
     this.#commandPistons();
     for (const magnet of this.#electroMagnets) {
-      const button = this.#buttons.find(({ placementId }) => placementId === magnet.sourceId);
-      magnet.active = magnet.ownActive !== (button !== undefined && button.contacts > 0);
+      const signal = this.#signalForTarget(magnet.placementId);
+      const active = signal?.kind === 'button' && signal.pressed;
+      magnet.active = magnet.ownActive !== active;
     }
     // A commanded device starts in its own state and switches to the other
     // while its controller is active (decision of 1st October 2026).
     for (const fan of this.#fans) {
-      const active = fan.sourceId !== undefined && this.#controllerActive(fan.sourceId);
+      const active = this.#signalIsActive(this.#signalForTarget(fan.placementId));
       fan.running = fan.ownRunning !== active;
     }
     for (const barrier of this.#barriers) {
-      const active = barrier.sourceId !== undefined && this.#controllerActive(barrier.sourceId);
+      const active = this.#signalIsActive(this.#signalForTarget(barrier.placementId));
       barrier.open = barrier.ownOpen !== active;
     }
   }
@@ -1193,8 +1289,8 @@ class PlanckSimulationSession implements SimulationSession {
   /** A piston follows its button while pressed and retracts as soon as it is released. */
   #commandPistons(): void {
     for (const piston of this.#pistons) {
-      const button = this.#buttons.find(({ placementId }) => placementId === piston.sourceId);
-      const pressed = button !== undefined && button.contacts > 0;
+      const signal = this.#signalForTarget(piston.placementId);
+      const pressed = signal?.kind === 'button' && signal.pressed;
       const risingEdge = pressed && !piston.buttonPressed;
       piston.buttonPressed = pressed;
 
@@ -1243,17 +1339,12 @@ class PlanckSimulationSession implements SimulationSession {
   /** Reads every lever and sets the direction of the conveyors it commands. */
   #commandConveyors(): void {
     for (const conveyor of this.#conveyors) {
-      const lever =
-        conveyor.leverId === undefined
-          ? undefined
-          : this.#levers.find(({ placementId }) => placementId === conveyor.leverId);
+      const signal = this.#signalForTarget(conveyor.placementId);
       const direction =
-        lever === undefined
+        signal?.kind !== 'lever'
           ? conveyor.ownDirection
           : conveyorDirections[
-              ({ left: 'left', center: 'stopped', right: 'right' } as const)[
-                this.#leverPosition(lever)
-              ]
+              ({ left: 'left', center: 'stopped', right: 'right' } as const)[signal.position]
             ];
       conveyor.direction = direction;
       if (direction !== 0) {
@@ -1501,6 +1592,21 @@ class PlanckSimulationSession implements SimulationSession {
       buttonPressed: false,
       phase: 'retracted',
       extension: 0,
+    });
+  }
+
+  #createTimer(placementId: string, delaySeconds: number): void {
+    const delaySteps = Math.max(1, Math.round(delaySeconds / this.#fixedStepSeconds));
+    assertPositiveSafeInteger(delaySteps, 'Le délai du minuteur en pas fixes');
+    const wire = this.#level.wires.find(({ timerId }) => timerId === placementId);
+    this.#timers.push({
+      placementId,
+      delaySeconds,
+      delaySteps,
+      sourceId: wire?.sourceId,
+      observedSignal: undefined,
+      outputSignal: undefined,
+      pending: [],
     });
   }
 
@@ -1819,6 +1925,7 @@ class PlanckSimulationSession implements SimulationSession {
     this.#springboards = [];
     this.#springboardPlatforms.clear();
     this.#pistons = [];
+    this.#timers = [];
     this.#sensors.clear();
     this.#activeSensorContacts.clear();
   }

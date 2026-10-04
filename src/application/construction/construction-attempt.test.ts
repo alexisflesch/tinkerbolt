@@ -779,6 +779,80 @@ describe('fils de commande', () => {
     });
   });
 
+  it('pose un circuit avec minuteur comme une seule liaison et réserve le minuteur', () => {
+    const level = createLevel();
+    const withTimer: LevelDocument = {
+      ...level,
+      objects: [
+        ...level.objects,
+        {
+          id: 'button-1',
+          type: 'button',
+          props: {},
+          transform: { position: { x: 1, y: 8 }, rotation: 0 },
+          permissions: lockedPermissions,
+        },
+        {
+          id: 'timer-1',
+          type: 'timer',
+          props: { delaySeconds: 3 },
+          transform: { position: { x: 4, y: 8 }, rotation: 0 },
+          permissions: lockedPermissions,
+        },
+        {
+          id: 'fan-1',
+          type: 'fan',
+          props: { state: 'off' },
+          transform: { position: { x: 8, y: 8 }, rotation: 0 },
+          permissions: lockedPermissions,
+        },
+        {
+          id: 'barrier-1',
+          type: 'barrier',
+          props: { state: 'closed' },
+          transform: { position: { x: 8, y: 4 }, rotation: 0 },
+          permissions: lockedPermissions,
+        },
+      ],
+      inventory: [
+        ...level.inventory,
+        {
+          id: 'wire-stock',
+          type: 'wire',
+          props: {},
+          quantity: 1,
+          permissions: { move: false, rotate: false, remove: true },
+        },
+      ],
+    };
+    const attempt = createConstructionAttempt(withTimer);
+    const linked = connectControlWire({
+      context: 'player',
+      wireId: 'wire-1',
+      inventoryEntryId: 'wire-stock',
+      sourceId: 'button-1',
+      timerId: 'timer-1',
+      targetId: 'fan-1',
+    }).execute(attempt);
+
+    expect(linked.status).toBe('accepted');
+    if (linked.status !== 'accepted') return;
+    expect(linked.state.document.wires).toEqual([
+      { id: 'wire-1', sourceId: 'button-1', timerId: 'timer-1', targetId: 'fan-1' },
+    ]);
+    expect(linked.state.document.inventory.find(({ id }) => id === 'wire-stock')?.quantity).toBe(0);
+    expect(linked.state.provenance['wire-1']).toBe('wire-stock');
+    expect(
+      connectControlWire({
+        context: 'author',
+        wireId: 'wire-2',
+        sourceId: 'button-1',
+        timerId: 'timer-1',
+        targetId: 'barrier-1',
+      }).execute(linked.state),
+    ).toEqual({ status: 'rejected', reason: 'timer-already-connected' });
+  });
+
   it('délie un fil par son identifiant', () => {
     const attempt = createConstructionAttempt(createWiringLevel());
     const connected = connect('conveyor-1').execute(attempt);

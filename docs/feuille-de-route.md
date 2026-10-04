@@ -18,8 +18,8 @@ autorise la nouvelle reprise, sans rouvrir V0 à V9.
 `6150c94` de l’autre agent de l’auteur, puis vérifié par l’orchestrateur.
 C2 : [ADR 0017 acceptée](decisions/0017-player-construction-and-async-storage.md),
 avec les arbitrages de l’auteur intégrés. **C2a et C3 livrés.** À la demande de
-l’auteur, l’ordre restant est
-**C9c–d → C7 → C6 → C4 → C4a → C10**. C5 est déjà implémenté ; seule sa
+l’auteur, l’ordre restant après C3 était **C9c–d → C7 → C6 → C4 → C4a → C10**.
+C5 est déjà implémenté ; seule sa
 recette visuelle reste différée. C3.1 et C3.2 sont livrés ; la dernière gate
 globale passe avec 1 236 tests Vitest et 92 E2E v1. Le jeu reprend maintenant
 les constructions de campagne et reçues avant toute simulation.
@@ -40,9 +40,17 @@ verticale de 10 unités. Il démarre fermé ; un appui même bref lance toute la
 course de sortie, il reste sorti tant que le bouton est maintenu, puis se
 rétracte automatiquement. Sa plaque propulse les corps dynamiques dans un puzzle
 jouable. La gate globale clôturant C9c passe avec 1 315 tests Vitest et 92 E2E
-v1. Suite : C9d minuteur, C7, C6, C4, C4a et C10. Les ADR 0011/0015 et 0017
-fixent les contrats de stockage et de reprise ; les quatre stockages utilisent
+v1. Les ADR 0011/0015 et 0017 fixent les contrats de stockage et de reprise ;
+les quatre stockages utilisent
 Dexie avec ports asynchrones.
+
+**C9d, minuteur, est implémenté** : délai entier de 1 à 10 s (3 s par défaut),
+fil logique unique avec minuteur intermédiaire, transmission retardée de chaque
+transition et affichage à sept segments des secondes/dixièmes. Le cadran utilise
+le moyeu de l’asset comme pivot ; la vignette affiche `03.0`. La capture desktop
+de référence est dans `test-results/c9d/timer-desktop.png`. Gate complète :
+1 338 Vitest et 93 E2E v1, 6 niveaux embarqués valides. La validation visuelle
+de l’auteur sera regroupée à C10. Suite : C7, C6, C4, C4a et C10.
 
 ## Règles de la reprise active
 
@@ -823,6 +831,27 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   SHA-256 attendu ; `git diff --check` passe.
 - La recette visuelle reste différée selon l’instruction de l’auteur. Prochaine
   tâche : C9d minuteur.
+
+### C9d — Minuteur — livré le 4 octobre 2026
+
+- Famille v3 éditable avec délai entier réglable de 1 à 10 s dans l’Atelier,
+  valeur initiale de 3 s et réglage fixe dans un niveau joué.
+- Le geste place le minuteur avant le câblage. Un seul fil d’inventaire relie
+  contrôleur → minuteur → appareil ; les deux changements de signal (activation
+  et désactivation) ressortent après le délai au pas fixe.
+- Aiguille animée autour du moyeu central du cadran. Affichage dessiné en
+  segments ambrés, au format `03.0` secondes/dixièmes ; sprite et vignette
+  exportés depuis `art/`.
+- Schémas stricts v3, migrations, atelier, partage, reprise et rejeu incluent le
+  minuteur et sa référence de fil.
+- Tests couvrent transitions retardées, impulsion brève, placement/câblage,
+  rendu et affichage. `e2e/timer.spec.ts` vérifie les pixels ambrés dans la zone
+  de l’écran et produit la capture desktop `test-results/c9d/timer-desktop.png`.
+- `pnpm check` vert : **1 338 Vitest, 93 E2E v1**, 6 documents embarqués valides,
+  build et précache verts. Le fichier d’essai de l’auteur est restauré à son
+  SHA-256 attendu ; `git diff --check` passe.
+- La capture corrigée est disponible pour la validation visuelle de l’auteur à
+  C10. Prochaine tâche : C7, puis C6, C4, C4a et C10.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

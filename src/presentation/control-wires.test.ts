@@ -52,6 +52,25 @@ const alignedDocument = () =>
     wires: [{ id: 'wire-1', sourceId: 'lever-1', targetId: 'conveyor-1' }],
   });
 
+const timerDocument = () =>
+  levelDocumentSchema.parse({
+    schemaVersion: 3,
+    id: 'wires-timer',
+    metadata: { title: 'Fil avec minuteur' },
+    objects: [
+      placement('ball-1', 'ball', 1, 1, {}),
+      placement('basket-1', 'basket', 1, 9, {}),
+      placement('lever-1', 'lever', 2, 4, { position: 'center' }),
+      placement('timer-1', 'timer', 6, 4.05, { delaySeconds: 3 }),
+      placement('conveyor-1', 'conveyor', 10, 4.05, { direction: 'stopped' }),
+    ],
+    inventory: [],
+    goal: { type: 'basket', ballId: 'ball-1', basketId: 'basket-1' },
+    buildZones: [],
+    scene: { min: { x: 0, y: 0 }, max: { x: 14, y: 10 } },
+    wires: [{ id: 'wire-1', sourceId: 'lever-1', timerId: 'timer-1', targetId: 'conveyor-1' }],
+  });
+
 describe('tracé des fils', () => {
   it('relie la source à la cible par un segment unique quand les ports sont alignés', () => {
     const [wire] = projectWires(alignedDocument());
@@ -81,5 +100,17 @@ describe('tracé des fils', () => {
     expect(wire?.from).toEqual({ x: 4.6, y: 4.05 });
     expect(wire?.to).toEqual({ x: 3, y: 5 });
     expect(wire?.bend).toEqual({ x: 3, y: 4.05 });
+  });
+
+  it('dérive deux segments autour du minuteur dans une seule liaison', () => {
+    const [wire] = projectWires(timerDocument());
+
+    expect(wire?.segments).toEqual([
+      { from: { x: 2.4, y: 4.05 }, to: { x: 5.25, y: 4.05 } },
+      { from: { x: 6.75, y: 4.05 }, to: { x: 8.5, y: 4.05 } },
+    ]);
+    expect(wire?.id).toBe('wire-1');
+    expect(wire?.sourceId).toBe('lever-1');
+    expect(wire?.targetId).toBe('conveyor-1');
   });
 });

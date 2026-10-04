@@ -598,4 +598,176 @@ save(
     THUMBS / "fan.png",
 )
 
+# C9d : le boîtier du minuteur est horizontal ; l'aiguille tourne autour du
+# centre du cadran, et la vignette reprend les deux calques du plateau.
+timer_background = load("timer/time-background.png")
+timer_background_box = opaque_box(timer_background)
+timer_background_sprite = export(
+    timer_background,
+    timer_background_box,
+    1.5,
+    0.5,
+    "timer-background",
+)
+timer_hand_image = load("timer/timer-hand.png")
+timer_hand_box = opaque_box(timer_hand_image)
+timer_hand_sprite = export(
+    timer_hand_image,
+    timer_hand_box,
+    0.14,
+    0.14,
+    "timer-hand",
+)
+timer_dial_source = (448, 397)
+timer_hand_pivot_source = (687, 772)
+timer_dial_center = {
+    "x": round(
+        (timer_dial_source[0] - timer_background_box[0])
+        / (timer_background_box[2] - timer_background_box[0])
+        * 1.5
+        - 0.75,
+        4,
+    ),
+    "y": round(
+        (timer_dial_source[1] - timer_background_box[1])
+        / (timer_background_box[3] - timer_background_box[1])
+        * 0.5
+        - 0.25,
+        4,
+    ),
+}
+timer_display_center = {
+    "x": round(
+        (1300 - timer_background_box[0])
+        / (timer_background_box[2] - timer_background_box[0])
+        * 1.5
+        - 0.75,
+        4,
+    ),
+    "y": round(
+        (360 - timer_background_box[1])
+        / (timer_background_box[3] - timer_background_box[1])
+        * 0.5
+        - 0.25,
+        4,
+    ),
+}
+timer_hand_pivot = {
+    "x": (timer_hand_pivot_source[0] - timer_hand_box[0])
+    / (timer_hand_box[2] - timer_hand_box[0]),
+    "y": (timer_hand_pivot_source[1] - timer_hand_box[1])
+    / (timer_hand_box[3] - timer_hand_box[1]),
+}
+timer_hand_offset = (
+    round(
+        (timer_dial_source[0] - timer_background_box[0])
+        / (timer_background_box[2] - timer_background_box[0])
+        * timer_background_sprite.width
+        - timer_hand_pivot["x"] * timer_hand_sprite.width
+    ),
+    round(
+        (timer_dial_source[1] - timer_background_box[1])
+        / (timer_background_box[3] - timer_background_box[1])
+        * timer_background_sprite.height
+        - timer_hand_pivot["y"] * timer_hand_sprite.height
+    ),
+)
+timer_thumbnail = composite(
+    [(timer_background_sprite, (0, 0)), (timer_hand_sprite, timer_hand_offset)],
+    timer_background_sprite.size,
+)
+timer_draw = ImageDraw.Draw(timer_thumbnail, "RGBA")
+timer_digit_width = 0.09
+timer_digit_height = 0.17
+timer_segment = 0.018
+timer_gap = 0.024
+timer_point = 0.025
+timer_glyphs = {
+    "0": "abcdef",
+    "1": "bc",
+    "2": "abdeg",
+    "3": "abcdg",
+    "4": "bcfg",
+    "5": "acdfg",
+    "6": "acdefg",
+    "7": "abc",
+    "8": "abcdefg",
+    "9": "abcdfg",
+}
+timer_text = "03.0"
+timer_text_width = sum(timer_point if char == "." else timer_digit_width for char in timer_text)
+timer_text_width += timer_gap * (len(timer_text) - 1)
+timer_scale = PX_PER_UNIT
+timer_left = round(
+    (timer_display_center["x"] + 0.75) * timer_scale - timer_text_width * timer_scale / 2
+)
+timer_top = round(
+    (timer_display_center["y"] + 0.25) * timer_scale - timer_digit_height * timer_scale / 2
+)
+
+for timer_char in timer_text:
+    if timer_char == ".":
+        x = timer_left
+        y = timer_top + round((timer_digit_height - timer_segment) * timer_scale)
+        width = round(timer_point * timer_scale)
+        height = round(timer_segment * timer_scale)
+        timer_draw.rectangle(
+            (x, y, x + width - 1, y + height - 1), fill=(255, 197, 77, 255)
+        )
+        timer_left += round((timer_point + timer_gap) * timer_scale)
+    else:
+        half = timer_digit_height / 2
+        vertical_height = half - timer_segment
+        local_shapes = {
+            "a": (timer_segment, 0, timer_digit_width - 2 * timer_segment, timer_segment),
+            "b": (
+                timer_digit_width - timer_segment,
+                timer_segment / 2,
+                timer_segment,
+                vertical_height,
+            ),
+            "c": (
+                timer_digit_width - timer_segment,
+                half + timer_segment / 2,
+                timer_segment,
+                vertical_height,
+            ),
+            "d": (
+                timer_segment,
+                timer_digit_height - timer_segment,
+                timer_digit_width - 2 * timer_segment,
+                timer_segment,
+            ),
+            "e": (0, half + timer_segment / 2, timer_segment, vertical_height),
+            "f": (0, timer_segment / 2, timer_segment, vertical_height),
+            "g": (
+                timer_segment,
+                half - timer_segment / 2,
+                timer_digit_width - 2 * timer_segment,
+                timer_segment,
+            ),
+        }
+        for segment in timer_glyphs[timer_char]:
+            x, y, width, height = local_shapes[segment]
+            x = timer_left + round(x * timer_scale)
+            y = timer_top + round(y * timer_scale)
+            width = round(width * timer_scale)
+            height = round(height * timer_scale)
+            timer_draw.rectangle(
+                (x, y, x + width - 1, y + height - 1), fill=(255, 197, 77, 255)
+            )
+        timer_left += round((timer_digit_width + timer_gap) * timer_scale)
+save(timer_thumbnail, THUMBS / "timer.png")
+geometry["timer"] = {
+    "footprint": {"x": -0.75, "y": -0.25, "width": 1.5, "height": 0.5},
+    "dialCenter": timer_dial_center,
+    "hand": {
+        "x": round(-timer_hand_pivot["x"] * 0.14, 4),
+        "y": round(-timer_hand_pivot["y"] * 0.14, 4),
+        "width": 0.14,
+        "height": 0.14,
+    },
+    "displayCenter": timer_display_center,
+}
+
 print(json.dumps(geometry, indent=2))

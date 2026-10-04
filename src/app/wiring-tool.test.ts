@@ -7,6 +7,7 @@ const objects = [
   { id: 'button-1', type: 'button' },
   { id: 'conveyor-1', type: 'conveyor' },
   { id: 'fan-1', type: 'fan' },
+  { id: 'timer-1', type: 'timer' },
   { id: 'ball-1', type: 'ball' },
 ] as const;
 
@@ -21,12 +22,56 @@ describe('outil fil : une commande et un appareil, dans n’importe quel ordre (
       exitLabel: 'Annuler le fil',
     });
     expect(wiringGuide(fromSource('lever-1'))).toEqual({
-      prompt: 'Choisis l’appareil à commander',
+      prompt: 'Choisis le minuteur ou l’appareil à commander',
       exitLabel: 'Annuler le fil',
     });
     expect(wiringGuide(fromTarget('fan-1'))).toEqual({
       prompt: 'Choisis le levier ou le bouton qui le commande',
       exitLabel: 'Annuler le fil',
+    });
+  });
+
+  it('insère le minuteur après le contrôleur puis termine le fil sur un appareil', () => {
+    const withTimer: WiringStep = {
+      kind: 'device-after-timer',
+      sourceId: 'button-1',
+      timerId: 'timer-1',
+    };
+
+    expect(wiringTap(fromSource('button-1'), objects, 'timer-1')).toEqual({
+      kind: 'next',
+      step: withTimer,
+    });
+    expect(wiringGuide(withTimer)).toEqual({
+      prompt: 'Choisis l’appareil à commander',
+      exitLabel: 'Annuler le fil',
+    });
+    expect(wiringTap(withTimer, objects, 'fan-1')).toEqual({
+      kind: 'connect',
+      sourceId: 'button-1',
+      timerId: 'timer-1',
+      targetId: 'fan-1',
+    });
+  });
+
+  it('refuse le minuteur comme départ ou appareil final, et reprend si le minuteur disparaît', () => {
+    const throughTimer: WiringStep = {
+      kind: 'device-after-timer',
+      sourceId: 'button-1',
+      timerId: 'timer-1',
+    };
+
+    expect(wiringTap(firstStep, objects, 'timer-1').kind).toBe('refused');
+    expect(wiringTap(throughTimer, objects, 'timer-1')).toMatchObject({ kind: 'refused' });
+    expect(
+      wiringTap(
+        throughTimer,
+        objects.filter(({ id }) => id !== 'timer-1'),
+        'fan-1',
+      ),
+    ).toEqual({
+      kind: 'next',
+      step: fromSource('button-1'),
     });
   });
 
@@ -50,7 +95,7 @@ describe('outil fil : une commande et un appareil, dans n’importe quel ordre (
       expect(wiringTap(firstStep, objects, placementId)).toEqual({
         kind: 'refused',
         message:
-          'Un fil relie un levier ou un bouton à un convoyeur, un ventilateur ou une barrière.',
+          'Un fil relie un levier ou un bouton à un convoyeur, un ventilateur, une barrière, un électroaimant ou un piston.',
       });
     }
   });

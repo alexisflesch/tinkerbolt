@@ -14,9 +14,23 @@ export const solutionFromAttempt = ({ document, provenance }: ConstructionAttemp
     const inventoryId = provenance[wire.id];
     return inventoryId === undefined
       ? []
-      : [{ id: wire.id, inventoryId, sourceId: wire.sourceId, targetId: wire.targetId }];
+      : [
+          {
+            id: wire.id,
+            inventoryId,
+            sourceId: wire.sourceId,
+            ...(wire.timerId === undefined ? {} : { timerId: wire.timerId }),
+            targetId: wire.targetId,
+          },
+        ];
   });
-  const wiredIds = new Set(wires.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
+  const wiredIds = new Set(
+    wires.flatMap(({ sourceId, timerId, targetId }) => [
+      sourceId,
+      ...(timerId === undefined ? [] : [timerId]),
+      targetId,
+    ]),
+  );
   const placements = document.objects.flatMap((placement) => {
     const inventoryId = provenance[placement.id];
     if (inventoryId === undefined) return [];

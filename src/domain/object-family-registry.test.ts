@@ -21,6 +21,7 @@ describe('registre des familles d’objet', () => {
       'fan',
       'electro-magnet',
       'piston',
+      'timer',
       'barrier',
       'springboard',
     ]);
@@ -28,6 +29,7 @@ describe('registre des familles d’objet', () => {
     expect(initialObjectFamilyRegistry.get('fan')?.catalogue.label).toBe('Ventilateur');
     expect(initialObjectFamilyRegistry.get('springboard')?.catalogue.label).toBe('Tremplin');
     expect(initialObjectFamilyRegistry.get('piston')?.catalogue.label).toBe('Piston');
+    expect(initialObjectFamilyRegistry.get('timer')?.catalogue.label).toBe('Minuteur');
 
     expect(initialObjectFamilyRegistry.get('ball')?.catalogue.label).toBe('Balle');
     expect(initialObjectFamilyRegistry.get('basket')?.catalogue.label).toBe('Panier');
@@ -59,8 +61,16 @@ describe('registre des familles d’objet', () => {
     expect(basket?.propertiesSchema.safeParse({}).success).toBe(true);
     expect(seesaw?.propertiesSchema.safeParse({}).success).toBe(true);
     const piston = initialObjectFamilyRegistry.get('piston');
+    const timer = initialObjectFamilyRegistry.get('timer');
     expect(piston?.propertiesSchema.safeParse({}).success).toBe(true);
     expect(piston?.propertiesSchema.safeParse({ state: 'on' }).success).toBe(false);
+    for (const delaySeconds of [1, 3, 10]) {
+      expect(timer?.propertiesSchema.safeParse({ delaySeconds }).success).toBe(true);
+    }
+    for (const delaySeconds of [0, 11, 1.5]) {
+      expect(timer?.propertiesSchema.safeParse({ delaySeconds }).success).toBe(false);
+    }
+    expect(timer?.propertiesSchema.safeParse({}).success).toBe(false);
     expect(ball?.propertiesSchema.safeParse({ color: 'red' }).success).toBe(false);
 
     for (const size of ['short', 'medium', 'long']) {

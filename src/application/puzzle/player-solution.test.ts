@@ -89,6 +89,13 @@ const origin: LevelDocument = levelDocumentSchema.parse({
       quantity: 2,
       permissions: { move: false, rotate: false, remove: true },
     },
+    {
+      id: 'timers',
+      type: 'timer',
+      props: { delaySeconds: 3 },
+      quantity: 1,
+      permissions: { move: true, rotate: true, remove: true },
+    },
   ],
   goal: { type: 'basket', ballId: 'ball', basketId: 'basket' },
   buildZones: [{ min: { x: 0, y: 0 }, max: { x: 10, y: 7 } }],
@@ -119,6 +126,12 @@ const placeButton = placeFromInventory({
   placementId: 'joueur-bouton',
   transform: { position: { x: 7, y: 2 }, rotation: 0 },
 });
+const placeTimer = placeFromInventory({
+  context: 'player',
+  inventoryEntryId: 'timers',
+  placementId: 'joueur-minuteur',
+  transform: { position: { x: 4, y: 3 }, rotation: 0 },
+});
 const wireButtonToFan = connectControlWire({
   context: 'player',
   wireId: 'fil-bouton',
@@ -132,6 +145,14 @@ const wireLeverToBarrier = connectControlWire({
   inventoryEntryId: 'wires',
   sourceId: 'decor-lever',
   targetId: 'decor-barrier',
+});
+const wireButtonThroughTimer = connectControlWire({
+  context: 'player',
+  wireId: 'fil-minuteur',
+  inventoryEntryId: 'wires',
+  sourceId: 'joueur-bouton',
+  timerId: 'joueur-minuteur',
+  targetId: 'decor-fan',
 });
 const moveDecorBeam = movePlacement({
   context: 'player',
@@ -224,6 +245,44 @@ describe('solution d’une tentative gagnante (M5, ADR 0015)', () => {
 
     expect(solutionSchema.safeParse(solution).success).toBe(true);
     expect(levelDocumentSchema.safeParse({ ...origin, solution }).success).toBe(true);
+  });
+
+  it('conserve le minuteur inséré dans un fil de la solution du joueur', () => {
+    const attempt = run(createConstructionAttempt(origin), [
+      placeButton,
+      placeTimer,
+      wireButtonThroughTimer,
+    ]);
+    const solution = solutionFromAttempt(attempt);
+
+    expect(solution).toEqual({
+      placements: [
+        {
+          inventoryId: 'buttons',
+          placementId: 'joueur-bouton',
+          transform: { position: { x: 7, y: 2 }, rotation: 0 },
+        },
+        {
+          inventoryId: 'timers',
+          placementId: 'joueur-minuteur',
+          transform: { position: { x: 4, y: 3 }, rotation: 0 },
+        },
+      ],
+      wires: [
+        {
+          id: 'fil-minuteur',
+          inventoryId: 'wires',
+          sourceId: 'joueur-bouton',
+          timerId: 'joueur-minuteur',
+          targetId: 'decor-fan',
+        },
+      ],
+    });
+    const replayed = playSolution(origin, solution);
+    expect(replayed).not.toBeNull();
+    if (replayed === null) return;
+    const placedTimer = replayed.document.objects.find(({ type }) => type === 'timer');
+    expect(replayed.document.wires[0]?.timerId).toBe(placedTimer?.id);
   });
 
   it('ne reprend pas un objet que le joueur a posé puis retiré', () => {

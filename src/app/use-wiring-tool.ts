@@ -25,15 +25,25 @@ export type WiringStep =
       readonly firstId: string;
       /** The wire's end the first object takes. */
       readonly first: 'source' | 'target';
+    }
+  | {
+      readonly kind: 'device-after-timer';
+      readonly sourceId: string;
+      readonly timerId: string;
     };
 
 type WiringTapOutcome =
   | { readonly kind: 'next'; readonly step: WiringStep }
   | { readonly kind: 'refused'; readonly message: string }
-  | { readonly kind: 'connect'; readonly sourceId: string; readonly targetId: string };
+  | {
+      readonly kind: 'connect';
+      readonly sourceId: string;
+      readonly timerId?: string;
+      readonly targetId: string;
+    };
 
 const unlinkableMessage =
-  'Un fil relie un levier ou un bouton à un convoyeur, un ventilateur ou une barrière.';
+  'Un fil relie un levier ou un bouton à un convoyeur, un ventilateur, une barrière, un électroaimant ou un piston.';
 
 /**
  * What a tap on `placementId` does at `step`. The rules and their wording
@@ -60,10 +70,36 @@ export const wiringTap = (
     return { kind: 'refused', message: unlinkableMessage };
   }
 
+  if (step.kind === 'device-after-timer') {
+    const source = typeOf(step.sourceId);
+    if (source === undefined) return { kind: 'next', step: { kind: 'first' } };
+    if (typeOf(step.timerId) !== 'timer') {
+      return {
+        kind: 'next',
+        step: { kind: 'second', firstId: step.sourceId, first: 'source' },
+      };
+    }
+    const issue = controlWireTargetIssue(source, tapped);
+    return issue === null
+      ? {
+          kind: 'connect',
+          sourceId: step.sourceId,
+          timerId: step.timerId,
+          targetId: placementId,
+        }
+      : { kind: 'refused', message: issue };
+  }
+
   const first = typeOf(step.firstId);
   // An undo can take the first object away mid-gesture: start over.
   if (first === undefined) return { kind: 'next', step: { kind: 'first' } };
   if (step.first === 'source') {
+    if (tapped === 'timer') {
+      return {
+        kind: 'next',
+        step: { kind: 'device-after-timer', sourceId: step.firstId, timerId: placementId },
+      };
+    }
     const issue = controlWireTargetIssue(first, tapped);
     return issue === null
       ? { kind: 'connect', sourceId: step.firstId, targetId: placementId }
@@ -82,9 +118,11 @@ export const wiringGuide = (
   const prompt =
     step.kind === 'first'
       ? 'Choisis une commande ou l’appareil à relier'
-      : step.first === 'source'
+      : step.kind === 'device-after-timer'
         ? 'Choisis l’appareil à commander'
-        : 'Choisis le levier ou le bouton qui le commande';
+        : step.first === 'source'
+          ? 'Choisis le minuteur ou l’appareil à commander'
+          : 'Choisis le levier ou le bouton qui le commande';
   return { prompt, exitLabel: 'Annuler le fil' };
 };
 
@@ -185,6 +223,7 @@ export function useWiringTool({
           context: session.mode === 'resolution' ? 'player' : 'author',
           wireId: nextWireId(document),
           sourceId: outcome.sourceId,
+          ...(outcome.timerId !== undefined ? { timerId: outcome.timerId } : {}),
           targetId: outcome.targetId,
           inventoryEntryId,
         }),

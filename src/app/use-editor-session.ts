@@ -21,11 +21,13 @@ const refusalMessage = (reason: string): string =>
         ? 'Suppression indisponible pour cet objet.'
         : reason === 'wire-already-connected'
           ? 'Cet appareil a déjà un contrôleur : il n’obéit qu’à un seul levier ou bouton.'
-          : reason === 'inventory-depleted'
-            ? 'Il n’en reste plus dans l’inventaire.'
-            : reason === 'inventory-provenance-missing'
-              ? 'Cet élément fait partie du niveau : il reste en place.'
-              : 'Cette action est indisponible.';
+          : reason === 'timer-already-connected'
+            ? 'Ce minuteur est déjà inséré dans un autre fil.'
+            : reason === 'inventory-depleted'
+              ? 'Il n’en reste plus dans l’inventaire.'
+              : reason === 'inventory-provenance-missing'
+                ? 'Cet élément fait partie du niveau : il reste en place.'
+                : 'Cette action est indisponible.';
 
 interface EditorSessionController {
   readonly session: EditorSession;

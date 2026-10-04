@@ -305,6 +305,15 @@ export const springboardGeometry = {
   },
 } as const;
 
+/** C9d inline signal delay; the source art's housing is approximately 3:1. */
+export const timerGeometry = {
+  footprint: centeredRect(1.5, 0.5),
+  dialCenter: { x: -0.511, y: 0.033 },
+  /** Frame offset puts the source-art hub (lower than its frame centre) at the dial pivot. */
+  handFootprint: { x: -0.0981, y: -0.1067, width: 0.14, height: 0.14 },
+  displayCenter: { x: 0.1768, y: 0.0039 },
+} as const;
+
 type BarrierState = 'closed' | 'open';
 
 const BARRIER_PILLAR_FOOTPRINT: WorldRect = { x: -0.45, y: -0.4779, width: 0.9, height: 0.9558 };

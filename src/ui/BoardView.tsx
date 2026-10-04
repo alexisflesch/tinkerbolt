@@ -52,6 +52,17 @@ const simulationView = (simulation: SimulationSnapshot): BoardSimulationView => 
           return [[device.placementId, { kind: 'barrier', retraction: device.retraction }]];
         case 'springboard':
           return [[device.placementId, { kind: 'springboard', compression: device.compression }]];
+        case 'timer':
+          return [
+            [
+              device.placementId,
+              {
+                kind: 'timer',
+                remainingSeconds: device.remainingSeconds,
+                handAngle: device.handAngle,
+              },
+            ],
+          ];
         case 'piston':
           return [];
         case 'lever':

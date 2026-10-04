@@ -15,6 +15,7 @@ import {
   massPropertiesSchema,
   seesawPropertiesSchema,
   springboardPropertiesSchema,
+  timerPropertiesSchema,
 } from './object-family-registry';
 
 /**
@@ -140,6 +141,12 @@ const objectPlacementSchema = z.discriminatedUnion('type', [
     type: z.literal('piston'),
     props: pistonPropertiesSchema,
   }),
+  z.strictObject({
+    ...placementFields,
+    toPlace: z.literal(true).optional(),
+    type: z.literal('timer'),
+    props: timerPropertiesSchema,
+  }),
 ]);
 
 const inventoryFields = {
@@ -243,15 +250,25 @@ const inventoryEntrySchema = z.discriminatedUnion('type', [
     props: electroMagnetPropertiesSchema,
   }),
   z.strictObject({ ...inventoryFields, type: z.literal('piston'), props: pistonPropertiesSchema }),
+  z.strictObject({ ...inventoryFields, type: z.literal('timer'), props: timerPropertiesSchema }),
 ]);
 
 /**
  * ADR 0009: a direct link from a controller to a device. Only the relation
  * is stored; route, colour and circuit letter are derived when drawing.
  */
+const controlWireV2Schema = z.strictObject({
+  id: identifierSchema,
+  sourceId: identifierSchema,
+  targetId: identifierSchema,
+  /** Workshop-only marker; absent means that the authored wire stays fixed. */
+  toPlace: z.literal(true).optional(),
+});
+
 const controlWireSchema = z.strictObject({
   id: identifierSchema,
   sourceId: identifierSchema,
+  timerId: identifierSchema.optional(),
   targetId: identifierSchema,
   /** Workshop-only marker; absent means that the authored wire stays fixed. */
   toPlace: z.literal(true).optional(),
@@ -276,14 +293,26 @@ const solutionPlacementSchema = z.strictObject({
   placementId: identifierSchema.optional(),
 });
 
-const solutionWireSchema = z.strictObject({
+const solutionWireV2Schema = z.strictObject({
   id: identifierSchema,
   inventoryId: identifierSchema,
   sourceId: identifierSchema,
   targetId: identifierSchema,
 });
 
+const solutionWireSchema = z.strictObject({
+  id: identifierSchema,
+  inventoryId: identifierSchema,
+  sourceId: identifierSchema,
+  timerId: identifierSchema.optional(),
+  targetId: identifierSchema,
+});
+
 /** ADR 0013 solution shape, also used for a player's winning solution (ADR 0015). */
+const solutionSchemaV2 = z.strictObject({
+  placements: z.array(solutionPlacementSchema).max(MAX_OBJECTS),
+  wires: z.array(solutionWireV2Schema).max(MAX_WIRES).optional(),
+});
 export const solutionSchema = z.strictObject({
   placements: z.array(solutionPlacementSchema).max(MAX_OBJECTS),
   wires: z.array(solutionWireSchema).max(MAX_WIRES).optional(),
@@ -431,11 +460,11 @@ const levelDocumentV2StructureSchema = z.strictObject({
   metadata: metadataSchema,
   scene: sceneSchema,
   /** Optional on input so that documents written before ADR 0009 stay valid v2. */
-  wires: z.array(controlWireSchema).max(MAX_WIRES).default([]),
+  wires: z.array(controlWireV2Schema).max(MAX_WIRES).default([]),
   /** Optional without a default: absent means that the level has no challenge (ADR 0010). */
   challenge: challengeSchema.optional(),
   /** Optional without a default: absent means that the level ships no reference solution (ADR 0013). */
-  solution: solutionSchema.optional(),
+  solution: solutionSchemaV2.optional(),
 });
 
 const levelDocumentV3StructureSchema = z.strictObject({
@@ -443,6 +472,8 @@ const levelDocumentV3StructureSchema = z.strictObject({
   schemaVersion: z.literal(LEVEL_DOCUMENT_SCHEMA_VERSION),
   objects: z.array(objectPlacementSchema).max(MAX_OBJECTS),
   inventory: z.array(inventoryEntrySchema).max(MAX_INVENTORY_ENTRIES),
+  wires: z.array(controlWireSchema).max(MAX_WIRES).default([]),
+  solution: solutionSchema.optional(),
 });
 
 type ObjectPlacement = z.infer<typeof objectPlacementSchema>;
@@ -636,6 +667,7 @@ const addControlWireIssues = (
   const placementsById = new Map(objects.map((placement) => [placement.id, placement]));
   const wireIds = new Set<string>();
   const commandedTargets = new Set<string>();
+  const usedTimers = new Set<string>();
 
   wires.forEach((wire, index) => {
     if (wireIds.has(wire.id)) {
@@ -662,6 +694,22 @@ const addControlWireIssues = (
       });
     }
     commandedTargets.add(wire.targetId);
+
+    if (wire.timerId !== undefined) {
+      const timer = placementsById.get(wire.timerId);
+      if (timer?.type !== 'timer') {
+        issues.push({
+          path: ['wires', index, 'timerId'],
+          message: `Le minuteur « ${wire.timerId} » doit référencer un minuteur placé.`,
+        });
+      } else if (usedTimers.has(wire.timerId)) {
+        issues.push({
+          path: ['wires', index, 'timerId'],
+          message: `Le minuteur « ${wire.timerId} » est déjà inséré dans un fil.`,
+        });
+      }
+      usedTimers.add(wire.timerId);
+    }
   });
 };
 
@@ -845,6 +893,11 @@ const addPuzzleIssues = (
       .map(({ targetId }) => targetId),
   );
   const usesByWireEntryId = new Map<string, number>();
+  const usedTimerIds = new Set(
+    document.wires
+      .filter(({ id }) => !allowSolutionWireInstances || !declaredSolutionWireIds.has(id))
+      .flatMap(({ timerId }) => (timerId === undefined ? [] : [timerId])),
+  );
   (solution.wires ?? []).forEach((wire, index) => {
     const path = ['solution', 'wires', index] as const;
     const entry = document.inventory.find(({ id }) => id === wire.inventoryId);
@@ -890,6 +943,23 @@ const addPuzzleIssues = (
       });
     }
     commandedTargets.add(wire.targetId);
+
+    if (wire.timerId !== undefined) {
+      const fixedTimer = fixedObjectsById.get(wire.timerId);
+      const timerType = fixedTimer?.type ?? placementTypesByReference.get(wire.timerId);
+      if (timerType !== 'timer') {
+        issues.push({
+          path: [...path, 'timerId'],
+          message: `La solution doit référencer un minuteur placé ou à placer « ${wire.timerId} ».`,
+        });
+      } else if (usedTimerIds.has(wire.timerId)) {
+        issues.push({
+          path: [...path, 'timerId'],
+          message: `Le minuteur « ${wire.timerId} » est déjà inséré dans un fil.`,
+        });
+      }
+      usedTimerIds.add(wire.timerId);
+    }
   });
 };
 

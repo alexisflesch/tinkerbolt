@@ -30,6 +30,7 @@ export type ConstructionErrorCode =
   | 'properties-not-permitted'
   | 'wiring-not-permitted'
   | 'wire-already-connected'
+  | 'timer-already-connected'
   | 'wire-not-found'
   | 'authoring-only'
   | 'scene-excludes-content'
@@ -109,6 +110,7 @@ interface ConnectControlWireInput {
   readonly context: ConstructionContext;
   readonly wireId: string;
   readonly sourceId: string;
+  readonly timerId?: string | undefined;
   readonly targetId: string;
   readonly inventoryEntryId?: string | undefined;
 }
@@ -538,13 +540,24 @@ export const connectControlWire = (input: ConnectControlWireInput): Construction
     if (state.document.wires.some(({ targetId }) => targetId === input.targetId)) {
       return reject('wire-already-connected');
     }
+    if (
+      input.timerId !== undefined &&
+      state.document.wires.some(({ timerId }) => timerId === input.timerId)
+    ) {
+      return reject('timer-already-connected');
+    }
 
     const documentCandidate = {
       ...state.document,
       inventory: taken.inventory,
       wires: [
         ...state.document.wires,
-        { id: input.wireId, sourceId: input.sourceId, targetId: input.targetId },
+        {
+          id: input.wireId,
+          sourceId: input.sourceId,
+          ...(input.timerId !== undefined ? { timerId: input.timerId } : {}),
+          targetId: input.targetId,
+        },
       ],
     };
     return acceptCandidate(documentCandidate, taken.provenance);
