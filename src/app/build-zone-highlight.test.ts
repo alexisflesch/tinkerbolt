@@ -16,7 +16,7 @@ const rightZone = { min: { x: 5, y: 1.5 }, max: { x: 8, y: 5.5 } } as const;
 const sceneZone = { min: { x: 0, y: 0 }, max: { x: 8, y: 5.5 } } as const;
 
 const level = (buildZones: LevelDocument['buildZones']): LevelDocument => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'zones',
   metadata: { title: 'Zones de construction' },
   objects: [

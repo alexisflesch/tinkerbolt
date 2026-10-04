@@ -25,7 +25,7 @@ const placed = (id: string, type: string, x: number, y: number) => ({
 
 /** A short beam the player may move, inside a build zone on the left part of the scene. */
 const zoneLevel = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'u13-zones',
   metadata: { title: 'Zones de construction' },
   objects: [

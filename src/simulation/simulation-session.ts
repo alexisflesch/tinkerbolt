@@ -14,6 +14,7 @@ import {
 
 import {
   ballGeometry,
+  boxGeometry,
   barrierGeometry,
   basketGeometry,
   beamGeometry,
@@ -744,6 +745,14 @@ class PlanckSimulationSession implements SimulationSession {
             placement.transform.rotation,
           );
           break;
+        case 'box':
+          this.#createBox(
+            placement.id,
+            placement.transform.position,
+            placement.transform.rotation,
+            placement.props.material,
+          );
+          break;
         case 'mass':
           this.#createMass(
             placement.id,
@@ -912,6 +921,30 @@ class PlanckSimulationSession implements SimulationSession {
     this.#createFixture(body, {
       shape: new Box(beamGeometry.footprints[size].width / 2, BEAM_HALF_THICKNESS),
       friction: 0.45,
+    });
+  }
+
+  #createBox(
+    placementId: string,
+    position: SimulationVector,
+    rotation: number,
+    material: 'wood' | 'metal',
+  ): void {
+    const body = this.#requireWorld().createBody({
+      type: 'dynamic',
+      position: new Vec2(position.x, position.y),
+      angle: rotation,
+      allowSleep: true,
+    });
+    this.#bodies.push({ placementId, role: 'primary', handle: body });
+    const { width, height } = boxGeometry.footprint;
+    // Gameplay masses, balanced independently of the source illustrations.
+    const kilograms = material === 'wood' ? 1 : 3;
+    this.#createFixture(body, {
+      shape: new Box(width / 2, height / 2),
+      density: kilograms / (width * height),
+      friction: 0.6,
+      restitution: 0.05,
     });
   }
 

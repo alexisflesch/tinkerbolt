@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   ballPropertiesSchema,
+  boxPropertiesSchema,
   barrierPropertiesSchema,
   basketPropertiesSchema,
   beamPropertiesSchema,
@@ -15,11 +16,11 @@ import {
 } from './object-family-registry';
 
 /**
- * The current persistent level format (ADR 0007). v1 documents remain
- * readable only through `migrateLevelDocumentV1ToV2`; nothing else accepts
- * them any more.
+ * The current persistent level format (ADR 0018). Legacy versions are
+ * readable through explicit v1 → v2 → v3 migrations only.
  */
-const LEVEL_DOCUMENT_SCHEMA_VERSION = 2 as const;
+const LEVEL_DOCUMENT_SCHEMA_VERSION = 3 as const;
+const LEVEL_DOCUMENT_V2_SCHEMA_VERSION = 2 as const;
 
 /** Legacy schema version, retained solely as migration input. */
 const LEVEL_DOCUMENT_V1_SCHEMA_VERSION = 1 as const;
@@ -83,8 +84,8 @@ const placementFields = {
 };
 
 /** Builds the discriminated union of placed objects over `fields`, shared by every family. */
-const placementSchemaFor = <Fields extends z.ZodRawShape>(fields: Fields) =>
-  z.discriminatedUnion('type', [
+const placementSchemasFor = <Fields extends z.ZodRawShape>(fields: Fields) =>
+  [
     z.strictObject({ ...fields, type: z.literal('ball'), props: ballPropertiesSchema }),
     z.strictObject({ ...fields, type: z.literal('basket'), props: basketPropertiesSchema }),
     z.strictObject({ ...fields, type: z.literal('beam'), props: beamPropertiesSchema }),
@@ -100,7 +101,9 @@ const placementSchemaFor = <Fields extends z.ZodRawShape>(fields: Fields) =>
       type: z.literal('springboard'),
       props: springboardPropertiesSchema,
     }),
-  ]);
+  ] as const;
+const placementSchemaFor = <Fields extends z.ZodRawShape>(fields: Fields) =>
+  z.discriminatedUnion('type', placementSchemasFor(fields));
 
 /** v1 placements: no workshop marking. */
 const objectPlacementV1Schema = placementSchemaFor(placementFields);
@@ -110,10 +113,20 @@ const objectPlacementV1Schema = placementSchemaFor(placementFields);
  * object the player will have to place; absent means fixed, so only `true`
  * is accepted.
  */
-const objectPlacementSchema = placementSchemaFor({
+const objectPlacementV2Schema = placementSchemaFor({
   ...placementFields,
   toPlace: z.literal(true).optional(),
 });
+
+const objectPlacementSchema = z.discriminatedUnion('type', [
+  ...placementSchemasFor({ ...placementFields, toPlace: z.literal(true).optional() }),
+  z.strictObject({
+    ...placementFields,
+    toPlace: z.literal(true).optional(),
+    type: z.literal('box'),
+    props: boxPropertiesSchema,
+  }),
+]);
 
 const inventoryFields = {
   id: identifierSchema,
@@ -201,9 +214,15 @@ const wireInventoryEntrySchema = z.strictObject({
 });
 
 /** v2 inventories add wires to the placeable families, compatibly (U21). */
+const inventoryEntryV2Schema = z.discriminatedUnion('type', [
+  ...placementInventoryEntrySchemas,
+  wireInventoryEntrySchema,
+]);
+
 const inventoryEntrySchema = z.discriminatedUnion('type', [
   ...placementInventoryEntrySchemas,
   wireInventoryEntrySchema,
+  z.strictObject({ ...inventoryFields, type: z.literal('box'), props: boxPropertiesSchema }),
 ]);
 
 /**
@@ -371,8 +390,8 @@ const metadataSchema = z.strictObject({
 const sharedDocumentFields = {
   id: identifierSchema,
   metadata: metadataV1Schema,
-  objects: z.array(objectPlacementSchema).max(MAX_OBJECTS),
-  inventory: z.array(inventoryEntrySchema).max(MAX_INVENTORY_ENTRIES),
+  objects: z.array(objectPlacementV2Schema).max(MAX_OBJECTS),
+  inventory: z.array(inventoryEntryV2Schema).max(MAX_INVENTORY_ENTRIES),
   goal: basketGoalSchema,
   buildZones: z.array(buildZoneSchema).max(MAX_BUILD_ZONES),
 };
@@ -387,7 +406,7 @@ const levelDocumentV1StructureSchema = z.strictObject({
 });
 
 const levelDocumentV2StructureSchema = z.strictObject({
-  schemaVersion: z.literal(LEVEL_DOCUMENT_SCHEMA_VERSION),
+  schemaVersion: z.literal(LEVEL_DOCUMENT_V2_SCHEMA_VERSION),
   ...sharedDocumentFields,
   metadata: metadataSchema,
   scene: sceneSchema,
@@ -397,6 +416,13 @@ const levelDocumentV2StructureSchema = z.strictObject({
   challenge: challengeSchema.optional(),
   /** Optional without a default: absent means that the level ships no reference solution (ADR 0013). */
   solution: solutionSchema.optional(),
+});
+
+const levelDocumentV3StructureSchema = z.strictObject({
+  ...levelDocumentV2StructureSchema.shape,
+  schemaVersion: z.literal(LEVEL_DOCUMENT_SCHEMA_VERSION),
+  objects: z.array(objectPlacementSchema).max(MAX_OBJECTS),
+  inventory: z.array(inventoryEntrySchema).max(MAX_INVENTORY_ENTRIES),
 });
 
 type ObjectPlacement = z.infer<typeof objectPlacementSchema>;
@@ -410,8 +436,9 @@ type Challenge = z.infer<typeof challengeSchema>;
 /** The legacy v1 contract (ADR 0004). Accepted only as migration input. */
 export type LevelDocumentV1 = z.infer<typeof levelDocumentV1StructureSchema>;
 
-/** The current v2 contract (ADR 0004, ADR 0007, ADR 0009 and ADR 0010). */
-export type LevelDocument = z.infer<typeof levelDocumentV2StructureSchema>;
+/** The legacy v2 contract, kept strict as migration input (ADR 0018). */
+type LevelDocumentV2 = z.infer<typeof levelDocumentV2StructureSchema>;
+export type LevelDocument = z.infer<typeof levelDocumentV3StructureSchema>;
 
 interface LevelDocumentValidationIssue {
   readonly path: readonly (string | number)[];
@@ -905,8 +932,8 @@ export const levelDocumentV1Schema = levelDocumentV1StructureSchema.superRefine(
   },
 );
 
-/** The current v2 contract (ADR 0004, ADR 0007, ADR 0009 and ADR 0010). */
-export const levelDocumentSchema = levelDocumentV2StructureSchema.superRefine(
+/** The strict legacy v2 contract (ADR 0018). */
+export const levelDocumentV2Schema = levelDocumentV2StructureSchema.superRefine(
   (document, context) => {
     const issues: LevelDocumentValidationIssue[] = [];
     addLevelDocumentRelationIssues(document, issues);
@@ -919,13 +946,38 @@ export const levelDocumentSchema = levelDocumentV2StructureSchema.superRefine(
   },
 );
 
+export const levelDocumentSchema = levelDocumentV3StructureSchema.superRefine(
+  (document, context) => {
+    const issues: LevelDocumentValidationIssue[] = [];
+    addLevelDocumentRelationIssues(document, issues);
+    addSceneContainmentIssues(document, issues);
+    addPuzzleIssues(document, issues, true);
+    addControlWireIssues(document.objects, document.wires, issues);
+    for (const issue of issues)
+      context.addIssue({ code: 'custom', path: [...issue.path], message: issue.message });
+  },
+);
+
 /**
  * Construction attempts expose remaining inventory in their document while
  * the challenge is defined against the original stock. Use this schema only
  * for that ephemeral projection; `ConstructionAttempt` separately restores
  * quantities from validated provenance before accepting a candidate.
  */
-export const levelDocumentAttemptSchema = levelDocumentV2StructureSchema.superRefine(
+export const levelDocumentV2AttemptSchema = levelDocumentV2StructureSchema.superRefine(
+  (document, context) => {
+    const issues: LevelDocumentValidationIssue[] = [];
+    addLevelDocumentRelationIssues(document, issues, false);
+    addSceneContainmentIssues(document, issues);
+    addPuzzleIssues(document, issues, false, true);
+    addControlWireIssues(document.objects, document.wires, issues);
+    for (const issue of issues) {
+      context.addIssue({ code: 'custom', path: [...issue.path], message: issue.message });
+    }
+  },
+);
+
+export const levelDocumentAttemptSchema = levelDocumentV3StructureSchema.superRefine(
   (document, context) => {
     const issues: LevelDocumentValidationIssue[] = [];
     addLevelDocumentRelationIssues(document, issues, false);
@@ -959,7 +1011,7 @@ export const levelDocumentAttemptSchema = levelDocumentV2StructureSchema.superRe
  * able to forget it.
  */
 type LevelDocumentMigrationResult =
-  | { readonly status: 'migrated'; readonly document: LevelDocument }
+  | { readonly status: 'migrated'; readonly document: LevelDocumentV2 }
   | {
       readonly status: 'scene-too-large';
       readonly width: number;
@@ -979,9 +1031,10 @@ type LevelDocumentMigrationResult =
 export const migrateLevelDocumentV1ToV2 = (
   document: LevelDocumentV1,
 ): LevelDocumentMigrationResult => {
+  const validated = levelDocumentV1Schema.parse(document);
   const points: WorldPosition[] = [
-    ...document.objects.map((placement) => placement.transform.position),
-    ...document.buildZones.flatMap((zone) => [zone.min, zone.max]),
+    ...validated.objects.map((placement) => placement.transform.position),
+    ...validated.buildZones.flatMap((zone) => [zone.min, zone.max]),
   ];
 
   const xs = points.map((point) => point.x);
@@ -1015,14 +1068,18 @@ export const migrateLevelDocumentV1ToV2 = (
 
   return {
     status: 'migrated',
-    document: {
-      ...document,
-      schemaVersion: LEVEL_DOCUMENT_SCHEMA_VERSION,
+    document: levelDocumentV2Schema.parse({
+      ...validated,
+      schemaVersion: LEVEL_DOCUMENT_V2_SCHEMA_VERSION,
       wires: [],
       scene: {
         min: { x: xRange.min, y: yRange.min },
         max: { x: xRange.max, y: yRange.max },
       },
-    },
+    }),
   };
 };
+
+/** ADR 0018: validate both ends; existing data survives the version change. */
+export const migrateLevelDocumentV2ToV3 = (candidate: LevelDocumentV2): LevelDocument =>
+  levelDocumentSchema.parse({ ...levelDocumentV2Schema.parse(candidate), schemaVersion: 3 });

@@ -61,7 +61,7 @@ const permissions = { move: false, rotate: false, remove: false } as const;
 
 const createLevelDocument = (ballY = 8): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-contract',
     metadata: { title: 'Contrat du port physique' },
     objects: [
@@ -102,7 +102,7 @@ const createLevelDocument = (ballY = 8): LevelDocument =>
 
 const createFreeBallLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-downward-gravity',
     metadata: { title: 'Contrat de gravité orientée vers le bas' },
     objects: [
@@ -129,7 +129,7 @@ const createFreeBallLevelDocument = (): LevelDocument =>
 
 const createBasketSensorLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-basket-sensor',
     metadata: { title: 'Contrat du capteur panier' },
     objects: [
@@ -162,7 +162,7 @@ const createBasketSensorLevelDocument = (): LevelDocument =>
  */
 const createSensorOnlyContactLevelDocument = (basketX = 0): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-sensor-only-contact',
     metadata: { title: 'Contrat de contact capteur seul' },
     objects: [
@@ -194,7 +194,7 @@ const createSensorOnlyContactLevelDocument = (basketX = 0): LevelDocument =>
  */
 const createTiltedBasketLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-tilted-basket',
     metadata: { title: 'Contrat de traversée du capteur' },
     objects: [
@@ -230,7 +230,7 @@ const createBasketDropLevelDocument = (
   ball: { readonly x: number; readonly y: number } = { x: 0, y: -3 },
 ): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-basket-drop',
     metadata: { title: 'Contrat de chute sur le panier' },
     objects: [
@@ -258,7 +258,7 @@ const createBasketDropLevelDocument = (
 /** Same probe, applied to the seesaw: the basket only carries the goal. */
 const createSeesawDropLevelDocument = (rotation: number, ballX = 0): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-seesaw-drop',
     metadata: { title: 'Contrat de chute sur la bascule' },
     objects: [
@@ -296,7 +296,7 @@ const createSeesawDropLevelDocument = (rotation: number, ballX = 0): LevelDocume
  */
 const createHighSpeedBeamLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-high-speed-beam',
     metadata: { title: 'Contrat de non-traversée de poutre' },
     objects: [
@@ -330,7 +330,7 @@ const createHighSpeedBeamLevelDocument = (): LevelDocument =>
 
 const createSeesawImpactLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-seesaw-impact',
     metadata: { title: 'Contrat de l’impact sur la bascule' },
     objects: [
@@ -364,7 +364,7 @@ const createSeesawImpactLevelDocument = (): LevelDocument =>
 
 const createBeamImpactLevelDocument = (beamX: number): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: `physics-port-beam-impact-${String(beamX)}`,
     metadata: { title: 'Contrat de l’impact sur la poutre' },
     objects: [
@@ -404,7 +404,7 @@ const createBeamImpactLevelDocument = (beamX: number): LevelDocument =>
  */
 const createUnreachableBasketLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-unreachable-basket',
     metadata: { title: 'Contrat de sortie de scène' },
     objects: [
@@ -436,7 +436,7 @@ const createUnreachableBasketLevelDocument = (): LevelDocument =>
  */
 const createRestingBallLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-resting-ball',
     metadata: { title: 'Contrat de temps écoulé' },
     objects: [
@@ -521,7 +521,7 @@ const mass = (id: string, position: { readonly x: number; readonly y: number }) 
 /** A mass dropped on a long beam, and a ball resting on a seesaw that a mass falls onto. */
 const createMassLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-mass',
     metadata: { title: 'Contrat de la masse' },
     objects: [
@@ -587,7 +587,7 @@ const createWiringLevelDocument = ({
   ballDrop,
 }: WiringScene): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-wiring',
     metadata: { title: 'Contrat du levier et du convoyeur' },
     objects: [
@@ -657,7 +657,7 @@ const device = (snapshot: SimulationSnapshot, placementId: string) => {
  */
 const createRollingLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-rolling',
     metadata: { title: 'Contrat du roulement' },
     objects: [
@@ -700,7 +700,7 @@ const createRollingLevelDocument = (): LevelDocument =>
 /** A short ramp that launches the ball onto a long flat beam at the origin. */
 const createRampLevelDocument = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-ramp',
     metadata: { title: 'Contrat de la pente' },
     objects: [
@@ -769,7 +769,7 @@ const createDeviceLevelDocument = (
   wires: readonly unknown[] = [],
 ): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'physics-port-devices',
     metadata: { title: 'Contrat des dispositifs' },
     objects: [

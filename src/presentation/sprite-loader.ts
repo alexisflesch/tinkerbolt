@@ -19,6 +19,7 @@ const spriteAssetsByFamily = {
   beam: ['beam-short', 'beam-medium', 'beam-long'],
   seesaw: ['seesaw-fulcrum', 'seesaw-beam'],
   mass: ['mass-10kg'],
+  box: ['box-wood', 'box-metal'],
   lever: ['lever-base', 'lever-handle'],
   // Both belts are loaded: which one is drawn depends on the belt's direction.
   conveyor: ['conveyor-belt', 'conveyor-belt-left', 'conveyor-frame'],
@@ -52,7 +53,11 @@ export const publicAssetUrl = (path: string, basePath: string): string =>
 const deploymentBasePath = import.meta.env.BASE_URL;
 
 /** A family's picture, plus the blue ball: a ball that is not the goal's. */
-export type SpriteThumbnail = SpriteFamily | 'second-ball';
+export type SpriteThumbnail =
+  | Exclude<SpriteFamily, 'box'>
+  | 'second-ball'
+  | 'box-wood'
+  | 'box-metal';
 
 /** One pre-composed picture per family, for catalogue cards (built by `art/build-sprites.py`). */
 export const spriteThumbnailPath = (thumbnail: SpriteThumbnail): string =>

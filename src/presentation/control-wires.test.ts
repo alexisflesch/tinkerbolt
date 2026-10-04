@@ -16,7 +16,7 @@ const placement = (id: string, type: string, x: number, y: number, props: object
 /** A lever wired to a conveyor, a long beam lying right between them. */
 const wiredDocument = (conveyorX: number) =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'wires',
     metadata: { title: 'Fils' },
     objects: [
@@ -36,7 +36,7 @@ const wiredDocument = (conveyorX: number) =>
 /** Lever and conveyor with ports level with each other: no bend needed. */
 const alignedDocument = () =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'wires-aligned',
     metadata: { title: 'Fils alignés' },
     objects: [

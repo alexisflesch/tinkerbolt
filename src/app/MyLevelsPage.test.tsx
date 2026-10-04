@@ -28,7 +28,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
 /** A small puzzle level: nothing in it is « à placer », so it can be received. */
 const puzzle = (id: string, metadata: LevelDocument['metadata']): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id,
     metadata,
     objects: [

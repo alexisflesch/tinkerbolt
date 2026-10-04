@@ -11,7 +11,7 @@ import {
 const locked = { move: false, rotate: false, remove: false } as const;
 
 const workshop = (overrides: Partial<LevelDocument> = {}): LevelDocument => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'atelier-u22',
   metadata: { title: 'Atelier U22' },
   objects: [
@@ -87,7 +87,7 @@ const workshop = (overrides: Partial<LevelDocument> = {}): LevelDocument => ({
 });
 
 const expectedPuzzle: LevelDocument = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'atelier-u22',
   metadata: { title: 'Atelier U22' },
   objects: workshop().objects.slice(0, 3),

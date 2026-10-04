@@ -251,15 +251,16 @@ suit l'une de trois poses : celle du placement (pièce immobile), celle du corps
 simulé, ou la position du corps sans sa rotation (ombrage et reflet qui restent
 face à la lumière).
 
-| Famille   | Calques, de l'arrière à l'avant                           | Empreinte monde (origine)                     |
-| --------- | --------------------------------------------------------- | --------------------------------------------- |
-| balle     | `ball-base`, `ball-spin` (tourne), `ball-highlight`       | 0,6 × 0,6 (centre)                            |
-| panier    | `basket-back`, `basket-front`                             | 1,5 × 1,1 (centre)                            |
-| poutre    | `beam-short`, `beam-medium` ou `beam-long` (U12)          | 2, 4 ou 6 × 0,25 (centre)                     |
-| bascule   | `seesaw-fulcrum` (immobile), `seesaw-beam` (pivote)       | ensemble 3 × 0,82 (pivot)                     |
-| masse     | `mass-10kg`                                               | 0,8 × 0,772 (centre)                          |
-| levier    | `lever-base` (immobile), `lever-handle` (pivote)          | socle 0,8 × 0,414, poignée 0,35 × 1,0 (pivot) |
-| convoyeur | `conveyor-belt` ou `conveyor-belt-left`, `conveyor-frame` | 3 × 0,58 (centre)                             |
+| Famille    | Calques, de l'arrière à l'avant                           | Empreinte monde (origine)                     |
+| ---------- | --------------------------------------------------------- | --------------------------------------------- |
+| balle      | `ball-base`, `ball-spin` (tourne), `ball-highlight`       | 0,6 × 0,6 (centre)                            |
+| panier     | `basket-back`, `basket-front`                             | 1,5 × 1,1 (centre)                            |
+| poutre     | `beam-short`, `beam-medium` ou `beam-long` (U12)          | 2, 4 ou 6 × 0,25 (centre)                     |
+| bascule    | `seesaw-fulcrum` (immobile), `seesaw-beam` (pivote)       | ensemble 3 × 0,82 (pivot)                     |
+| masse      | `mass-10kg`                                               | 0,8 × 0,772 (centre)                          |
+| caisse C9a | `box-wood` ou `box-metal` (corps dynamique)               | 0,8 × 0,8 (centre)                            |
+| levier     | `lever-base` (immobile), `lever-handle` (pivote)          | socle 0,8 × 0,414, poignée 0,35 × 1,0 (pivot) |
+| convoyeur  | `conveyor-belt` ou `conveyor-belt-left`, `conveyor-frame` | 3 × 0,58 (centre)                             |
 
 La bande du convoyeur fait exception au cadre commun : son sprite couvre la
 fenêtre du cadre plus une période exacte du motif (77 px), et le renderer fait

@@ -22,7 +22,7 @@ const placed = (id: string, type: string, x: number, y: number) => ({
 
 /** A medium beam to place, a build zone on the left part of the scene only. */
 const ghostLevel = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'u1-fantome',
   metadata: { title: 'Fantôme de placement' },
   objects: [placed('ball-1', 'ball', 0.6, 0.6), placed('basket-1', 'basket', 7.1, 4.7)],

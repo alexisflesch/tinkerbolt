@@ -5,6 +5,7 @@ export const basketPropertiesSchema = z.strictObject({});
 export const beamPropertiesSchema = z.strictObject({
   size: z.enum(['short', 'medium', 'long']),
 });
+export const boxPropertiesSchema = z.strictObject({ material: z.enum(['wood', 'metal']) });
 export const seesawPropertiesSchema = z.strictObject({});
 /** One sprite and one physical mass per weight; a new weight extends the enum. */
 export const massPropertiesSchema = z.strictObject({
@@ -151,6 +152,13 @@ export const initialObjectFamilyRegistry = createObjectFamilyRegistry([
     },
     capabilities: ['movable'],
     propertiesSchema: massPropertiesSchema,
+  },
+  {
+    id: 'box',
+    dataVersion: 1,
+    catalogue: { label: 'Caisse', description: 'Un corps libre en bois ou en métal' },
+    capabilities: ['movable', 'rotatable'],
+    propertiesSchema: boxPropertiesSchema,
   },
   {
     id: 'lever',

@@ -21,7 +21,7 @@ const placement = (x: number, y: number, rotation = 0) => ({
  * exactly where the physical box does.
  */
 const threeBeams = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'trois-poutres',
   metadata: { title: 'Trois poutres' },
   scene: { min: { x: 0, y: 0 }, max: { x: 16, y: 9 } },

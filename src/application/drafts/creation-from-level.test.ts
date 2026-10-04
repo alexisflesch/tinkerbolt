@@ -13,7 +13,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
 
 /** A puzzle (received or from the campaign): decor, inventory, reference solution. */
 const level: LevelDocument = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'recu-0123456789abcdef',
   metadata: {
     title: 'Le grand saut',

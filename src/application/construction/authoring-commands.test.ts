@@ -30,7 +30,7 @@ import {
 } from './index';
 
 const createLevel = (overrides: Partial<LevelDocument> = {}): LevelDocument => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'authoring-test',
   metadata: { title: 'Authoring test', description: 'Description' },
   objects: [
@@ -681,7 +681,7 @@ describe('commandes d’auteur', () => {
 describe('révéler la solution de l’auteur (M7, ADR 0015)', () => {
   /** A received or campaign puzzle: decor, inventory, the author's solution. */
   const source: LevelDocument = levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'recu-0123456789abcdef',
     metadata: { title: 'Le grand saut', author: 'Lili' },
     objects: [

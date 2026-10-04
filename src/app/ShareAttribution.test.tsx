@@ -23,7 +23,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
 /** The U22 machine as a workshop: its short beam is « à placer » and the complete machine wins. */
 const machine = (id: string, metadata: LevelDocument['metadata']): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id,
     metadata,
     objects: [

@@ -1,6 +1,8 @@
 import {
   levelDocumentSchema,
   levelDocumentV1Schema,
+  levelDocumentV2Schema,
+  migrateLevelDocumentV2ToV3,
   migrateLevelDocumentV1ToV2,
   type LevelDocument,
 } from '../../domain/level-document';
@@ -78,14 +80,21 @@ const decodeLevelFileUnchecked = (text: string): LevelFileDecodeResult => {
     const migration = migrateLevelDocumentV1ToV2(legacy.data);
     if (migration.status !== 'migrated') return { status: 'error', code: 'invalid-document' };
 
-    const current = levelDocumentSchema.safeParse(migration.document);
+    const current = levelDocumentSchema.safeParse(migrateLevelDocumentV2ToV3(migration.document));
     if (!current.success) {
       return { status: 'error', code: 'invalid-document', issues: current.error.issues };
     }
     return { status: 'ok', document: current.data };
   }
 
-  if (candidate.schemaVersion !== 2) return { status: 'error', code: 'unsupported-version' };
+  if (candidate.schemaVersion === 2) {
+    const legacy = levelDocumentV2Schema.safeParse(candidate);
+    if (!legacy.success)
+      return { status: 'error', code: 'invalid-document', issues: legacy.error.issues };
+    return { status: 'ok', document: migrateLevelDocumentV2ToV3(legacy.data) };
+  }
+
+  if (candidate.schemaVersion !== 3) return { status: 'error', code: 'unsupported-version' };
 
   const current = levelDocumentSchema.safeParse(candidate);
   if (!current.success) {

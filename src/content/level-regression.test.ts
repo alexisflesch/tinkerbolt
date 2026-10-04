@@ -13,7 +13,7 @@ import {
 
 const levelOne = (): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'regression-first-drop',
     metadata: {
       title: 'Laisser tomber — fixture de régression',

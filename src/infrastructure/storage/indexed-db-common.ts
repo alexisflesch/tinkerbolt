@@ -66,12 +66,30 @@ export const storageErrorCode = (
 export const isFutureEnvelope = (raw: unknown, currentVersion: number): boolean => {
   if (typeof raw !== 'object' || raw === null || !('envelope' in raw)) return false;
   const envelope = raw.envelope;
-  return (
-    typeof envelope === 'object' &&
-    envelope !== null &&
+  if (typeof envelope !== 'object' || envelope === null) return false;
+  if (
     'version' in envelope &&
     typeof envelope.version === 'number' &&
     envelope.version > currentVersion
+  )
+    return true;
+  if (!('data' in envelope) || typeof envelope.data !== 'object' || envelope.data === null)
+    return false;
+  const data = envelope.data;
+  const isFutureDocument = (candidate: unknown): boolean =>
+    typeof candidate === 'object' &&
+    candidate !== null &&
+    'schemaVersion' in candidate &&
+    typeof candidate.schemaVersion === 'number' &&
+    candidate.schemaVersion > 3;
+  if ('document' in data && isFutureDocument(data.document)) return true;
+  if ('source' in data && isFutureDocument(data.source)) return true;
+  return (
+    'attempt' in data &&
+    typeof data.attempt === 'object' &&
+    data.attempt !== null &&
+    'document' in data.attempt &&
+    isFutureDocument(data.attempt.document)
   );
 };
 

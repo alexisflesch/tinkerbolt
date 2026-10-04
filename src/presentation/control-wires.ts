@@ -50,6 +50,7 @@ const portOffset = (placement: Placement): WorldPoint | undefined => {
     case 'basket':
     case 'beam':
     case 'seesaw':
+    case 'box':
     case 'mass':
     case 'springboard':
       return undefined;

@@ -201,12 +201,12 @@ describe('codec de fichier de niveau', () => {
     expect(reread.status === 'ok' && 'description' in reread.document.metadata).toBe(false);
   });
 
-  it('valide puis migre un document v1 vers un document v2 utilisable', () => {
+  it('valide puis migre un document v1 vers un document v3 utilisable', () => {
     const result = decodeLevelFile(JSON.stringify(legacyDocument));
 
     expect(result.status).toBe('ok');
     if (result.status !== 'ok') return;
-    expect(result.document.schemaVersion).toBe(2);
+    expect(result.document.schemaVersion).toBe(3);
     expect(result.document.id).toBe('legacy-level');
     expect(result.document.scene.min.x).toBeLessThanOrEqual(0);
     expect(result.document.scene.max.x).toBeGreaterThanOrEqual(4);
@@ -232,7 +232,7 @@ describe('codec de fichier de niveau', () => {
   });
 
   it('refuse une version de document inconnue', () => {
-    expect(decodeLevelFile('{"schemaVersion":3}')).toEqual({
+    expect(decodeLevelFile('{"schemaVersion":4}')).toEqual({
       status: 'error',
       code: 'unsupported-version',
     });

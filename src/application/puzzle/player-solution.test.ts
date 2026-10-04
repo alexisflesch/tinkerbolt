@@ -20,7 +20,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
 
 /** A received level: decor with a movable beam, a lever and two devices to command. */
 const origin: LevelDocument = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'recu-m5',
   metadata: { title: 'Niveau reçu M5' },
   objects: [

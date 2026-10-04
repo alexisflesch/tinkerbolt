@@ -33,7 +33,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
  */
 const receivedDocument = (metadata: LevelDocument['metadata'], ballX = 7): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'niveau-recu-m10',
     metadata,
     objects: [

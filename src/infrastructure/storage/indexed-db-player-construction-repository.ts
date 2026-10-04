@@ -11,6 +11,7 @@ import {
   playerConstructionEnvelopeSchema,
   playerConstructionSourceSchema,
 } from '../player-construction/player-construction-codec';
+import { legacyLevelSourceFingerprint } from '../level-file/level-fingerprint';
 import { encodeLevelFile } from '../level-file/level-file-codec';
 import { decodeReceivedLevelRow } from './indexed-db-received-level-repository';
 import { checkedRow, currentInstant, storageErrorCode, warningPart } from './indexed-db-common';
@@ -20,16 +21,25 @@ const failure = (error: unknown): PlayerConstructionWriteResult => ({
   code: storageErrorCode(error),
 });
 
-const checkedConstruction = (db: Dexie, source: PlayerConstructionSource, clock: () => Date) =>
-  checkedRow(
+const checkedConstruction = async (
+  db: Dexie,
+  source: PlayerConstructionSource,
+  clock: () => Date,
+  legacyFingerprint: string | null,
+) => {
+  const migration = { changed: false };
+  const checked = await checkedRow(
     db,
     'playerConstructions',
     [source.scope, source.levelId],
     (raw) => {
-      const envelope = decodePlayerConstructionRow(raw, source.scope, source.levelId);
+      const original = decodePlayerConstructionRow(raw, source.scope, source.levelId);
+      const envelope = decodePlayerConstructionRow(raw, source.scope, source.levelId, {
+        legacyFingerprint,
+        currentFingerprint: source.sourceFingerprint,
+      });
       if (envelope === null) return null;
-      // A changed source is incompatibility, not corruption. Validate all
-      // relations only when the source represented by the envelope is available.
+      migration.changed = original?.data.sourceFingerprint !== envelope.data.sourceFingerprint;
       return envelope.data.sourceFingerprint !== source.sourceFingerprint ||
         constructionForSource(envelope, source).status === 'ok'
         ? envelope
@@ -38,6 +48,13 @@ const checkedConstruction = (db: Dexie, source: PlayerConstructionSource, clock:
     1,
     clock,
   );
+  if (migration.changed && checked.status === 'ok' && checked.value !== null) {
+    await db
+      .table('playerConstructions')
+      .put({ scope: source.scope, levelId: source.levelId, envelope: checked.value });
+  }
+  return checked;
+};
 
 const checkReceivedParent = async (
   db: Dexie,
@@ -72,6 +89,7 @@ export const createIndexedDBPlayerConstructionRepository = (
     const canonicalSource = encodeLevelFile(source.document);
     const context: { operation?: 'delete-incompatible' } = {};
     try {
+      const legacyFingerprint = await legacyLevelSourceFingerprint(source.document);
       return await db.transaction(
         'rw',
         db.table('playerConstructions'),
@@ -80,7 +98,7 @@ export const createIndexedDBPlayerConstructionRepository = (
         async () => {
           const parent = await checkReceivedParent(db, source, canonicalSource, clock);
           if (parent.status === 'error') return parent;
-          const checked = await checkedConstruction(db, source, clock);
+          const checked = await checkedConstruction(db, source, clock, legacyFingerprint);
           if (checked.status === 'future')
             return { status: 'error', code: 'unsupported-version' } as const;
           if (checked.value === null)
@@ -127,6 +145,7 @@ export const createIndexedDBPlayerConstructionRepository = (
     const row = { scope: source.scope, levelId: source.levelId, envelope: envelope.data };
     const canonicalSource = encodeLevelFile(source.document);
     try {
+      const legacyFingerprint = await legacyLevelSourceFingerprint(source.document);
       return await db.transaction(
         'rw',
         db.table('playerConstructions'),
@@ -135,7 +154,7 @@ export const createIndexedDBPlayerConstructionRepository = (
         async () => {
           const parent = await checkReceivedParent(db, source, canonicalSource, clock);
           if (parent.status === 'error') return parent;
-          const checked = await checkedConstruction(db, source, clock);
+          const checked = await checkedConstruction(db, source, clock, legacyFingerprint);
           if (checked.status === 'future')
             return { status: 'error', code: 'unsupported-version' } as const;
           if (
@@ -156,12 +175,13 @@ export const createIndexedDBPlayerConstructionRepository = (
     if (!parsed.success) return { status: 'error', code: 'invalid-construction' };
     const source = parsed.data;
     try {
+      const legacyFingerprint = await legacyLevelSourceFingerprint(source.document);
       return await db.transaction(
         'rw',
         db.table('playerConstructions'),
         db.table('backups'),
         async () => {
-          const checked = await checkedConstruction(db, source, clock);
+          const checked = await checkedConstruction(db, source, clock, legacyFingerprint);
           if (checked.status === 'future')
             return { status: 'error', code: 'unsupported-version' } as const;
           await db.table('playerConstructions').delete([source.scope, source.levelId]);

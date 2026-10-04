@@ -50,6 +50,114 @@ const attempt = () => {
 };
 
 describe('persistance des constructions de joueur', () => {
+  it.each([
+    ['campaign', false],
+    ['campaign', true],
+    ['received', false],
+    ['received', true],
+  ] as const)(
+    'migre une construction v2 seulement si sa source est identique (%s, modifiée : %s)',
+    async (scope, changed) => {
+      const db = open();
+      const levelId = scope === 'campaign' ? document.id : receivedId;
+      if (scope === 'received')
+        await createIndexedDBReceivedLevelRepository(db, clock).save({
+          id: receivedId,
+          document,
+          origin: 'file',
+          receivedAt: instant,
+          solved: false,
+        });
+      const oldSource = { ...document, schemaVersion: 2 };
+      const hash = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(`${JSON.stringify(oldSource, null, 2)}\n`),
+      );
+      const fingerprint = Array.from(new Uint8Array(hash), (byte) =>
+        byte.toString(16).padStart(2, '0'),
+      ).join('');
+      const state = attempt();
+      await db.table('playerConstructions').put({
+        scope,
+        levelId,
+        envelope: {
+          kind: 'player-construction',
+          version: 1,
+          data: {
+            scope,
+            levelId,
+            sourceFingerprint: fingerprint,
+            updatedAt: instant,
+            attempt: { ...state, document: { ...state.document, schemaVersion: 2 } },
+          },
+        },
+      });
+      const source = await prepared(
+        scope,
+        changed
+          ? { ...document, metadata: { ...document.metadata, title: 'Source modifiée' } }
+          : document,
+      );
+      if (scope === 'received' && changed)
+        await createIndexedDBReceivedLevelRepository(db, clock).save({
+          id: receivedId,
+          document: source.document,
+          origin: 'file',
+          receivedAt: instant,
+          solved: false,
+        });
+      const result = await createIndexedDBPlayerConstructionRepository(db, clock).load(source);
+      expect(result).toEqual(
+        changed
+          ? { status: 'ok', attempt: null, warning: 'source-changed' }
+          : { status: 'ok', attempt: state },
+      );
+      const row: unknown = await db.table('playerConstructions').get([scope, levelId]);
+      if (changed) expect(row).toBeUndefined();
+      else
+        expect(row).toMatchObject({
+          envelope: {
+            data: {
+              sourceFingerprint: source.sourceFingerprint,
+              attempt: { document: { schemaVersion: 3 } },
+            },
+          },
+        });
+      expect(await db.table('backups').count()).toBe(0);
+    },
+  );
+
+  it('préserve un document de tentative futur dans une enveloppe courante', async () => {
+    const db = open();
+    const source = await prepared();
+    const state = attempt();
+    const raw = {
+      scope: 'campaign',
+      levelId: document.id,
+      envelope: {
+        kind: 'player-construction',
+        version: 1,
+        data: {
+          scope: 'campaign',
+          levelId: document.id,
+          sourceFingerprint: source.sourceFingerprint,
+          updatedAt: instant,
+          attempt: { ...state, document: { ...state.document, schemaVersion: 4 } },
+        },
+      },
+    };
+    await db.table('playerConstructions').put(raw);
+    const repo = createIndexedDBPlayerConstructionRepository(db, clock);
+    expect(await repo.load(source)).toEqual({ status: 'error', code: 'unsupported-version' });
+    expect(await repo.save(source, state)).toEqual({
+      status: 'error',
+      code: 'unsupported-version',
+    });
+    expect(await repo.delete(source)).toEqual({ status: 'error', code: 'unsupported-version' });
+    expect(await db.table('playerConstructions').get(['campaign', document.id])).toEqual(raw);
+    expect(await db.table('backups').count()).toBe(0);
+  });
+
   it('sauvegarde une enveloppe datée puis retrouve la tentative après réouverture', async () => {
     const factory = new IDBFactory();
     const db = open(factory);

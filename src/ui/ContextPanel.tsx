@@ -236,6 +236,29 @@ export function ContextPanel({ session, onExecuteCommand, onClose }: ContextPane
           )}
         </div>
       )}
+      {selectedPlacement.type === 'box' && canEdit && (
+        <label className="context-size-control">
+          Matériau de la caisse
+          <select
+            aria-label="Matériau de la caisse"
+            value={selectedPlacement.props.material}
+            onChange={(event) => {
+              const material = event.target.value;
+              if (material !== 'wood' && material !== 'metal') return;
+              onExecuteCommand(
+                updatePlacementProperties({
+                  context: 'author',
+                  placementId: selectedPlacement.id,
+                  props: { material },
+                }),
+              );
+            }}
+          >
+            <option value="wood">Bois</option>
+            <option value="metal">Métal</option>
+          </select>
+        </label>
+      )}
       {selectedPlacement.type === 'beam' && session.mode === 'creation' && (
         <label className="context-size-control">
           Longueur de la poutre

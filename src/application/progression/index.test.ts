@@ -18,7 +18,7 @@ const movableBeam = { move: true, rotate: true, remove: true } as const;
 const movableMass = { move: true, rotate: false, remove: true } as const;
 
 const createLevel = (): LevelDocument => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'progression-test',
   metadata: { title: 'Progression test' },
   objects: [

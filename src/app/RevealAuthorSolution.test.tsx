@@ -16,7 +16,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
 
 /** A received puzzle: decor with a lever and a fan, the author's beam, button and two wires. */
 const source: LevelDocument = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'recu-0123456789abcdef',
   metadata: { title: 'Le grand saut', author: 'Lili' },
   objects: [

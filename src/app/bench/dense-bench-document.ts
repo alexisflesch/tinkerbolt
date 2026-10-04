@@ -75,7 +75,7 @@ const masses: Placement[] = massPositions.map(([x, y], index) =>
 );
 
 export const denseBenchDocument: LevelDocument = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'bench-dense-scene',
   metadata: {
     title: 'Scène dense',

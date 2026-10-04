@@ -24,7 +24,7 @@ const pngSize = (bytes: Buffer): { readonly width: number; readonly height: numb
 const permissions = { move: true, rotate: false, remove: true } as const;
 
 const everyFamily = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'sprite-assets',
   metadata: { title: 'Toutes les familles' },
   objects: [
@@ -81,6 +81,13 @@ const everyFamily = levelDocumentSchema.parse({
       props: {},
       permissions,
     },
+    ...(['wood', 'metal'] as const).map((material) => ({
+      id: `box-${material}`,
+      type: 'box',
+      props: { material },
+      permissions,
+      transform: { position: { x: 7, y: 6 }, rotation: 0 },
+    })),
     {
       id: 'mass-1',
       type: 'mass',
@@ -192,6 +199,17 @@ describe('sprites du plateau', () => {
       expect(publicFile(spriteAssetPath(asset, 2)).byteLength).toBeGreaterThan(0);
     }
   });
+
+  it.each(['box-wood', 'box-metal'] as const)(
+    'fournit la vignette %s et son calque',
+    (thumbnail) => {
+      const thumb = publicFile(spriteThumbnailPath(thumbnail));
+      const sprite = publicFile(spriteAssetPath(thumbnail, 2));
+      expect(thumb.byteLength).toBeLessThanOrEqual(SPRITE_BUDGET_BYTES);
+      expect(pngSize(thumb)).toEqual({ width: 102, height: 102 });
+      expect(pngSize(sprite)).toEqual(pngSize(thumb));
+    },
+  );
 
   it('fournit la vignette de la balle bleue, celle qui n’est pas l’objectif', () => {
     const blue = publicFile(spriteThumbnailPath('second-ball'));

@@ -6,6 +6,7 @@ const placementNames: Readonly<Record<LevelDocument['objects'][number]['type'], 
   beam: 'Poutre',
   seesaw: 'Bascule',
   mass: 'Masse',
+  box: 'Caisse',
   lever: 'Levier',
   conveyor: 'Convoyeur',
   button: 'Bouton',
@@ -25,8 +26,12 @@ const masculineTypes: ReadonlySet<LevelDocument['objects'][number]['type']> = ne
 
 /** The French display name for a placed object, shared by `BoardView` and `ContextPanel`. */
 export const placementName = (object: LevelDocument['objects'][number]): string =>
-  placementNames[object.type];
+  object.type === 'box'
+    ? object.props.material === 'wood'
+      ? 'Caisse en bois'
+      : 'Caisse métallique'
+    : placementNames[object.type];
 
 /** « la poutre », « le panier » : the name with its definite article, in lower case. */
 export const placementNameWithArticle = (object: LevelDocument['objects'][number]): string =>
-  `${masculineTypes.has(object.type) ? 'le' : 'la'} ${placementNames[object.type].toLowerCase()}`;
+  `${masculineTypes.has(object.type) ? 'le' : 'la'} ${placementName(object).toLowerCase()}`;

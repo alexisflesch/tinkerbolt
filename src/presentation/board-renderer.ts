@@ -1,5 +1,6 @@
 import {
   ballGeometry,
+  boxGeometry,
   barrierFootprint,
   barrierGeometry,
   basketGeometry,
@@ -262,6 +263,8 @@ const layerPoseSources: Record<SpriteAsset, LayerPoseSource> = {
   'seesaw-fulcrum': 'placement',
   'seesaw-beam': 'body',
   'mass-10kg': 'body',
+  'box-wood': 'body',
+  'box-metal': 'body',
   'lever-base': 'placement',
   'lever-handle': 'body',
   'conveyor-belt': 'placement',
@@ -338,6 +341,7 @@ const layerAssetsFor = (
   if (object.type === 'ball') {
     return object.id === goalBallId ? GOAL_BALL_LAYERS : OTHER_BALL_LAYERS;
   }
+  if (object.type === 'box') return [object.props.material === 'wood' ? 'box-wood' : 'box-metal'];
   if (object.type === 'beam') return [BEAM_LAYERS[object.props.size]];
   if (object.type !== 'conveyor') return spriteAssetsForFamily(object.type);
   const belt = conveyorBeltAt(object, view).facing === -1 ? 'conveyor-belt-left' : 'conveyor-belt';
@@ -355,6 +359,8 @@ const footprintForObject = (object: Placement): BoardDestination => {
       return beamGeometry.footprints[object.props.size];
     case 'seesaw':
       return seesawGeometry.footprint;
+    case 'box':
+      return boxGeometry.footprint;
     case 'mass':
       return massGeometry.footprint;
     case 'lever':
@@ -546,6 +552,8 @@ const drawOrderByAsset: Record<SpriteAsset, number> = {
   'seesaw-fulcrum': 0,
   'seesaw-beam': 0,
   'mass-10kg': 0,
+  'box-wood': 0,
+  'box-metal': 0,
   'lever-base': 0,
   'lever-handle': 0,
   'conveyor-belt': 0,

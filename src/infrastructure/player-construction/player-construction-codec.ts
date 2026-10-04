@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-import { levelDocumentSchema, type LevelDocument } from '../../domain/level-document';
+import {
+  levelDocumentSchema,
+  levelDocumentAttemptSchema,
+  levelDocumentV2AttemptSchema,
+  type LevelDocument,
+} from '../../domain/level-document';
 import { freezeAttempt } from '../../application/construction/construction-attempt';
 import {
   playerConstructionAttemptSchema,
@@ -42,10 +47,27 @@ export const playerConstructionEnvelopeSchema = z.strictObject({
     })
     .refine(({ scope, levelId }) => sourceIdentitySchema.safeParse({ scope, levelId }).success),
 });
+const migratedAttemptSchema = z.union([
+  playerConstructionAttemptSchema,
+  playerConstructionAttemptSchema
+    .extend({ document: levelDocumentV2AttemptSchema })
+    .transform(({ document, provenance }) => ({
+      document: levelDocumentAttemptSchema.parse({ ...document, schemaVersion: 3 }),
+      provenance,
+    })),
+]);
+const migratedEnvelopeSchema = playerConstructionEnvelopeSchema.extend({
+  data: z
+    .strictObject({
+      ...playerConstructionEnvelopeSchema.shape.data.shape,
+      attempt: migratedAttemptSchema,
+    })
+    .refine(({ scope, levelId }) => sourceIdentitySchema.safeParse({ scope, levelId }).success),
+});
 const rowSchema = z.strictObject({
   scope: z.enum(['campaign', 'received']),
   levelId: idSchema,
-  envelope: playerConstructionEnvelopeSchema,
+  envelope: migratedEnvelopeSchema,
 });
 
 type SourceResult =
@@ -86,6 +108,10 @@ export const decodePlayerConstructionRow = (
   raw: unknown,
   scope: PlayerConstructionSource['scope'],
   levelId: string,
+  migrationSource?: {
+    readonly legacyFingerprint: string | null;
+    readonly currentFingerprint: string;
+  },
 ): z.infer<typeof playerConstructionEnvelopeSchema> | null => {
   const parsed = rowSchema.safeParse(raw);
   if (
@@ -96,7 +122,16 @@ export const decodePlayerConstructionRow = (
     parsed.data.envelope.data.levelId !== levelId
   )
     return null;
-  return parsed.data.envelope;
+  const envelope = parsed.data.envelope;
+  // Only rebase an old source fingerprint after comparing its exact v2 bytes.
+  // A real source change keeps its old hash and follows the source-changed path.
+  if (migrationSource?.legacyFingerprint === envelope.data.sourceFingerprint) {
+    return {
+      ...envelope,
+      data: { ...envelope.data, sourceFingerprint: migrationSource.currentFingerprint },
+    };
+  }
+  return envelope;
 };
 
 export const constructionForSource = (

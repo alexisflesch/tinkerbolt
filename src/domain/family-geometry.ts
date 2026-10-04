@@ -29,6 +29,9 @@ const centeredRect = (width: number, height: number): WorldRect => ({
 const polygon = (points: readonly (readonly [number, number])[]): WorldPolygon =>
   points.map(([x, y]) => ({ x, y }));
 
+/** C9a gameplay footprint: a box fits the belt and presses a button. */
+export const boxGeometry = { footprint: centeredRect(0.8, 0.8) } as const;
+
 const BALL_RADIUS = 0.3;
 
 export const ballGeometry = {

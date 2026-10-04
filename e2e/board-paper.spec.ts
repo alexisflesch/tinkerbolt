@@ -13,7 +13,7 @@ const formats = [
 ] as const;
 
 const level = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'v2b-paper',
   metadata: { title: 'Le parchemin suit la caméra' },
   scene: { min: { x: 0, y: 0 }, max: { x: 8, y: 5.5 } },

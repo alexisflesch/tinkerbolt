@@ -287,7 +287,7 @@ const openSelfSolvingReceivedLevel = async (
 const sharedLevelNotKeptMessage = 'Ce niveau n’a pas été gardé sur cet appareil.';
 
 const sharedM8Level = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'niveau-recu-m8',
   metadata: { title: 'Niveau reçu M8' },
   objects: [
@@ -3614,7 +3614,7 @@ describe('coque TinkerBolt', () => {
       permissions: locked,
     });
     const wiredLevel = levelDocumentSchema.parse({
-      schemaVersion: 2,
+      schemaVersion: 3,
       id: 'u21-fil-joueur',
       metadata: { title: 'Fil du joueur' },
       objects: [

@@ -13,7 +13,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
  * ball falls beside the basket unless a tilted beam sends it there.
  */
 const origin = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'recu-m5-rejeu',
   metadata: { title: 'Rejeu M5' },
   objects: [

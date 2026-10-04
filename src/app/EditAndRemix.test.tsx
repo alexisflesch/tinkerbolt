@@ -46,7 +46,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
  * short beam to place, harmless far on the left (checked headless).
  */
 const receivedDocument: LevelDocument = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'niveau-recu-m11',
   metadata: { title: 'Le saut', author: 'Lili' },
   objects: [

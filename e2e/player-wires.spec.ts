@@ -34,7 +34,7 @@ const placed = (id: string, type: string, x: number, y: number, props: object = 
 
 /** A lever and a conveyor for the player to wire, and a level wire button → fan. */
 const wiredLevel = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'u21-fil-joueur',
   metadata: { title: 'Fil du joueur' },
   objects: [

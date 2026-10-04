@@ -426,7 +426,7 @@ describe('niveaux reçus', () => {
         version: 1,
         data: {
           id: receivedId,
-          document: { schemaVersion: 999 },
+          document: { schemaVersion: 3 },
           origin: 'file',
           receivedAt: instant,
           solved: false,

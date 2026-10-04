@@ -11,7 +11,7 @@ import type {
 const locked = { move: false, rotate: false, remove: false } as const;
 
 const puzzle: LevelDocument = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'niveau-recu',
   metadata: { title: 'Niveau reçu', author: 'Lili' },
   objects: [

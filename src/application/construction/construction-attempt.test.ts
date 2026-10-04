@@ -23,7 +23,7 @@ const permissions = {
 } as const;
 
 const createLevel = (): LevelDocument => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'construction-test',
   metadata: { title: 'Construction test' },
   objects: [

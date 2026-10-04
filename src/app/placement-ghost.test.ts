@@ -20,7 +20,7 @@ import { placementGhost } from './placement-ghost';
 const locked = { move: false, rotate: false, remove: false } as const;
 
 const level: LevelDocument = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'placement-ghost',
   metadata: { title: 'Fantôme de placement' },
   objects: [

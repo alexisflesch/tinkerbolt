@@ -22,22 +22,8 @@ import {
 /** The same art the board draws, pre-composed, so a catalogue card looks like the object it places. */
 const beamSizeLabels = { short: 'courte', medium: 'moyenne', long: 'longue' } as const;
 
-const spriteFamilyByKind: Readonly<Record<ObjectKind, SpriteFamily>> = {
-  Balle: 'ball',
-  Panier: 'basket',
-  Poutre: 'beam',
-  Bascule: 'seesaw',
-  Masse: 'mass',
-  Levier: 'lever',
-  Convoyeur: 'conveyor',
-  Bouton: 'button',
-  Ventilateur: 'fan',
-  Barrière: 'barrier',
-  Tremplin: 'springboard',
-};
-
 /** A ball from the player's inventory is never the goal's: it is drawn blue. */
-const playerThumbnail = (family: SpriteFamily): SpriteThumbnail =>
+const playerThumbnail = (family: Exclude<SpriteFamily, 'box'>): SpriteThumbnail =>
   family === 'ball' ? 'second-ball' : family;
 
 interface DrawerCard {
@@ -60,7 +46,14 @@ const authorCard = (entry: AuthorCatalogueEntry): DrawerCard => ({
   accessibleName: entry.accessibleName,
   detail: entry.description,
   // The red ball is the goal's and never in the catalogue: a ball added here is blue.
-  thumbnail: entry.type === 'ball' ? 'second-ball' : spriteFamilyByKind[entry.kind],
+  thumbnail:
+    entry.type === 'box'
+      ? entry.props.material === 'wood'
+        ? 'box-wood'
+        : 'box-metal'
+      : entry.type === 'ball'
+        ? 'second-ball'
+        : entry.type,
   isDepleted: false,
   source: { from: 'catalogue', entry },
 });
@@ -72,7 +65,13 @@ const inventoryCards = (inventoryEntry: InventoryEntry): DrawerCard[] => {
   if (catalogEntry === undefined) return [];
   const { kind } = catalogEntry;
   const name =
-    inventoryEntry.type === 'beam' ? `Poutre ${beamSizeLabels[inventoryEntry.props.size]}` : kind;
+    inventoryEntry.type === 'box'
+      ? inventoryEntry.props.material === 'wood'
+        ? 'Caisse en bois'
+        : 'Caisse métallique'
+      : inventoryEntry.type === 'beam'
+        ? `Poutre ${beamSizeLabels[inventoryEntry.props.size]}`
+        : kind;
   const quantity = String(inventoryEntry.quantity);
   return [
     {
@@ -81,7 +80,12 @@ const inventoryCards = (inventoryEntry: InventoryEntry): DrawerCard[] => {
       name,
       accessibleName: `${name}, quantité : ${quantity}`,
       detail: `Quantité : ${quantity}`,
-      thumbnail: playerThumbnail(spriteFamilyByKind[kind]),
+      thumbnail:
+        inventoryEntry.type === 'box'
+          ? inventoryEntry.props.material === 'wood'
+            ? 'box-wood'
+            : 'box-metal'
+          : playerThumbnail(inventoryEntry.type === 'wire' ? 'ball' : inventoryEntry.type),
       isDepleted: inventoryEntry.quantity === 0,
       source: { from: 'inventory', inventoryEntryId: inventoryEntry.id },
     },

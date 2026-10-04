@@ -1,11 +1,11 @@
 # État du dépôt — TinkerBolt
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
-validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1 et
-C3.2 livrés**. C8 est clôturé. La suite prioritaire demandée par l’auteur est
-C9a–d, C7 puis C6, avant C4/C4a. C5 est implémenté ; recette visuelle différée sur instruction
-de l’auteur. Dernière gate C3.2 verte : 1 236 tests Vitest et 92 E2E v1. U3
-reste abandonnée.
+validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
+C3.2 et C9a livrés**. C8 est clôturé. La suite prioritaire demandée par
+l’auteur est C9b–d, C7 puis C6, avant C4/C4a. C5 est implémenté ; recette
+visuelle différée sur instruction de l’auteur. Dernière gate globale verte :
+1 271 tests Vitest et 92 E2E v1. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -39,18 +39,21 @@ droite centrée ; la poursuite est autorisée. Aucun de ces nouveaux contrôles
 n’est implémenté dans l’application. La recette visuelle est différée sur instruction de l’auteur ; elle ne bloque
 pas l’implémentation autorisée. Les comportements principaux des nouvelles
 familles sont confirmés ; leurs détails de modèle et d’équilibrage restent
-consignés dans les tâches C9.
+consignés dans les tâches C9. Pour C9a, la recette visuelle est différée selon
+l’instruction de l’auteur.
 L’[audit C8](audit-assets-c8.md) rapproche les 17 groupes d’assets du code livré
 et mesure les sources candidates. C8 est clôturé : les contrats auteur sont
 consignés dans les ADR 0018/0019 et l’amendement 0009. C9 suivra l’ordre accepté
-caisses → électroaimant → piston → minuteur. Les caisses forment une famille
-`box` à variante bois/métal ; le délai du minuteur est un entier de 1 à 10 s,
-3 s par défaut, avec affichage possible au dixième. Seule la caisse métallique
-est attirée ; la bille en acier est hors C9. L’équilibrage physique reste à
-faire dans les scènes de test. C9a, l’intégration complète de la famille `box`,
-est la prochaine tâche.
+caisses → électroaimant → piston → minuteur. C9a ajoute la famille dynamique
+`box`, variante bois/métal, à géométrie commune 0,8 × 0,8 unité monde et masses
+1/3 kg. La variante métallique n’est pas encore attirée ; cela relève de C9b.
+Le délai du minuteur est un entier de 1 à 10 s, 3 s par défaut, avec affichage
+possible au dixième. La bille en acier reste hors C9. Les autres comportements
+et constantes physiques restent à intégrer dans C9b–d.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
-rouvertes. Aucun changement du todo auteur, du contenu ou des assets.
+rouvertes. Le todo auteur reste intact ; le contenu des niveaux existants ne
+change que par `schemaVersion: 3`. C9a ajoute les sprites et vignettes des deux
+variantes de caisse.
 
 C1 (`6150c94`, autre agent de l’auteur) corrige la pose après câblage dans le
 tutoriel 3 : les identifiants des poses de la solution cachée sont réservés,

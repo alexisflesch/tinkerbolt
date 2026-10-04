@@ -25,7 +25,7 @@ const { levelOneId, winnableLevelOneData } = vi.hoisted(() => {
   return {
     levelOneId,
     winnableLevelOneData: {
-      schemaVersion: 2,
+      schemaVersion: 3,
       id: levelOneId,
       metadata: { title: 'La bille de service' },
       objects: [

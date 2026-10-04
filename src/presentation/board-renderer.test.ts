@@ -186,7 +186,7 @@ const viewport = {
 } satisfies BoardViewport;
 
 const levelDocument = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'presentation-contract',
   metadata: { title: 'Contrat de rendu' },
   objects: [
@@ -377,6 +377,8 @@ const createPendingSpriteLoader = (): {
     'seesaw-fulcrum': fakeSprite('seesaw-fulcrum'),
     'seesaw-beam': fakeSprite('seesaw-beam'),
     'mass-10kg': fakeSprite('mass-10kg'),
+    'box-wood': fakeSprite('box-wood'),
+    'box-metal': fakeSprite('box-metal'),
     'lever-base': fakeSprite('lever-base'),
     'lever-handle': fakeSprite('lever-handle'),
     'conveyor-belt': fakeSprite('conveyor-belt'),
@@ -446,7 +448,7 @@ const createDeviceDocument = (
   rotation = 0,
 ) =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'device-presentation',
     metadata: { title: 'Dispositif' },
     objects: [
@@ -483,7 +485,7 @@ const lockedPermissions = { move: false, rotate: false, remove: false } as const
 /** The goal's ball, a second ball and the basket. */
 const createTwoBallDocument = () =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'two-balls',
     metadata: { title: 'Deux balles' },
     objects: [
@@ -521,7 +523,7 @@ const createWiredDocument = (
   conveyorDirection: 'left' | 'stopped' | 'right',
 ) =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'wired-presentation',
     metadata: { title: 'Levier et convoyeur' },
     objects: [
@@ -1041,7 +1043,7 @@ describe('renderer Canvas 2D du plateau', () => {
 
   it('dessine le panier arrière, la balle, puis le panier avant', async () => {
     const document = levelDocumentSchema.parse({
-      schemaVersion: 2,
+      schemaVersion: 3,
       id: 'b4-ball-before-basket',
       metadata: { title: 'Balle avant panier' },
       objects: [
@@ -1079,7 +1081,7 @@ describe('renderer Canvas 2D du plateau', () => {
 
   it('conserve l’ordre du document entre deux objets qui ne sont pas des balles', async () => {
     const document = levelDocumentSchema.parse({
-      schemaVersion: 2,
+      schemaVersion: 3,
       id: 'b4-non-ball-order',
       metadata: { title: 'Poutre et bascule' },
       objects: [

@@ -14,6 +14,7 @@ describe('registre des familles d’objet', () => {
       'beam',
       'seesaw',
       'mass',
+      'box',
       'lever',
       'conveyor',
       'button',

@@ -18,7 +18,7 @@ const viewport: BoardViewport = {
 
 const createDocument = (objects: LevelDocument['objects']): LevelDocument =>
   levelDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'hit-test',
     metadata: { title: 'Hit-test' },
     objects,

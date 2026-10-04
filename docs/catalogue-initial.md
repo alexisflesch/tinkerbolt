@@ -11,13 +11,14 @@ ajoutent avec leurs assets : la **masse**, le **levier** et le **convoyeur**,
 reliés par des fils de commande ([ADR 0009](decisions/0009-control-wires.md)).
 Le 26 septembre 2026, quatre autres arrivent avec leurs assets : le **bouton**,
 le **ventilateur**, la **barrière** et le **tremplin**. Le catalogue compte donc
-onze familles :
+douze familles après C9a :
 
 - balle ;
 - panier ;
 - poutre ;
 - bascule ;
 - masse ;
+- caisse (bois ou métal, une seule famille) ;
 - levier ;
 - convoyeur ;
 - bouton ;
@@ -147,6 +148,27 @@ l'autre bout, ou se laisse emporter par un convoyeur.
   pas une famille ;
 - non rotatable par commande ; elle peut basculer pendant la simulation.
 
+## Caisse
+
+### Rôle
+
+Un corps libre qui tombe, repose sur une poutre, suit un convoyeur ou appuie sur
+un bouton. Les matériaux sont deux variantes de la seule famille `box`, suivant
+l’[ADR 0019](decisions/0019-c9-object-contracts.md).
+
+### Modèle livré en C9a
+
+- carré dynamique de 0,8 × 0,8 unité monde, centré sur sa pose ;
+- propriété persistée `material: 'wood' | 'metal'`, obligatoire dans le format v3 ;
+- masses de jeu : bois 1 kg, métal 3 kg ; friction 0,6 et restitution 0,05 ;
+- dimensions et masses choisies par les tests de chute, de repos, de convoyeur,
+  de poussée par le ventilateur et un puzzle de bouton commandant une barrière ;
+- déplacement, rotation et retrait selon les permissions du niveau ; matériau
+  réglable en Atelier, fixé par l’inventaire en résolution ;
+- deux sprites et deux choix visibles dans le catalogue ; même géométrie pour
+  les collisions, le rendu, la sélection et l’aperçu de pose ;
+- attraction de la variante métallique réservée à C9b.
+
 ## Levier
 
 ### Rôle
@@ -235,8 +257,7 @@ ou un passage qui s'ouvre.
 
 ### Modèle
 
-- poteau statique de 0,9 × 0,96, barre de 1,7 × 0,38 (agrandis le 1er octobre
-  2026) ;
+- poteau statique de 0,9 × 0,96, barre de 1,7 × 0,38 (agrandis le 1er octobre 2026) ;
 - orientée par sa rotation, par pas de 15°, comme le ventilateur : tournée vers
   la gauche de la verticale, elle est dessinée en miroir, barre à gauche ;
   « Retourner » la met en miroir de gauche à droite ;
@@ -280,6 +301,7 @@ interface InventoryEntry {
     | 'beam'
     | 'seesaw'
     | 'mass'
+    | 'box'
     | 'lever'
     | 'conveyor'
     | 'button'
@@ -290,6 +312,7 @@ interface InventoryEntry {
     | {}
     | { size: 'short' | 'medium' | 'long' }
     | { weight: '10kg' }
+    | { material: 'wood' | 'metal' }
     | { position: 'left' | 'center' | 'right' }
     | { direction: 'left' | 'stopped' | 'right' }
     | { state: 'on' | 'off' }
@@ -326,6 +349,9 @@ La progression de la campagne et la géométrie mesurée de chaque niveau sont d
 - le capteur du panier ne modifie pas la trajectoire physique ;
 - les objets dont une permission est à `false` refusent la commande correspondante ;
 - l'inventaire distingue et décompte correctement les tailles de poutre ;
+- une caisse de chaque matériau tombe, repose sur une face et revient à sa pose au reset ;
+- les deux variantes suivent le convoyeur et ouvrent une barrière par un bouton ;
+- la caisse en bois est plus facile à pousser par un ventilateur que la caisse métallique ;
 - une masse posée sur une poutre repose à la hauteur de son empreinte ;
 - une masse lâchée sur une bascule catapulte la balle posée à l'autre bout ;
 - un levier tient chacun de ses trois crans, sans dépasser ses butées ;

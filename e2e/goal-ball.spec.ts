@@ -32,7 +32,7 @@ const blueBall = { x: 4.5, y: 1 } as const;
 
 /** The goal's ball and a second ball, side by side, both free to fall once launched. */
 const twoBallLevel = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'u7-goal-ball',
   metadata: { title: 'Balle suivie' },
   objects: [

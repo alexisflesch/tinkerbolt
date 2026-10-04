@@ -40,6 +40,9 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
       case 'beam':
         label = `Poutre ${inventory.props.size === 'short' ? 'courte' : inventory.props.size === 'medium' ? 'moyenne' : 'longue'}`;
         break;
+      case 'box':
+        label = inventory.props.material === 'wood' ? 'Caisse en bois' : 'Caisse métallique';
+        break;
       case 'mass':
         label = 'Masse';
         break;

@@ -9,7 +9,7 @@ const locked = { move: false, rotate: false, remove: false } as const;
 
 /** A received level: decor, one beam to place, the author's solution. */
 const level: LevelDocument = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'recu-0123456789abcdef',
   metadata: { title: 'Le saut', author: 'Lili' },
   objects: [

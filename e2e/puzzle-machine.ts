@@ -6,7 +6,7 @@ import { levelDocumentSchema } from '../src/domain/level-document';
 
 // Playwright's loader does not import JSON modules: read level 1 through the L22 codec.
 const levelOne = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'u22-fixture',
   metadata: { title: 'Fixture U22' },
   objects: [

@@ -6,13 +6,14 @@ import {
   levelDocumentAttemptSchema,
   levelDocumentSchema,
   levelDocumentV1Schema,
+  levelDocumentV2Schema,
   migrateLevelDocumentV1ToV2,
   type LevelDocument,
   type LevelDocumentV1,
 } from './level-document';
 
 const validLevel: LevelDocument = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'first-drop',
   metadata: {
     title: 'Première chute',
@@ -712,7 +713,7 @@ describe('migrateLevelDocumentV1ToV2', () => {
       expect(zone.max.y).toBeLessThanOrEqual(migrated.scene.max.y);
     }
 
-    expect(levelDocumentSchema.safeParse(migrated).success).toBe(true);
+    expect(levelDocumentV2Schema.safeParse(migrated).success).toBe(true);
   });
 
   it('porte une scène issue d’un groupe compact au minimum de 4 unités de côté', () => {
@@ -752,7 +753,7 @@ describe('migrateLevelDocumentV1ToV2', () => {
     expect(migrated.scene).toEqual({ min: { x: -2, y: -2 }, max: { x: 2.5, y: 2 } });
     expect(migrated.scene.max.x - migrated.scene.min.x).toBeGreaterThanOrEqual(4);
     expect(migrated.scene.max.y - migrated.scene.min.y).toBeGreaterThanOrEqual(4);
-    expect(levelDocumentSchema.safeParse(migrated).success).toBe(true);
+    expect(levelDocumentV2Schema.safeParse(migrated).success).toBe(true);
   });
 
   it('échoue explicitement, sans produire de v2, quand l’étalement v1 dépasse la scène maximale', () => {
@@ -819,7 +820,7 @@ describe('migrateLevelDocumentV1ToV2', () => {
     expect(atBoundaryResult.status).toBe('migrated');
     if (atBoundaryResult.status !== 'migrated') return;
     expect(atBoundaryResult.document.scene.max.x - atBoundaryResult.document.scene.min.x).toBe(64);
-    expect(levelDocumentSchema.safeParse(atBoundaryResult.document).success).toBe(true);
+    expect(levelDocumentV2Schema.safeParse(atBoundaryResult.document).success).toBe(true);
 
     const justOverResult = migrateLevelDocumentV1ToV2(boundaryV1Level(60.1, 'legacy-just-over'));
     expect(justOverResult.status).toBe('scene-too-large');
@@ -999,7 +1000,7 @@ describe('migrateLevelDocumentV1ToV2', () => {
       // migration refuses explicitly, or what it returns is a valid v2
       // document — nothing else is acceptable.
       if (result.status === 'migrated') {
-        expect(levelDocumentSchema.safeParse(result.document).success).toBe(true);
+        expect(levelDocumentV2Schema.safeParse(result.document).success).toBe(true);
       } else {
         expect(result.status).toBe('scene-too-large');
       }

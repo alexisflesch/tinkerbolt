@@ -187,6 +187,13 @@ mass_scale = 0.8 / (mass_box[2] - mass_box[0])
 mass_h = (mass_box[3] - mass_box[1]) * mass_scale
 mass_sprite = export(mass, mass_box, 0.8, mass_h, "mass-10kg")
 save(mass_sprite, THUMBS / "mass.png")
+# C9a: gameplay dimensions are chosen independently of image dimensions.
+# Crop alpha, then export both materials to the same 0.8-unit square frame.
+for material, source in (("wood", "wooden-box"), ("metal", "metallic-box")):
+    box_image = load(f"boxes/{source}.png")
+    box_sprite = export(box_image, opaque_box(box_image), 0.8, 0.8, f"box-{material}")
+    save(box_sprite, THUMBS / f"box-{material}.png")
+
 # Le collider sépare le corps trapézoïdal de l'anneau de levage, un cercle :
 # une seule enveloppe convexe en ferait une pointe.
 mass_origin = ((mass_box[0] + mass_box[2]) / 2, (mass_box[1] + mass_box[3]) / 2)

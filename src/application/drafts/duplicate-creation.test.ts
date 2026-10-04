@@ -7,7 +7,7 @@ import { duplicateCreation } from './duplicate-creation';
 const locked = { move: false, rotate: false, remove: false } as const;
 
 const workshop = (id: string, title: string): LevelDocument => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id,
   metadata: { title, basedOn: [{ title: 'Le niveau d’origine', author: 'Lili' }] },
   objects: [

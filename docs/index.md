@@ -45,7 +45,7 @@ gagne et l'autre document doit être corrigé, pas arbitré au cas par cas.
 | `docs/plan-remise-en-jeu.md`                                   | 1208    | historique A–F ; spécifications détaillées de C1, C2, D3                                                               |
 | `docs/architecture.md`                                         | 223     | couches, dépendances, états distincts, modèle d'objet                                                                  |
 | `docs/qualite.md`                                              | 149     | stratégie de test, niveaux de test, gates                                                                              |
-| `docs/catalogue-initial.md`                                    | 239     | contrats des onze familles d'objets                                                                                    |
+| `docs/catalogue-initial.md`                                    | 377     | contrats des douze familles d'objets                                                                                   |
 | `docs/tinkerbolt_control_wires_v1.md`                          | 125     | spécification fonctionnelle des fils de commande                                                                       |
 | `docs/mobile-editor-interactions.md`                           | 595     | gestes, états d'interface, scénarios tactiles (v2 : hors v1)                                                           |
 | `docs/levels/nouveaux-niveaux.md`                              | —       | campagne esquissée : 18 propositions, niveau 15 différé                                                                |
@@ -58,7 +58,7 @@ gagne et l'autre document doit être corrigé, pas arbitré au cas par cas.
 | `docs/decisions/0006-board-renderer.md`                        | 101     | renderer du plateau et pipeline de sprites (accepté)                                                                   |
 | `docs/decisions/0007-world-scale-and-camera.md`                | 269     | repère du monde, scène, caméra, échelle des sprites (accepté)                                                          |
 | `docs/decisions/0008-client-side-routing.md`                   | 99      | routage côté client, schéma d'URL (accepté)                                                                            |
-| `docs/decisions/0009-control-wires.md`                         | 90      | fils de commande : modèle, rendu, câblage (accepté, amendé)                                                            |
+| `docs/decisions/0009-control-wires.md`                         | 209     | fils de commande : modèle, rendu, câblage et minuteur en série (accepté, amendé)                                       |
 | `docs/decisions/0010-object-challenge-and-progression.md`      | 92      | défi d'objets ✅/⭐/🏆, ouverture des niveaux (accepté)                                                                |
 | `docs/decisions/0011-local-storage-and-url-sharing.md`         | —       | IndexedDB/Dexie asynchrone, sans reprise `localStorage` ; codecs et partage URL (accepté, amendé C0)                   |
 | `docs/decisions/0012-pwa-service-worker.md`                    | 47      | PWA, service worker, mises à jour (accepté)                                                                            |

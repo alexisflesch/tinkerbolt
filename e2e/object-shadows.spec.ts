@@ -17,7 +17,7 @@ const ballStart = { x: 1.5, y: 1.1 };
 const inside = { x: 2.2, y: 4.5 };
 const outside = { x: 5.8, y: 1.5 };
 const shadowLevel = levelDocumentSchema.parse({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'u3-sans-ombres',
   metadata: { title: 'Plateau sans ombres' },
   scene: { min: { x: 0, y: 0 }, max: { x: 8, y: 5.5 } },

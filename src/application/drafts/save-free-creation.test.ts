@@ -6,7 +6,7 @@ import type { DraftCreation, DraftCreationContent, DraftRepository } from './dra
 import { saveFreeCreation, startFreeCreation } from './save-free-creation';
 
 const workshop: LevelDocument = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'free-workshop',
   metadata: { title: 'Atelier de niveau' },
   objects: [],

@@ -122,9 +122,30 @@ export const createIndexedDBDraftRepository = (db: Dexie, clock: () => Date): Dr
           2,
           clock,
         );
-        return checked.status === 'future'
-          ? ({ status: 'error', code: 'unsupported-version' } as const)
-          : ({ status: 'ok', creation: checked.value, ...warningPart(checked.warning) } as const);
+        if (checked.status === 'future')
+          return { status: 'error', code: 'unsupported-version' } as const;
+        if (checked.value !== null) {
+          const creation = checked.value;
+          // Persist migrated level bytes without changing the author's last edit date.
+          const row = {
+            id,
+            updatedAt: creation.updatedAt,
+            envelope: {
+              kind: 'draft',
+              version: 2,
+              data: {
+                document: storedDocument(creation.document),
+                ...(creation.source === undefined
+                  ? {}
+                  : { source: storedDocument(creation.source) }),
+                updatedAt: creation.updatedAt,
+              },
+            },
+          };
+          const raw: unknown = await db.table('creations').get(id);
+          if (JSON.stringify(raw) !== JSON.stringify(row)) await db.table('creations').put(row);
+        }
+        return { status: 'ok', creation: checked.value, ...warningPart(checked.warning) } as const;
       });
     } catch (error) {
       return failure(error);

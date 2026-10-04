@@ -25,7 +25,7 @@ import {
 const permissions = { move: true, rotate: false, remove: false } as const;
 
 const createLevel = (): LevelDocument => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'editor-session-test',
   metadata: { title: 'Editor session test' },
   objects: [

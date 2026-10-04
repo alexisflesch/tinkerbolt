@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { embeddedLevels } from '../../content/embedded-levels';
 import type { LevelDocument } from '../../domain/level-document';
-import { encodeLevelFile } from '../level-file/level-file-codec';
+import { decodeLevelFile, encodeLevelFile } from '../level-file/level-file-codec';
 import { createIndexedDBDraftRepository } from './indexed-db-draft-repository';
 import { createTinkerboltDatabase } from './tinkerbolt-database';
 
@@ -23,6 +23,86 @@ const validRow = () => ({
 const quota = (): DOMException => new DOMException('Quota exceeded', 'QuotaExceededError');
 
 describe('contrats historiques des créations sur IndexedDB', () => {
+  it('migre aussi une création v1 par v2 vers v3', async () => {
+    const db = open();
+    const legacy = {
+      schemaVersion: 1,
+      id: document.id,
+      metadata: { title: document.metadata.title },
+      objects: document.objects,
+      inventory: document.inventory.filter(({ type }) => type !== 'wire'),
+      goal: document.goal,
+      buildZones: document.buildZones,
+    };
+
+    const decoded = decodeLevelFile(JSON.stringify(legacy));
+    expect(decoded.status).toBe('ok');
+    if (decoded.status !== 'ok') return;
+    await db.table('creations').put({
+      id: document.id,
+      updatedAt: instant,
+      envelope: { kind: 'draft', version: 2, data: { document: legacy, updatedAt: instant } },
+    });
+    expect(await createIndexedDBDraftRepository(db, clock).load(document.id)).toEqual({
+      status: 'ok',
+      creation: { document: decoded.document, updatedAt: instant },
+    });
+  });
+
+  it('migre document et copie source v2 en conservant la date', async () => {
+    const db = open();
+    const raw = {
+      id: document.id,
+      updatedAt: instant,
+      envelope: {
+        kind: 'draft',
+        version: 2,
+        data: {
+          document: { ...document, schemaVersion: 2 },
+          source: { ...source, schemaVersion: 2 },
+          updatedAt: instant,
+        },
+      },
+    };
+    await db.table('creations').put(raw);
+    expect(await createIndexedDBDraftRepository(db, clock).load(document.id)).toEqual({
+      status: 'ok',
+      creation: { document, source, updatedAt: instant },
+    });
+    expect(await db.table('creations').get(document.id)).toMatchObject({
+      envelope: {
+        data: { document: { schemaVersion: 3 }, source: { schemaVersion: 3 }, updatedAt: instant },
+      },
+    });
+    expect(await db.table('backups').count()).toBe(0);
+  });
+
+  it('protège un document futur dans une enveloppe courante', async () => {
+    const db = open();
+    const raw = {
+      ...validRow(),
+      envelope: {
+        ...validRow().envelope,
+        data: { document: { ...document, schemaVersion: 4 }, updatedAt: instant },
+      },
+    };
+    await db.table('creations').put(raw);
+    const repository = createIndexedDBDraftRepository(db, clock);
+    expect(await repository.load(document.id)).toEqual({
+      status: 'error',
+      code: 'unsupported-version',
+    });
+    expect(await repository.save({ document })).toEqual({
+      status: 'error',
+      code: 'unsupported-version',
+    });
+    expect(await repository.delete(document.id)).toEqual({
+      status: 'error',
+      code: 'unsupported-version',
+    });
+    expect(await db.table('creations').get(document.id)).toEqual(raw);
+  });
+
   it('met à jour une création sous le même id et date le dernier document', async () => {
     const db = open();
     const repository = createIndexedDBDraftRepository(db, clock);
@@ -66,7 +146,7 @@ describe('contrats historiques des créations sur IndexedDB', () => {
       ...validRow(),
       envelope: {
         ...validRow().envelope,
-        data: { ...validRow().envelope.data, document: { schemaVersion: 999 } },
+        data: { ...validRow().envelope.data, document: { schemaVersion: 3 } },
       },
     };
     await db.table('creations').put(raw);

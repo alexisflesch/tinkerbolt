@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { embeddedLevels } from '../../content/embedded-levels';
 import type { LevelDocument } from '../../domain/level-document';
-import { encodeLevelFile } from '../level-file/level-file-codec';
+import { decodeLevelFile, encodeLevelFile } from '../level-file/level-file-codec';
 import type { ReceivedLevel } from '../../application/received/received-level-repository';
 import { createIndexedDBReceivedLevelRepository } from './indexed-db-received-level-repository';
 import { createTinkerboltDatabase } from './tinkerbolt-database';
@@ -40,6 +40,79 @@ const row = (level: ReceivedLevel) => ({
 const quota = (): DOMException => new DOMException('Quota exceeded', 'QuotaExceededError');
 
 describe('contrats historiques des niveaux reçus sur IndexedDB', () => {
+  it('migre aussi un reçu v1 par v2 vers v3', async () => {
+    const db = open();
+    const legacy = {
+      schemaVersion: 1,
+      id: document.id,
+      metadata: { title: document.metadata.title },
+      objects: document.objects,
+      inventory: document.inventory.filter(({ type }) => type !== 'wire'),
+      goal: document.goal,
+      buildZones: document.buildZones,
+    };
+
+    const decoded = decodeLevelFile(JSON.stringify(legacy));
+    expect(decoded.status).toBe('ok');
+    if (decoded.status !== 'ok') return;
+    await db.table('receivedLevels').put({
+      ...row(entry()),
+      envelope: { ...row(entry()).envelope, data: { ...entry(), document: legacy } },
+    });
+    expect(await createIndexedDBReceivedLevelRepository(db, clock).load(id)).toEqual({
+      status: 'ok',
+      level: { ...entry(), document: decoded.document },
+    });
+  });
+
+  it('migre un reçu v2 en conservant identité, résultat, date et solution joueur', async () => {
+    const db = open();
+    const level = entry({ solved: true, bestObjectCount: 1, playerSolution: { placements: [] } });
+    const raw = {
+      ...row(level),
+      envelope: {
+        ...row(level).envelope,
+        data: { ...level, document: { ...document, schemaVersion: 2 } },
+      },
+    };
+    await db.table('receivedLevels').put(raw);
+    expect(await createIndexedDBReceivedLevelRepository(db, clock).load(id)).toEqual({
+      status: 'ok',
+      level,
+    });
+    expect(await db.table('receivedLevels').get(id)).toMatchObject({
+      envelope: {
+        data: {
+          document: { schemaVersion: 3 },
+          bestObjectCount: 1,
+          receivedAt: instant,
+          playerSolution: { placements: [] },
+        },
+      },
+    });
+    expect(await db.table('backups').count()).toBe(0);
+  });
+
+  it('protège un reçu de format futur dans une enveloppe courante', async () => {
+    const db = open();
+    const raw = {
+      ...row(entry()),
+      envelope: {
+        ...row(entry()).envelope,
+        data: { ...entry(), document: { ...document, schemaVersion: 4 } },
+      },
+    };
+    await db.table('receivedLevels').put(raw);
+    const repository = createIndexedDBReceivedLevelRepository(db, clock);
+    expect(await repository.load(id)).toEqual({ status: 'error', code: 'unsupported-version' });
+    expect(await repository.save(entry())).toEqual({
+      status: 'error',
+      code: 'unsupported-version',
+    });
+    expect(await repository.delete(id)).toEqual({ status: 'error', code: 'unsupported-version' });
+    expect(await db.table('receivedLevels').get(id)).toEqual(raw);
+  });
+
   it('fait un aller-retour complet avec record et solution, et accepte les champs facultatifs absents', async () => {
     const db = open();
     const repository = createIndexedDBReceivedLevelRepository(db, clock);

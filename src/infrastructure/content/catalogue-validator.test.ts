@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { validateContentCatalog, type ContentLevelFile } from './catalogue-validator';
 
 const validLevel = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: 'first-drop',
   metadata: { title: 'Fixture de validation' },
   objects: [

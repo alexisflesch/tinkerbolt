@@ -159,9 +159,15 @@ export const createIndexedDBReceivedLevelRepository = (
             1,
             clock,
           );
-          return checked.status === 'future'
-            ? ({ status: 'error', code: 'unsupported-version' } as const)
-            : ({ status: 'ok', level: checked.value, ...warningPart(checked.warning) } as const);
+          if (checked.status === 'future')
+            return { status: 'error', code: 'unsupported-version' } as const;
+          if (checked.value !== null) {
+            const row = prepare(checked.value);
+            const raw: unknown = await db.table('receivedLevels').get(id);
+            if (JSON.stringify(raw) !== JSON.stringify(row))
+              await db.table('receivedLevels').put(row);
+          }
+          return { status: 'ok', level: checked.value, ...warningPart(checked.warning) } as const;
         },
       );
     } catch (error) {

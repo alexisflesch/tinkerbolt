@@ -489,12 +489,13 @@ et les invariants restent applicables. Aucune capture ni vérification d’image
 pendant l’implémentation actuelle ; la recette visuelle est différée.
 
 Le 4 octobre, l’auteur a demandé de terminer C3 avant de changer l’ordre de la
-suite ; **C3 est maintenant livré**. C8 est ensuite clôturé après l’audit et les
-arbitrages. L’ordre prioritaire courant est **C9a–d → C7 → C6 → C4/C4a**, comme
-consigné dans la [feuille de route active](feuille-de-route.md). L’auteur a
-confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
-du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.
-Les constantes physiques sont équilibrées pendant les tâches correspondantes.
+suite ; **C3 est maintenant livré**. C8 et C9a sont clôturés après l’audit, les
+arbitrages et l’intégration complète de la famille `box`. L’ordre prioritaire
+courant est **C9b–d → C7 → C6 → C4/C4a**, comme consigné dans la
+[feuille de route active](feuille-de-route.md). L’auteur a confirmé l’ordre des
+familles, `box` avec variante matériau, le délai initial du minuteur et ses
+règles ; voir les ADR 0018, 0019 et l’amendement de 0009. Les constantes
+physiques des trois familles restantes sont équilibrées dans leurs tâches.
 La feuille de route reste seule propriétaire de la séquence, des dépendances et
 du journal.
 
