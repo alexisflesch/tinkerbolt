@@ -417,11 +417,18 @@ Pour chacune :
 
 ### C10 — Recette des compléments desktop
 
-- **Avancement partiel — 4 octobre.** `pnpm check:fast` passe avec 1 353 tests
+- **Avancement partiel — 5 octobre.** `pnpm check:fast` passe avec 1 353 tests
   Vitest ; build, `format:check`, `deadcode` et `content:check` passent aussi.
   Les parcours navigateur ciblés (reprise C3, éditeur, fils, PWA/splash et
   fumée) passent après adaptation du test de persistance aux propriétés fermées
-  par défaut ; les 2 E2E C4a passent à 1440 × 900 et 1280 × 720.
+  par défaut. Les 2 E2E C4a confirment aux deux formats le clic sans sélecteur
+  et le redimensionnement par glissement ; les 2 E2E C10 partagés valident les
+  familles et le fil à minuteur dans un niveau v3 ; les 2 E2E desktop C10
+  valident accueil, splash, icônes et victoire à 1440 × 900 et 1280 × 720.
+- Le test de victoire attend maintenant l’état « Simulation en cours » avant
+  d’avancer l’horloge simulée : le lancement peut attendre la sauvegarde
+  asynchrone. L’échec précédemment observé à 1280 × 720 disparaît avec cette
+  synchronisation, sans délai arbitraire.
 - `pnpm check` et la recette visuelle auteur restent en attente : la gate
   complète contient des scénarios qui écrivent des captures et l’instruction
   active demande de n’en produire aucune. C10 n’est donc pas clôturé.

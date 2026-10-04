@@ -1,13 +1,14 @@
 # État du dépôt — TinkerBolt
 
-Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
+Dernière mise à jour : 5 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
 C3.2, C4, C4a, C8, C9a à C9d, C7 et C6 implémentés**. C5 est implémenté ; sa
-recette visuelle reste différée. C4a passe `pnpm check:fast` (1 353 tests
-Vitest), le build et ses 2 E2E desktop ciblés. C10 est en cours : validateurs
-non visuels et parcours navigateur ciblés passent ; `pnpm check` complet et
-recette visuelle restent à faire, car ils produisent des captures interdites
-par l’instruction active. U3 reste abandonnée.
+recette visuelle reste différée. `pnpm check:fast` passe avec 1 353 tests
+Vitest et le build passe. Les 2 E2E C4a et les 4 nouveaux E2E C10 passent aux
+deux formats desktop ; le scénario de victoire attend le lancement après la
+sauvegarde asynchrone. C10 reste en cours : `pnpm check` complet et recette
+visuelle restent à faire, car ils produisent des captures interdites par
+l’instruction active. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
