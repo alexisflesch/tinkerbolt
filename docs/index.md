@@ -45,7 +45,7 @@ gagne et l'autre document doit être corrigé, pas arbitré au cas par cas.
 | `docs/plan-remise-en-jeu.md`                                   | 1208    | historique A–F ; spécifications détaillées de C1, C2, D3                                                               |
 | `docs/architecture.md`                                         | 223     | couches, dépendances, états distincts, modèle d'objet                                                                  |
 | `docs/qualite.md`                                              | 149     | stratégie de test, niveaux de test, gates                                                                              |
-| `docs/catalogue-initial.md`                                    | 377     | contrats des douze familles d'objets                                                                                   |
+| `docs/catalogue-initial.md`                                    | 377     | contrats des familles initiales et ajouts C9a–C9c                                                                        |
 | `docs/tinkerbolt_control_wires_v1.md`                          | 125     | spécification fonctionnelle des fils de commande                                                                       |
 | `docs/mobile-editor-interactions.md`                           | 595     | gestes, états d'interface, scénarios tactiles (v2 : hors v1)                                                           |
 | `docs/levels/nouveaux-niveaux.md`                              | —       | campagne esquissée : 18 propositions, niveau 15 différé                                                                |

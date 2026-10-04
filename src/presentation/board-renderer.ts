@@ -14,6 +14,7 @@ import {
   leverGeometry,
   massGeometry,
   facingPose,
+  pistonGeometry,
   seesawGeometry,
   springboardGeometry,
 } from '../domain/family-geometry';
@@ -269,6 +270,9 @@ const layerPoseSources: Record<SpriteAsset, LayerPoseSource> = {
   'box-metal': 'body',
   'electro-magnet-off': 'body',
   'electro-magnet-on': 'body',
+  'piston-rod': 'body',
+  'piston-housing': 'placement',
+  'piston-plate': 'body',
   'lever-base': 'placement',
   'lever-handle': 'body',
   'conveyor-belt': 'placement',
@@ -370,6 +374,8 @@ const footprintForObject = (object: Placement): BoardDestination => {
       return seesawGeometry.footprint;
     case 'electro-magnet':
       return electroMagnetGeometry.footprint;
+    case 'piston':
+      return pistonGeometry.footprint;
     case 'box':
       return boxGeometry.footprint;
     case 'mass':
@@ -405,6 +411,9 @@ const partialLayerDestinations: Partial<Record<SpriteAsset, BoardDestination>> =
   'springboard-spring': springboardGeometry.spring.footprint,
   'springboard-base': springboardGeometry.base.footprint,
   'springboard-platform': springboardGeometry.platform.footprint,
+  'piston-rod': pistonGeometry.rod.footprint,
+  'piston-housing': pistonGeometry.housing.footprint,
+  'piston-plate': pistonGeometry.plate.footprint,
 };
 
 /** The bar's sprite, in pixels: the renderer shows only the part out of the pillar. */
@@ -510,6 +519,23 @@ const layerDestination = (object: Placement, asset: SpriteAsset): BoardDestinati
 const restingBodyRotation = (object: Placement): number =>
   object.transform.rotation + (object.type === 'lever' ? leverAngle(object.props.position) : 0);
 
+/** The piston plate starts at the end of its fixed housing, already retracted. */
+const restingBodyPosition = (object: Placement): BoardPoint => {
+  const { position } = object.transform;
+  if (object.type !== 'piston') return { x: position.x, y: position.y };
+  const rotation = object.transform.rotation;
+  return {
+    x:
+      position.x +
+      pistonGeometry.homeOffset.x * Math.cos(rotation) -
+      pistonGeometry.homeOffset.y * Math.sin(rotation),
+    y:
+      position.y +
+      pistonGeometry.homeOffset.x * Math.sin(rotation) +
+      pistonGeometry.homeOffset.y * Math.cos(rotation),
+  };
+};
+
 const projectLayer = (
   object: Placement,
   asset: SpriteAsset,
@@ -520,7 +546,7 @@ const projectLayer = (
     rotation: object.transform.rotation,
   };
   const body = view?.bodyPoses.get(object.id) ?? {
-    position: placementPose.position,
+    position: restingBodyPosition(object),
     rotation: restingBodyRotation(object),
   };
   const source = layerPoseSources[asset];
@@ -567,6 +593,9 @@ const drawOrderByAsset: Record<SpriteAsset, number> = {
   'box-metal': 0,
   'electro-magnet-off': 0,
   'electro-magnet-on': 0,
+  'piston-rod': 0,
+  'piston-housing': 1,
+  'piston-plate': 2,
   'lever-base': 0,
   'lever-handle': 0,
   'conveyor-belt': 0,

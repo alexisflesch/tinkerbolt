@@ -2,9 +2,9 @@
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
-C3.2, C8, C9a et C9b livrés**. La suite prioritaire demandée par l’auteur est
-C9c–d, C7 puis C6, avant C4/C4a et C10. C5 est implémenté ; recette visuelle
-différée sur instruction de l’auteur. Dernière gate globale verte : 1 296 tests
+C3.2, C8, C9a, C9b et C9c livrés**. La suite prioritaire demandée par l’auteur est
+C9d, C7 puis C6, avant C4/C4a et C10. C5 est implémenté ; recette visuelle
+différée sur instruction de l’auteur. Dernière gate globale verte : 1 315 tests
 Vitest et 92 E2E v1. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
@@ -39,7 +39,7 @@ droite centrée ; la poursuite est autorisée. Aucun de ces nouveaux contrôles
 n’est implémenté dans l’application. La recette visuelle est différée sur instruction de l’auteur ; elle ne bloque
 pas l’implémentation autorisée. Les comportements principaux des nouvelles
 familles sont confirmés ; leurs détails de modèle et d’équilibrage restent
-consignés dans les tâches C9. Pour C9a et C9b, la recette visuelle est différée
+consignés dans les tâches C9. Pour C9a à C9c, la recette visuelle est différée
 selon l’instruction de l’auteur.
 L’[audit C8](audit-assets-c8.md) rapproche les 17 groupes d’assets du code livré
 et mesure les sources candidates. C8 est clôturé : les contrats auteur sont
@@ -48,10 +48,12 @@ caisses → électroaimant → piston → minuteur. C9a ajoute la famille dynami
 `box`, variante bois/métal, à géométrie commune 0,8 × 0,8 unité monde et masses
 1/3 kg. C9b ajoute l’électroaimant : état initial `on/off`, état `on` par défaut
 au catalogue, conservation de l’état sans fil, inversion temporaire par bouton
-et attraction de la seule caisse métallique dans un rayon de 2,8 unités. La
-bille en acier reste hors C9. Les comportements et constantes du piston et du
-minuteur restent à intégrer dans C9c–d. Le délai du minuteur est un entier de
-1 à 10 s, 3 s par défaut, avec affichage possible au dixième.
+et attraction de la seule caisse métallique dans un rayon de 2,8 unités. C9c
+ajoute le piston fermé au démarrage : un appui même bref déclenche la course
+complète ; il reste sorti tant que le bouton est maintenu, puis se rétracte
+automatiquement. Sa plaque propulse les corps dynamiques. Le minuteur reste à
+intégrer en C9d : son délai est un entier de 1 à 10 s, 3 s par défaut, avec
+affichage possible au dixième. La bille en acier reste hors C9.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
 rouvertes. Le todo auteur reste intact ; le contenu des niveaux existants ne
 change que par `schemaVersion: 3`. C9a ajoute les sprites et vignettes des deux

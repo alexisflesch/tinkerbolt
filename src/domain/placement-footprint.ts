@@ -10,6 +10,7 @@ import {
   fanGeometry,
   leverFootprint,
   massGeometry,
+  pistonGeometry,
   seesawGeometry,
   springboardGeometry,
   type WorldPoint,
@@ -41,6 +42,8 @@ const localFootprintFor = (placement: FootprintSource): WorldRect => {
       return seesawGeometry.footprint;
     case 'electro-magnet':
       return electroMagnetGeometry.footprint;
+    case 'piston':
+      return pistonGeometry.footprint;
     case 'box':
       return boxGeometry.footprint;
     case 'mass':

@@ -105,7 +105,7 @@ internes de la bascule, est défini dans `docs/catalogue-initial.md`.
 
 `objects` est une union Zod discriminée stricte sur `type` ; les variantes et
 leurs propriétés sont celles de `src/domain/level-document.ts` et
-`src/domain/object-family-registry.ts` (treize familles après C9b, voir
+`src/domain/object-family-registry.ts` (quatorze familles après C9c, voir
 `docs/catalogue-initial.md`). Un placement ne contient que
 son identifiant, son type, sa transformée en unités du monde, ses propriétés et
 ses permissions. Il ne contient ni version par objet, ni handle de moteur, ni

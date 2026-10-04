@@ -72,7 +72,7 @@ describe('outil fil : une commande et un appareil, dans n’importe quel ordre (
     expect(wiringTap(fromSource('lever-1'), objects, 'ball-1')).toEqual({
       kind: 'refused',
       message:
-        'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière ou un électroaimant placés.',
+        'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière, un électroaimant ou un piston placés.',
     });
     expect(wiringTap(fromSource('button-1'), objects, 'conveyor-1')).toEqual({
       kind: 'refused',

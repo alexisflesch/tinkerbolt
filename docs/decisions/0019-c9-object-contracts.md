@@ -31,12 +31,18 @@ Date : 2026-10-04
 ### Piston
 
 - Le piston est commandé par le bouton uniquement.
-- Tant que le bouton reste enfoncé, le piston reste en position sortie. Au
-  relâchement, il revient à sa position initiale. Un appui momentané, y compris
-  celui d’un objet qui passe sur le bouton, produit donc une sortie puis une
-  rétraction réutilisable.
-- La sortie doit propulser les objets. Sa vitesse, sa course et la force utile
-  sont réglées et testées pendant C9c.
+- Le piston a une seule position initiale : fermé. Il n’expose pas de réglage
+  `on/off` et sa position initiale n’est pas persistée.
+- Un front d’activation lance une course complète vers la sortie, même si le
+  bouton est relâché avant que la tige ait fini de sortir. Une fois sortie, la
+  tige reste en place tant que le bouton est enfoncé ; si le bouton est déjà
+  relâché, elle se rétracte automatiquement. Un appui bref, comme celui d’un
+  objet qui roule sur le bouton, produit donc une sortie puis une rétraction.
+- Le gabarit du piston est comparable au ventilateur : empreinte de sélection
+  1,395 × 0,756 unité monde (surface proche de celle du ventilateur). La course
+  est de 0,414 unité ; le déplacement de la tête à 12 unités monde par seconde
+  propulse une balle posée dessus au-delà du bord haut d’une scène de 10 unités,
+  en partant près du bord bas. Ce réglage est couvert par le test physique C9c.
 
 ### Minuteur
 

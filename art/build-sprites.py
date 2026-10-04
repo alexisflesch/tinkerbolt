@@ -409,6 +409,119 @@ save(
     THUMBS / "springboard.png",
 )
 
+# Piston : le boîtier reste fixe ; la tige et la plaque coulissent ensemble.
+# Le centre du boîtier sert d'origine de placement. La vignette montre le
+# piston fermé, sa position de départ obligatoire (ADR 0019).
+piston_housing = load("piston/piston-housing.png")
+piston_housing_box = opaque_box(piston_housing)
+PISTON_HOUSING_WIDTH = 0.92
+PISTON_HOME_OFFSET = 0.299
+PISTON_TRAVEL = 0.414
+piston_scale = PISTON_HOUSING_WIDTH / (piston_housing_box[2] - piston_housing_box[0])
+piston_origin = (
+    (piston_housing_box[0] + piston_housing_box[2]) / 2,
+    (piston_housing_box[1] + piston_housing_box[3]) / 2,
+)
+piston_housing_height = (piston_housing_box[3] - piston_housing_box[1]) * piston_scale
+piston_housing_sprite = export(
+    piston_housing,
+    piston_housing_box,
+    PISTON_HOUSING_WIDTH,
+    piston_housing_height,
+    "piston-housing",
+)
+
+piston_plate = load("piston/piston-plate.png")
+piston_plate_box = opaque_box(piston_plate)
+piston_plate_origin = (
+    (piston_plate_box[0] + piston_plate_box[2]) / 2,
+    (piston_plate_box[1] + piston_plate_box[3]) / 2,
+)
+piston_plate_width = (piston_plate_box[2] - piston_plate_box[0]) * piston_scale
+piston_plate_height = (piston_plate_box[3] - piston_plate_box[1]) * piston_scale
+piston_plate_sprite = export(
+    piston_plate,
+    piston_plate_box,
+    piston_plate_width,
+    piston_plate_height,
+    "piston-plate",
+)
+
+piston_rod = load("piston/piston-rod.png")
+piston_rod_box = opaque_box(piston_rod)
+PISTON_ROD_WIDTH = 0.736
+piston_rod_height = PISTON_ROD_WIDTH * (piston_rod_box[3] - piston_rod_box[1]) / (
+    piston_rod_box[2] - piston_rod_box[0]
+)
+piston_rod_sprite = export(
+    piston_rod,
+    piston_rod_box,
+    PISTON_ROD_WIDTH,
+    piston_rod_height,
+    "piston-rod",
+)
+
+geometry["piston"] = {
+    "footprint": {
+        "x": -PISTON_HOUSING_WIDTH / 2,
+        "y": -piston_plate_height / 2,
+        "width": PISTON_HOUSING_WIDTH / 2 + PISTON_HOME_OFFSET + PISTON_TRAVEL + piston_plate_width / 2,
+        "height": piston_plate_height,
+    },
+    "housing": {
+        "footprint": rect(piston_housing_box, piston_origin, piston_scale),
+        "polygon": to_world(hull(outline(piston_housing)), piston_origin, piston_scale),
+    },
+    "plate": {
+        "footprint": {
+            "x": -piston_plate_width / 2,
+            "y": -piston_plate_height / 2,
+            "width": piston_plate_width,
+            "height": piston_plate_height,
+        },
+        "polygon": to_world(hull(outline(piston_plate)), piston_plate_origin, piston_scale),
+    },
+    "rod": {"footprint": {"x": -PISTON_ROD_WIDTH, "y": -piston_rod_height / 2, "width": PISTON_ROD_WIDTH, "height": piston_rod_height}},
+    "homeOffset": {"x": PISTON_HOME_OFFSET, "y": 0},
+    "travel": PISTON_TRAVEL,
+}
+piston_px = lambda v: round(v * PX_PER_UNIT)  # noqa: E731
+piston_frame = (
+    -PISTON_HOUSING_WIDTH / 2,
+    -piston_plate_height / 2,
+    PISTON_HOME_OFFSET + PISTON_TRAVEL + piston_plate_width / 2,
+    piston_plate_height / 2,
+)
+save(
+    composite(
+        [
+            (
+                piston_rod_sprite,
+                (
+                    piston_px(PISTON_HOME_OFFSET - PISTON_ROD_WIDTH),
+                    piston_px(-piston_rod_height / 2 - piston_frame[1]),
+                ),
+            ),
+            (
+                piston_housing_sprite,
+                (
+                    piston_px(-PISTON_HOUSING_WIDTH / 2 - piston_frame[0]),
+                    piston_px(-piston_housing_height / 2 - piston_frame[1]),
+                ),
+            ),
+            (
+                piston_plate_sprite,
+                (
+                    piston_px(PISTON_HOME_OFFSET - piston_plate_width / 2 - piston_frame[0]),
+                    0,
+                ),
+            ),
+        ],
+        (piston_px(piston_frame[2] - piston_frame[0]), piston_px(piston_frame[3] - piston_frame[1])),
+    ),
+    THUMBS / "piston.png",
+)
+
 # Barrière : poteau fixe et barre qui coulisse dans le poteau. Repère :
 # pixels du poteau, origine au centre du poteau. La barre est exportée
 # entière ; le renderer n'en dessine que la partie sortie du poteau.

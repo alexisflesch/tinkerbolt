@@ -1025,7 +1025,7 @@ describe('règles d’un fil de commande, expliquées une à une', () => {
     expect(controlWireTargetIssue('button', 'barrier')).toBeNull();
     for (const type of ['lever', 'button', 'ball', 'mass'] as const) {
       expect(controlWireTargetIssue('lever', type)).toBe(
-        'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière ou un électroaimant placés.',
+        'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière, un électroaimant ou un piston placés.',
       );
     }
   });

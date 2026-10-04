@@ -10,6 +10,7 @@ import {
   type Fixture,
   type FixtureDef,
   type Joint,
+  type Vec2Value,
 } from 'planck';
 
 import {
@@ -26,6 +27,7 @@ import {
   leverGeometry,
   massGeometry,
   facingPose,
+  pistonGeometry,
   seesawGeometry,
   springboardGeometry,
   type LeverPosition,
@@ -56,8 +58,8 @@ interface SimulationVector {
   readonly y: number;
 }
 
-type SimulationBodyRole = 'primary' | 'base' | 'board' | 'handle';
-type SimulationBodyType = 'static' | 'dynamic';
+type SimulationBodyRole = 'primary' | 'base' | 'board' | 'handle' | 'piston';
+type SimulationBodyType = 'static' | 'kinematic' | 'dynamic';
 
 export interface SimulationBodyState {
   readonly placementId: string;
@@ -127,6 +129,12 @@ type SimulationDeviceState =
       readonly kind: 'springboard';
       /** 0 at rest, 1 fully squashed by a landing; drawn only. */
       readonly compression: number;
+    }
+  | {
+      readonly placementId: string;
+      readonly kind: 'piston';
+      /** 0 retracted, 1 fully extended. */
+      readonly extension: number;
     };
 
 interface SimulationSensorEventFields {
@@ -260,6 +268,17 @@ interface BarrierRecord {
 interface SpringboardRecord {
   readonly placementId: string;
   compression: number;
+}
+
+interface PistonRecord {
+  readonly placementId: string;
+  readonly body: Body;
+  readonly sourceId: string | undefined;
+  readonly homePosition: Vec2Value;
+  readonly axis: Vec2Value;
+  buttonPressed: boolean;
+  phase: 'retracted' | 'extending' | 'extended' | 'retracting';
+  extension: number;
 }
 
 interface SensorRecord {
@@ -412,6 +431,9 @@ const SPRINGBOARD_RESTITUTION = 1;
 const SPRINGBOARD_FULL_SQUASH_SPEED = 8;
 const SPRINGBOARD_RELAX_RATE = 5;
 
+/** A short, forceful stroke that can launch a ball across the visible scene. */
+const PISTON_SPEED = 12;
+
 /** A box fixture covering a footprint given relative to the body's origin. */
 const rectBox = ({ x, y, width, height }: WorldRect) =>
   new Box(width / 2, height / 2, new Vec2(x + width / 2, y + height / 2), 0);
@@ -478,10 +500,10 @@ const assertPositiveSafeInteger = (value: number, label: string): void => {
 };
 
 const bodyType = (body: Body): SimulationBodyType => {
-  const type = body.getType();
-  if (type === 'static') return 'static';
-  if (type === 'dynamic') return 'dynamic';
-  throw new Error(`Type de corps physique non exposable : ${type}.`);
+  if (body.isStatic()) return 'static';
+  if (body.isKinematic()) return 'kinematic';
+  if (body.isDynamic()) return 'dynamic';
+  throw new Error('Type de corps physique non exposable.');
 };
 
 class PlanckSimulationSession implements SimulationSession {
@@ -506,6 +528,7 @@ class PlanckSimulationSession implements SimulationSession {
   #barriers: BarrierRecord[] = [];
   #springboards: SpringboardRecord[] = [];
   #springboardPlatforms = new Map<Fixture, SpringboardRecord>();
+  #pistons: PistonRecord[] = [];
   #sensors = new Map<Fixture, SensorRecord>();
   #activeSensorContacts = new Map<string, number>();
   #events: SimulationSensorEvent[] = [];
@@ -643,6 +666,13 @@ class PlanckSimulationSession implements SimulationSession {
             placementId,
             kind: 'springboard',
             compression,
+          }),
+        ),
+        ...this.#pistons.map(
+          ({ placementId, extension }): SimulationDeviceState => ({
+            placementId,
+            kind: 'piston',
+            extension,
           }),
         ),
       ],
@@ -833,6 +863,13 @@ class PlanckSimulationSession implements SimulationSession {
           break;
         case 'springboard':
           this.#createSpringboard(
+            placement.id,
+            placement.transform.position,
+            placement.transform.rotation,
+          );
+          break;
+        case 'piston':
+          this.#createPiston(
             placement.id,
             placement.transform.position,
             placement.transform.rotation,
@@ -1136,6 +1173,7 @@ class PlanckSimulationSession implements SimulationSession {
   /** Reads every controller and sets the state of the devices it commands. */
   #commandDevices(): void {
     this.#commandConveyors();
+    this.#commandPistons();
     for (const magnet of this.#electroMagnets) {
       const button = this.#buttons.find(({ placementId }) => placementId === magnet.sourceId);
       magnet.active = magnet.ownActive !== (button !== undefined && button.contacts > 0);
@@ -1149,6 +1187,51 @@ class PlanckSimulationSession implements SimulationSession {
     for (const barrier of this.#barriers) {
       const active = barrier.sourceId !== undefined && this.#controllerActive(barrier.sourceId);
       barrier.open = barrier.ownOpen !== active;
+    }
+  }
+
+  /** A piston follows its button while pressed and retracts as soon as it is released. */
+  #commandPistons(): void {
+    for (const piston of this.#pistons) {
+      const button = this.#buttons.find(({ placementId }) => placementId === piston.sourceId);
+      const pressed = button !== undefined && button.contacts > 0;
+      const risingEdge = pressed && !piston.buttonPressed;
+      piston.buttonPressed = pressed;
+
+      // A momentary press completes its outward stroke before auto-retracting.
+      // A sustained press holds the plate out, and a new press can reverse a return.
+      if (risingEdge && (piston.phase === 'retracted' || piston.phase === 'retracting')) {
+        piston.phase = 'extending';
+      }
+      if (piston.phase === 'extended' && !pressed) piston.phase = 'retracting';
+
+      const target = piston.phase === 'extending' || piston.phase === 'extended' ? 1 : 0;
+      const distance = piston.extension * pistonGeometry.travel;
+      const remaining = target * pistonGeometry.travel - distance;
+      if (Math.abs(remaining) < 1e-6) {
+        piston.body.setLinearVelocity(new Vec2(0, 0));
+        continue;
+      }
+      const speed =
+        Math.sign(remaining) * Math.min(PISTON_SPEED, Math.abs(remaining) / this.#fixedStepSeconds);
+      piston.body.setLinearVelocity(new Vec2(piston.axis.x * speed, piston.axis.y * speed));
+    }
+  }
+
+  /** Reads the kinematic slider's progress after the fixed physics step. */
+  #trackPistons(): void {
+    for (const piston of this.#pistons) {
+      const position = piston.body.getPosition();
+      const dx = position.x - piston.homePosition.x;
+      const dy = position.y - piston.homePosition.y;
+      const travelled = dx * piston.axis.x + dy * piston.axis.y;
+      piston.extension = Math.max(0, Math.min(1, travelled / pistonGeometry.travel));
+      if (piston.phase === 'extending' && piston.extension >= 1) {
+        piston.phase = 'extended';
+        if (!piston.buttonPressed) piston.phase = 'retracting';
+      } else if (piston.phase === 'retracting' && piston.extension <= 0) {
+        piston.phase = 'retracted';
+      }
     }
   }
 
@@ -1374,6 +1457,48 @@ class PlanckSimulationSession implements SimulationSession {
     this.#springboardPlatforms.set(platform, record);
   }
 
+  #createPiston(placementId: string, position: SimulationVector, rotation: number): void {
+    const world = this.#requireWorld();
+    const axis = new Vec2(Math.cos(rotation), Math.sin(rotation));
+    const homePosition = new Vec2(
+      position.x + pistonGeometry.homeOffset.x * axis.x,
+      position.y + pistonGeometry.homeOffset.x * axis.y,
+    );
+    const housing = world.createBody({
+      type: 'static',
+      position: new Vec2(position.x, position.y),
+      angle: rotation,
+    });
+    this.#bodies.push({ placementId, role: 'base', handle: housing });
+    this.#createFixture(housing, {
+      shape: new Polygon(pistonGeometry.housing.polygon.map(({ x, y }) => new Vec2(x, y))),
+      friction: 0.5,
+    });
+
+    const slider = world.createBody({
+      type: 'kinematic',
+      position: homePosition,
+      angle: rotation,
+      bullet: true,
+    });
+    this.#bodies.push({ placementId, role: 'piston', handle: slider });
+    this.#createFixture(slider, {
+      shape: new Polygon(pistonGeometry.plate.polygon.map(({ x, y }) => new Vec2(x, y))),
+      friction: 0.5,
+    });
+    this.#createFixture(slider, { shape: rectBox(pistonGeometry.rod.footprint), friction: 0.5 });
+    this.#pistons.push({
+      placementId,
+      body: slider,
+      sourceId: this.#level.wires.find(({ targetId }) => targetId === placementId)?.sourceId,
+      homePosition,
+      axis,
+      buttonPressed: false,
+      phase: 'retracted',
+      extension: 0,
+    });
+  }
+
   /** A landing squashes the spring in proportion to its speed; drawn only. */
   #squashSpringboard(contact: Contact): void {
     const onA = this.#springboardPlatforms.get(contact.getFixtureA());
@@ -1567,6 +1692,7 @@ class PlanckSimulationSession implements SimulationSession {
     }
     this.#relaxSpringboards();
     this.#sinkButtons();
+    this.#trackPistons();
     this.#commandDevices();
     this.#moveBarriers();
     this.#spinFans();
@@ -1687,6 +1813,7 @@ class PlanckSimulationSession implements SimulationSession {
     this.#barriers = [];
     this.#springboards = [];
     this.#springboardPlatforms.clear();
+    this.#pistons = [];
     this.#sensors.clear();
     this.#activeSensorContacts.clear();
   }

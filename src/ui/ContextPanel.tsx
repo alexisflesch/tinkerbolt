@@ -61,7 +61,7 @@ const barrierStateFromValue = (value: string): 'closed' | 'open' | null =>
 
 /**
  * The panel for the currently selected placement: move; rotate beams freely,
- * levers within their supported range, and fans, barriers or springboards by
+ * levers within their supported range, and fans, barriers, pistons or springboards by
  * quarter turns; and remove. Renders `null` when nothing is selected or outside
  * `'construction'` — `BoardShell` hands it to `InspectorDrawer`, which shows it
  * in the right rail (wide) or as a compact sheet, next to `LevelResult`. The two are mutually exclusive by

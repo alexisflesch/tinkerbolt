@@ -8,6 +8,8 @@ export const beamPropertiesSchema = z.strictObject({
 /** Initial state, inverted while the wired button is pressed (ADR 0019). */
 export const electroMagnetPropertiesSchema = z.strictObject({ state: z.enum(['on', 'off']) });
 export const boxPropertiesSchema = z.strictObject({ material: z.enum(['wood', 'metal']) });
+/** A piston always starts retracted; its transient stroke is runtime state (ADR 0019). */
+export const pistonPropertiesSchema = z.strictObject({});
 export const seesawPropertiesSchema = z.strictObject({});
 /** One sprite and one physical mass per weight; a new weight extends the enum. */
 export const massPropertiesSchema = z.strictObject({
@@ -211,6 +213,16 @@ export const initialObjectFamilyRegistry = createObjectFamilyRegistry([
     },
     capabilities: ['movable', 'rotatable'],
     propertiesSchema: electroMagnetPropertiesSchema,
+  },
+  {
+    id: 'piston',
+    dataVersion: 1,
+    catalogue: {
+      label: 'Piston',
+      description: 'Propulse les objets en sortant',
+    },
+    capabilities: ['movable', 'rotatable'],
+    propertiesSchema: pistonPropertiesSchema,
   },
   {
     id: 'barrier',

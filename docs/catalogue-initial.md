@@ -11,7 +11,7 @@ ajoutent avec leurs assets : la **masse**, le **levier** et le **convoyeur**,
 reliés par des fils de commande ([ADR 0009](decisions/0009-control-wires.md)).
 Le 26 septembre 2026, quatre autres arrivent avec leurs assets : le **bouton**,
 le **ventilateur**, la **barrière** et le **tremplin**. Le catalogue compte donc
-treize familles après C9b :
+quatorze familles après C9c :
 
 - balle ;
 - panier ;
@@ -24,6 +24,7 @@ treize familles après C9b :
 - bouton ;
 - ventilateur ;
 - électroaimant ;
+- piston ;
 - barrière ;
 - tremplin.
 
@@ -211,8 +212,8 @@ tout.
 
 ### Rôle
 
-Un contrôleur momentané : il commande un ventilateur, une barrière ou un électroaimant tant
-qu'un objet appuie dessus.
+Un contrôleur momentané : il commande un ventilateur, une barrière, un
+électroaimant ou un piston tant qu'un objet appuie dessus.
 
 ### Modèle
 
@@ -273,6 +274,31 @@ magnétiques dans cette tranche ([ADR 0019](decisions/0019-c9-object-contracts.m
 - déplacement, rotation et retrait selon les permissions du niveau ;
 - deux sprites on/off cadrés ensemble et une vignette en marche ; le collider,
   la sélection et le rendu gardent la même empreinte dans les deux états.
+
+## Piston
+
+### Rôle
+
+Une tige qui sort pour propulser les objets devant elle. Elle reste sortie tant
+que le bouton est enfoncé, puis revient en position fermée.
+
+### Modèle livré en C9c
+
+- une famille `piston`, composée d’un boîtier fixe, d’une tige et d’une plaque
+  mobile ; ces composants internes ne sont pas des placements séparés ;
+- une seule position initiale, fermée ; aucun réglage d’état initial n’est
+  persisté ;
+- un front d’activation termine la course de sortie même après un appui bref ;
+  le piston reste sorti tant que le bouton est enfoncé, puis se rétracte
+  automatiquement et peut être réutilisé ;
+- rotation et permissions de mouvement selon le niveau ; le piston propulse les
+  corps dynamiques par contact avec sa plaque, au pas fixe ;
+- empreinte proche du ventilateur (1,395 × 0,756 unité monde), course de 0,414
+  unité et vitesse de sortie de 12 unités monde par seconde ; une balle posée
+  dessus atteint et dépasse le bord haut d’une scène de 10 unités dans le test
+  physique ;
+- un puzzle jouable vérifie la poussée ; les illustrations ne fixent pas les
+  valeurs physiques.
 
 ## Barrière
 
@@ -379,10 +405,14 @@ La progression de la campagne et la géométrie mesurée de chaque niveau sont d
 - une caisse de chaque matériau tombe, repose sur une face et revient à sa pose au reset ;
 - les deux variantes suivent le convoyeur et ouvrent une barrière par un bouton ;
 - la caisse en bois est plus facile à pousser par un ventilateur que la caisse métallique ;
-- l’électroaimant n’accepte qu’un bouton et ne touche qu’aux caisses métalliques ;
+- l’électroaimant et le piston n’acceptent qu’un bouton ; l’électroaimant ne
+  touche qu’aux caisses métalliques ;
 - sa portée, l’inversion sous appui, le retour à l’état initial et son reset
   sont testés au pas fixe ;
 - un puzzle retire une caisse métallique qui bouche la chute vers le panier ;
+- un piston réutilisable propulse un objet lorsqu’un bouton est brièvement
+  enfoncé ; il reste sorti pendant un appui maintenu, puis revient fermé ; le
+  démarrage toujours fermé est testé ;
 - une masse posée sur une poutre repose à la hauteur de son empreinte ;
 - une masse lâchée sur une bascule catapulte la balle posée à l'autre bout ;
 - un levier tient chacun de ses trois crans, sans dépasser ses butées ;

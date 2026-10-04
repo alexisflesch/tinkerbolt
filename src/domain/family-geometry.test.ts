@@ -10,6 +10,7 @@ import {
   massGeometry,
   facingPose,
   mirroredRotation,
+  pistonGeometry,
   seesawGeometry,
   springboardGeometry,
   type WorldPolygon,
@@ -112,6 +113,16 @@ describe('géométrie des familles', () => {
     );
     expectPolygonToFillFootprint(barrierGeometry.pillar.polygon, barrierGeometry.pillar.footprint);
     expectPolygonToFillFootprint(fanGeometry.body.polygon, fanGeometry.body.footprint);
+  });
+
+  it('garde le piston à une taille proche du ventilateur', () => {
+    const pistonArea = pistonGeometry.footprint.width * pistonGeometry.footprint.height;
+    const fanArea = fanGeometry.body.footprint.width * fanGeometry.body.footprint.height;
+
+    expect(pistonGeometry.footprint.width).toBeLessThan(fanGeometry.body.footprint.width * 1.2);
+    expect(pistonGeometry.footprint.height).toBeLessThan(fanGeometry.body.footprint.height * 1.2);
+    expect(pistonArea).toBeGreaterThan(fanArea * 0.7);
+    expect(pistonArea).toBeLessThan(fanArea * 1.25);
   });
 
   it('pose le capuchon du bouton et le plateau du tremplin au sommet de leur empreinte', () => {

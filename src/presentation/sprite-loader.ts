@@ -21,6 +21,7 @@ const spriteAssetsByFamily = {
   mass: ['mass-10kg'],
   box: ['box-wood', 'box-metal'],
   'electro-magnet': ['electro-magnet-off', 'electro-magnet-on'],
+  piston: ['piston-rod', 'piston-housing', 'piston-plate'],
   lever: ['lever-base', 'lever-handle'],
   // Both belts are loaded: which one is drawn depends on the belt's direction.
   conveyor: ['conveyor-belt', 'conveyor-belt-left', 'conveyor-frame'],

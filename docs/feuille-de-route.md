@@ -33,11 +33,16 @@ différée selon l’instruction active. **C9b, électroaimant, est livré**. Il
 démarre actif sans fil par défaut dans le catalogue,
 garde son état initial `on/off` au niveau et l’inverse temporairement sous
 l’appui d’un bouton ; seule la caisse métallique est attirée, dans une portée
-de 2,8 unités. La gate globale passe à 1 296 Vitest et 92 E2E v1. La recette
-visuelle reste différée selon l’instruction active. Suite : C9c piston, C9d
-minuteur, C7, C6, C4, C4a et C10. Les ADR 0011/0015 et 0017 fixent les contrats
-de stockage et de reprise ; les quatre stockages utilisent Dexie avec ports
-asynchrones.
+de 2,8 unités. La gate globale passe à 1 296 Vitest et 92 E2E v1. **C9c,
+piston, est livré** : gabarit proche du ventilateur, course de 0,414 unité et
+vitesse de 12 unités/s ; une balle posée dessus dépasse le bord haut d’une scène
+verticale de 10 unités. Il démarre fermé ; un appui même bref lance toute la
+course de sortie, il reste sorti tant que le bouton est maintenu, puis se
+rétracte automatiquement. Sa plaque propulse les corps dynamiques dans un puzzle
+jouable. La gate globale clôturant C9c passe avec 1 315 tests Vitest et 92 E2E
+v1. Suite : C9d minuteur, C7, C6, C4, C4a et C10. Les ADR 0011/0015 et 0017
+fixent les contrats de stockage et de reprise ; les quatre stockages utilisent
+Dexie avec ports asynchrones.
 
 ## Règles de la reprise active
 
@@ -149,14 +154,14 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C8   | Inventaire exact des assets et contrats des nouveaux objets             | C0.                                                             |
 | Livré                 | C9a  | Famille `box`, variante bois/métal                                      | C8 ; contrats acceptés dans ADR 0018/0019 et ADR 0009.          |
 | Livré                 | C9b  | Électroaimant                                                           | C9a ; comportement accepté dans ADR 0019.                       |
-| 1                     | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
-| 2                     | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
-| 3                     | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
-| 4                     | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| 5                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
-| 6                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Livré                 | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
+| 1                     | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
+| 2                     | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées.                                        |
+| 3                     | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
+| 4                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
+| 5                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5   | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 7                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 6                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
 | 9                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
 | 10                    | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
 | 11                    | M2   | Interface portrait                                                      | M1.                                                             |
@@ -334,7 +339,7 @@ et catalogue. Distinguer variantes d’une famille existante et nouvelles famill
 | ----------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `art/assets/boxes/wooden-box.png`, `metallic-box.png` | Famille `box`, matériau bois/métal | Seule la métallique est attirée ; choisir et tester forme, dimensions et masses.                                           |
 | `art/assets/electro-magnet/`                          | Électroaimant                      | Caisse métallique seule, commandé par bouton (pas le levier), portée comparable ou un peu inférieure au ventilateur.       |
-| `art/assets/piston/`                                  | Piston                             | Bouton maintenu : sorti ; relâché : retour à la position de départ en propulsant les objets. Course/vitesse à régler.      |
+| `art/assets/piston/`                                  | Piston                             | Position initiale fermée uniquement ; un appui même bref termine la sortie, le piston reste dehors tant que le bouton est appuyé, puis se rétracte. Course/vitesse à régler. |
 | `art/assets/timer/`                                   | Minuteur                           | Inséré dans un fil unique, retarde chaque changement d’état ; 1–10 s réglables en Atelier, fixés par niveau en résolution. |
 
 - Contrats confirmés dans les [ADR 0018](decisions/0018-level-document-v3.md), [0019](decisions/0019-c9-object-contracts.md) et [0009](decisions/0009-control-wires.md) ; l’ordre est accepté. Seuls les réglages physiques restent à équilibrer dans les scènes de test.
@@ -794,6 +799,29 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   à son SHA-256 attendu ; `git diff --check` passe.
 - Aucune capture ni vérification d’image selon l’instruction de l’auteur pour
   cette session ; validation visuelle différée. Prochaine tâche : C9c.
+
+### C9c — Piston — livré le 4 octobre 2026
+
+- Famille v3 `piston`, à géométrie composite (boîtier fixe, tige et plaque
+  mobile), sans propriété d’état initial : il commence toujours fermé.
+- Retour de test de l’auteur intégré : gabarit réduit à 1,395 × 0,756 unité
+  monde, surface comparable au ventilateur ; course de 0,414 unité à 12 unités
+  monde/s. Une balle placée sur la tête, près du bas d’une scène verticale de
+  10 unités, est propulsée au-delà du bord haut.
+- Un front du bouton lance toujours la course complète, même après un appui
+  bref. Le piston reste sorti tant que le bouton est maintenu, puis revient
+  automatiquement ; il est réutilisable. La rotation oriente la course.
+- Sprites de boîtier, tige et plaque ainsi que vignette exportés depuis `art/`.
+  Catalogue auteur, inventaire, placement, sérialisation, partage et rendu
+  intègrent la famille. Un puzzle vérifie la poussée et la capture de la balle.
+- Tests de géométrie, taille, rendu, codecs, commande maintenue ou brève, reset,
+  orientation et éjection verticale. La liste de cibles des tests de câblage
+  inclut le piston.
+- `pnpm check` vert : **1 315 Vitest, 92 E2E v1**, 6 documents embarqués valides,
+  build et précache verts. Le fichier d’essai de l’auteur a retrouvé son
+  SHA-256 attendu ; `git diff --check` passe.
+- La recette visuelle reste différée selon l’instruction de l’auteur. Prochaine
+  tâche : C9d minuteur.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

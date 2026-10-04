@@ -4,6 +4,7 @@ import {
   ballPropertiesSchema,
   boxPropertiesSchema,
   electroMagnetPropertiesSchema,
+  pistonPropertiesSchema,
   barrierPropertiesSchema,
   basketPropertiesSchema,
   beamPropertiesSchema,
@@ -133,6 +134,12 @@ const objectPlacementSchema = z.discriminatedUnion('type', [
     type: z.literal('electro-magnet'),
     props: electroMagnetPropertiesSchema,
   }),
+  z.strictObject({
+    ...placementFields,
+    toPlace: z.literal(true).optional(),
+    type: z.literal('piston'),
+    props: pistonPropertiesSchema,
+  }),
 ]);
 
 const inventoryFields = {
@@ -235,6 +242,7 @@ const inventoryEntrySchema = z.discriminatedUnion('type', [
     type: z.literal('electro-magnet'),
     props: electroMagnetPropertiesSchema,
   }),
+  z.strictObject({ ...inventoryFields, type: z.literal('piston'), props: pistonPropertiesSchema }),
 ]);
 
 /**
@@ -567,14 +575,16 @@ type PlacementType = ObjectPlacement['type'];
 
 /**
  * ADR 0009: whether a `source` may command a `target`. Levers and buttons
- * command; conveyors, fans, barriers and electro-magnets obey. A button has two states and a
+ * command; conveyors, fans, barriers, electro-magnets and pistons obey. A button has two states and a
  * conveyor three: a button never commands a conveyor. Electro-magnets accept
  * only a button (ADR 0019).
  */
 const canCommand = (source: PlacementType, target: PlacementType): boolean => {
   if (source === 'lever') return target === 'conveyor' || target === 'fan' || target === 'barrier';
   if (source === 'button')
-    return target === 'fan' || target === 'barrier' || target === 'electro-magnet';
+    return (
+      target === 'fan' || target === 'barrier' || target === 'electro-magnet' || target === 'piston'
+    );
   return false;
 };
 
@@ -584,6 +594,7 @@ const controlTargets: ReadonlySet<PlacementType> = new Set([
   'fan',
   'barrier',
   'electro-magnet',
+  'piston',
 ]);
 
 /** Why `type` cannot start a wire, or `null` when it can (ADR 0009). */
@@ -602,10 +613,11 @@ export const controlWireTargetIssue = (
   target: PlacementType | undefined,
 ): string | null => {
   if (target === undefined || !controlTargets.has(target)) {
-    return 'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière ou un électroaimant placés.';
+    return 'Un fil doit arriver sur un convoyeur, un ventilateur, une barrière, un électroaimant ou un piston placés.';
   }
   if (source !== undefined && controlSources.has(source) && !canCommand(source, target)) {
     if (target === 'electro-magnet') return 'Seul un bouton commande un électroaimant.';
+    if (target === 'piston') return 'Seul un bouton commande un piston.';
     return 'Un bouton ne commande pas de convoyeur : seul un levier en donne le sens.';
   }
   return null;

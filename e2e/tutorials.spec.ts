@@ -52,6 +52,9 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
       case 'electro-magnet':
         label = 'Électroaimant';
         break;
+      case 'piston':
+        label = 'Piston';
+        break;
       case 'springboard':
         label = 'Tremplin';
         break;

@@ -819,6 +819,9 @@ const fan = (rotation: number, state: string, position = { x: 0, y: 0 }) =>
 const barrier = (state: string, rotation = 0) =>
   placed('barrier-1', 'barrier', { x: 0, y: 0 }, { state }, rotation);
 
+const piston = (rotation = 0, position = { x: 0, y: 0 }) =>
+  placed('piston-1', 'piston', position, {}, rotation);
+
 describe('port physique candidat-neutre', () => {
   it('construit une projection éphémère avec les corps et le pivot attendus', () => {
     const level = createLevelDocument();
@@ -1991,5 +1994,119 @@ describe('port physique candidat-neutre', () => {
         expect(device(session.readState(), 'springboard-1')).toMatchObject({ compression: 0 });
       },
     );
+  });
+});
+
+describe('piston commandé par bouton', () => {
+  it('démarre fermé, pousse les objets devant lui et reste sorti pendant un appui maintenu', () => {
+    const level = createDeviceLevelDocument(
+      [
+        piston(),
+        placed('button-1', 'button', { x: 5, y: 0 }),
+        placed('press-ball', 'ball', { x: 5, y: -0.55 }),
+        placed('payload', 'ball', { x: 0.95, y: 0.2 }),
+      ],
+      [{ id: 'wire-1', sourceId: 'button-1', targetId: 'piston-1' }],
+    );
+
+    withSession(level, (session) => {
+      expect(device(session.readState(), 'piston-1')).toMatchObject({
+        kind: 'piston',
+        extension: 0,
+      });
+
+      let wasPropelled = false;
+      for (let step = 0; step < 180; step += 1) {
+        session.advanceFixedSteps(1);
+        if (body(session.readState(), 'payload', 'primary').linearVelocity.x > 1) {
+          wasPropelled = true;
+        }
+      }
+
+      expect(device(session.readState(), 'button-1')).toMatchObject({ pressed: true });
+      expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 1 });
+      expect(wasPropelled).toBe(true);
+
+      session.advanceFixedSteps(60);
+      expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 1 });
+      session.reset();
+      expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 0 });
+    });
+  });
+
+  it('termine sa sortie après un appui bref, puis se rétracte automatiquement', () => {
+    const level = createDeviceLevelDocument(
+      [
+        piston(),
+        placed('button-1', 'button', { x: 0.5, y: 0.45 }),
+        placed('press-ball', 'ball', { x: 0.75, y: -0.1 }),
+      ],
+      [{ id: 'wire-1', sourceId: 'button-1', targetId: 'piston-1' }],
+    );
+
+    withSession(level, (session) => {
+      let maximumExtension = 0;
+      for (let step = 0; step < 120; step += 1) {
+        session.advanceFixedSteps(1);
+        const current = device(session.readState(), 'piston-1');
+        if (current.kind === 'piston')
+          maximumExtension = Math.max(maximumExtension, current.extension);
+      }
+
+      expect(maximumExtension).toBeGreaterThan(0.95);
+      expect(device(session.readState(), 'button-1')).toMatchObject({ pressed: false });
+      expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 0 });
+      expect(body(session.readState(), 'press-ball', 'primary').position.x).toBeGreaterThan(0.75);
+    });
+  });
+
+  it('oriente la course du piston selon sa rotation', () => {
+    const level = createDeviceLevelDocument(
+      [
+        piston(Math.PI / 2),
+        placed('button-1', 'button', { x: 5, y: 0 }),
+        placed('press-ball', 'ball', { x: 5, y: -1 }),
+      ],
+      [{ id: 'wire-1', sourceId: 'button-1', targetId: 'piston-1' }],
+    );
+
+    withSession(level, (session) => {
+      session.advanceFixedSteps(120);
+      expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 1 });
+      expect(body(session.readState(), 'piston-1', 'piston').position.x).toBeCloseTo(0, 3);
+      expect(body(session.readState(), 'piston-1', 'piston').position.y).toBeCloseTo(0.713, 3);
+    });
+  });
+
+  it('éjecte verticalement une balle sur toute la hauteur de la scène', () => {
+    const scene = { min: { x: -6, y: -5 }, max: { x: 6, y: 5 } };
+    const level = levelDocumentSchema.parse({
+      schemaVersion: 3,
+      id: 'piston-full-screen-launch',
+      metadata: { title: 'Piston sur toute la hauteur' },
+      objects: [
+        placed('ball-1', 'ball', { x: -5, y: 4 }),
+        placed('basket-1', 'basket', { x: -4, y: 4 }),
+        piston(-Math.PI / 2, { x: 0, y: 4.3 }),
+        placed('shot-ball', 'ball', { x: 0, y: 3.479 }),
+        placed('button-1', 'button', { x: 4, y: 0 }),
+        placed('press-ball', 'ball', { x: 4, y: -0.55 }),
+      ],
+      inventory: [],
+      goal: { type: 'basket', ballId: 'ball-1', basketId: 'basket-1' },
+      buildZones: [],
+      wires: [{ id: 'wire-1', sourceId: 'button-1', targetId: 'piston-1' }],
+      scene,
+    });
+
+    withSession(level, (session) => {
+      let highestY = body(session.readState(), 'shot-ball', 'primary').position.y;
+      for (let step = 0; step < 120; step += 1) {
+        session.advanceFixedSteps(1);
+        highestY = Math.min(highestY, body(session.readState(), 'shot-ball', 'primary').position.y);
+      }
+
+      expect(highestY).toBeLessThan(scene.min.y);
+    });
   });
 });

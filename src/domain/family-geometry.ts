@@ -35,6 +35,40 @@ export const boxGeometry = { footprint: centeredRect(0.8, 0.8) } as const;
 /** C9b gameplay footprint and radial field; independent of source pixels. */
 export const electroMagnetGeometry = { footprint: centeredRect(1, 0.8), range: 2.8 } as const;
 
+/** C9c piston: a fixed horizontal housing and a button-driven sliding assembly. */
+export const pistonGeometry = {
+  footprint: { x: -0.46, y: -0.3782, width: 1.3952, height: 0.7564 },
+  housing: {
+    footprint: { x: -0.46, y: -0.2527, width: 0.92, height: 0.5053 },
+    polygon: polygon([
+      [-0.4263, -0.0409],
+      [-0.2932, -0.1925],
+      [-0.0309, -0.2527],
+      [0.3437, -0.2527],
+      [0.4488, -0.093],
+      [0.3413, 0.2519],
+      [-0.2908, 0.2414],
+      [-0.4303, 0.1364],
+    ]),
+  },
+  plate: {
+    footprint: { x: -0.2222, y: -0.3782, width: 0.4444, height: 0.7564 },
+    polygon: polygon([
+      [-0.2198, -0.156],
+      [-0.0537, -0.3774],
+      [0.1708, -0.375],
+      [0.2206, -0.3212],
+      [0.2214, 0.3228],
+      [0.1684, 0.3774],
+      [-0.0505, 0.3774],
+      [-0.2222, 0.1504],
+    ]),
+  },
+  rod: { footprint: { x: -0.736, y: -0.0374, width: 0.736, height: 0.0749 } },
+  homeOffset: { x: 0.299, y: 0 },
+  travel: 0.414,
+} as const;
+
 const BALL_RADIUS = 0.3;
 
 export const ballGeometry = {

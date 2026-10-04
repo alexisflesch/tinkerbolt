@@ -20,12 +20,14 @@ describe('registre des familles d’objet', () => {
       'button',
       'fan',
       'electro-magnet',
+      'piston',
       'barrier',
       'springboard',
     ]);
     expect(initialObjectFamilyRegistry.get('mass')?.catalogue.label).toBe('Masse');
     expect(initialObjectFamilyRegistry.get('fan')?.catalogue.label).toBe('Ventilateur');
     expect(initialObjectFamilyRegistry.get('springboard')?.catalogue.label).toBe('Tremplin');
+    expect(initialObjectFamilyRegistry.get('piston')?.catalogue.label).toBe('Piston');
 
     expect(initialObjectFamilyRegistry.get('ball')?.catalogue.label).toBe('Balle');
     expect(initialObjectFamilyRegistry.get('basket')?.catalogue.label).toBe('Panier');
@@ -56,6 +58,9 @@ describe('registre des familles d’objet', () => {
     expect(ball?.propertiesSchema.safeParse({}).success).toBe(true);
     expect(basket?.propertiesSchema.safeParse({}).success).toBe(true);
     expect(seesaw?.propertiesSchema.safeParse({}).success).toBe(true);
+    const piston = initialObjectFamilyRegistry.get('piston');
+    expect(piston?.propertiesSchema.safeParse({}).success).toBe(true);
+    expect(piston?.propertiesSchema.safeParse({ state: 'on' }).success).toBe(false);
     expect(ball?.propertiesSchema.safeParse({ color: 'red' }).success).toBe(false);
 
     for (const size of ['short', 'medium', 'long']) {
