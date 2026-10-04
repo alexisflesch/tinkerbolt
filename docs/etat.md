@@ -5,7 +5,8 @@ validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
 C3.2, C4, C4a, C8, C9a à C9d, C7 et C6 implémentés**. C5 est implémenté ; sa
 recette visuelle reste différée. `pnpm check:fast` passe avec 1 353 tests
 Vitest et le build passe. Les 2 E2E C4a et les 4 nouveaux E2E C10 passent aux
-deux formats desktop ; le scénario de victoire attend le lancement après la
+deux formats desktop ; 16 E2E ciblés C3/C4a/C10, fils et PWA passent sans
+captures ni traces. Le scénario de victoire attend le lancement après la
 sauvegarde asynchrone. C10 reste en cours : `pnpm check` complet et recette
 visuelle restent à faire, car ils produisent des captures interdites par
 l’instruction active. U3 reste abandonnée.

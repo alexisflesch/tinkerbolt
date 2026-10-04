@@ -425,6 +425,8 @@ Pour chacune :
   et le redimensionnement par glissement ; les 2 E2E C10 partagés valident les
   familles et le fil à minuteur dans un niveau v3 ; les 2 E2E desktop C10
   valident accueil, splash, icônes et victoire à 1440 × 900 et 1280 × 720.
+- Une reprise isolée sans capture ni trace de 16 E2E ciblés (C3, fils, PWA,
+  C4a et C10) passe également aux deux formats desktop concernés.
 - Le test de victoire attend maintenant l’état « Simulation en cours » avant
   d’avancer l’horloge simulée : le lancement peut attendre la sauvegarde
   asynchrone. L’échec précédemment observé à 1280 × 720 disparaît avec cette
