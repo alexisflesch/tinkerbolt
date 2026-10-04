@@ -498,8 +498,8 @@ suite ; **C3 est maintenant livré**. C8 et C9a à C9d sont clôturés après
 l’audit, les arbitrages et l’intégration des quatre familles. L’ordre demandé
 par l’auteur, **C7 → C6 → C4/C4a → C10**, est consigné dans la
 [feuille de route active](feuille-de-route.md) : C7, C6 et C4 sont livrés ;
-C4a est maintenant implémenté et validé de façon ciblée ; C10 reste la
-prochaine recette intégrée. La disposition du splash et ses
+C4a est maintenant implémenté et validé de façon ciblée ; C10 est en cours,
+avec gate globale et recette visuelle en attente. La disposition du splash et ses
 captures responsive ont été validées par l’auteur pour C6. L’auteur a
 confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
 du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.

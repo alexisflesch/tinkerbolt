@@ -21,8 +21,8 @@ Les dépendances de chaque tâche sont dans la feuille de route. Les contrats C9
 l’ordre, le modèle de caisse et le réglage initial du minuteur sont confirmés
 dans les ADR 0018/0019 et 0009. La soumission Grist reste ouverte. C2 est
 accepté, C2a, C3 et C4 sont livrés. C8, C9a à C9d, C7 et C6 sont clôturés ; C4a
-est implémenté et testé de façon ciblée, la gate intégrée restant à C10. La
-prochaine tâche active est C10. La poignée C4 se redimensionne par glissement
+est implémenté et testé de façon ciblée. C10 est en cours : la gate intégrée et
+la recette restent à finaliser. La poignée C4 se redimensionne par glissement
 avec aperçu et aimantation aux trois tailles ; les maquettes C4/C4a ont été
 examinées et leurs positions corrigées sur instruction de
 l’auteur. Les autres maquettes restent à valider. C0 ne constate ni

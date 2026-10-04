@@ -77,8 +77,8 @@ façon ciblée** : propriétés fermées par défaut, clic simple distinct d’u
 ou d’un geste de poignée, liste d’objets accessible, `pnpm check:fast` vert
 (1 353 Vitest), build vert et 2 E2E C4a verts aux deux formats desktop. La gate
 globale et la recette de l’ensemble sont regroupées dans C10 ; aucune nouvelle
-capture n’est faite selon l’instruction de l’auteur. **La prochaine tâche est
-C10.**
+capture n’est faite selon l’instruction de l’auteur. **C10 est maintenant en
+cours.**
 
 ## Règles de la reprise active
 
@@ -417,6 +417,14 @@ Pour chacune :
 
 ### C10 — Recette des compléments desktop
 
+- **Avancement partiel — 4 octobre.** `pnpm check:fast` passe avec 1 353 tests
+  Vitest ; build, `format:check`, `deadcode` et `content:check` passent aussi.
+  Les parcours navigateur ciblés (reprise C3, éditeur, fils, PWA/splash et
+  fumée) passent après adaptation du test de persistance aux propriétés fermées
+  par défaut ; les 2 E2E C4a passent à 1440 × 900 et 1280 × 720.
+- `pnpm check` et la recette visuelle auteur restent en attente : la gate
+  complète contient des scénarios qui écrivent des captures et l’instruction
+  active demande de n’en produire aucune. C10 n’est donc pas clôturé.
 - Rejouer fil direct et liaison contrôleur → minuteur → dispositif (une unité
   de fil, deux segments, transitions retardées), reprise locale, modification
   de poutre, victoire et nouveaux objets dans un niveau partagé.

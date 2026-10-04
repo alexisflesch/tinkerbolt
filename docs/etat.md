@@ -4,9 +4,10 @@ Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
 C3.2, C4, C4a, C8, C9a à C9d, C7 et C6 implémentés**. C5 est implémenté ; sa
 recette visuelle reste différée. C4a passe `pnpm check:fast` (1 353 tests
-Vitest), le build et ses 2 E2E desktop ciblés ; la gate globale reste à C10
-conformément à l’instruction de ne pas faire de nouvelles captures. U3 reste
-abandonnée.
+Vitest), le build et ses 2 E2E desktop ciblés. C10 est en cours : validateurs
+non visuels et parcours navigateur ciblés passent ; `pnpm check` complet et
+recette visuelle restent à faire, car ils produisent des captures interdites
+par l’instruction active. U3 reste abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
