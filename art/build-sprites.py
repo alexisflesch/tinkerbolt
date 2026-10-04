@@ -414,8 +414,8 @@ save(
 # piston fermé, sa position de départ obligatoire (ADR 0019).
 piston_housing = load("piston/piston-housing.png")
 piston_housing_box = opaque_box(piston_housing)
-PISTON_HOUSING_WIDTH = 0.92
-PISTON_HOME_OFFSET = 0.299
+PISTON_HOUSING_WIDTH = 0.782
+PISTON_HOME_OFFSET = 0.254
 PISTON_TRAVEL = 0.414
 piston_scale = PISTON_HOUSING_WIDTH / (piston_housing_box[2] - piston_housing_box[0])
 piston_origin = (
@@ -449,7 +449,7 @@ piston_plate_sprite = export(
 
 piston_rod = load("piston/piston-rod.png")
 piston_rod_box = opaque_box(piston_rod)
-PISTON_ROD_WIDTH = 0.736
+PISTON_ROD_WIDTH = 0.6256
 piston_rod_height = PISTON_ROD_WIDTH * (piston_rod_box[3] - piston_rod_box[1]) / (
     piston_rod_box[2] - piston_rod_box[0]
 )

@@ -2074,7 +2074,7 @@ describe('piston commandé par bouton', () => {
       session.advanceFixedSteps(120);
       expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 1 });
       expect(body(session.readState(), 'piston-1', 'piston').position.x).toBeCloseTo(0, 3);
-      expect(body(session.readState(), 'piston-1', 'piston').position.y).toBeCloseTo(0.713, 3);
+      expect(body(session.readState(), 'piston-1', 'piston').position.y).toBeCloseTo(0.668, 3);
     });
   });
 
@@ -2101,12 +2101,16 @@ describe('piston commandé par bouton', () => {
 
     withSession(level, (session) => {
       let highestY = body(session.readState(), 'shot-ball', 'primary').position.y;
+      let strongestUpwardSpeed = 0;
       for (let step = 0; step < 120; step += 1) {
         session.advanceFixedSteps(1);
-        highestY = Math.min(highestY, body(session.readState(), 'shot-ball', 'primary').position.y);
+        const shot = body(session.readState(), 'shot-ball', 'primary');
+        highestY = Math.min(highestY, shot.position.y);
+        strongestUpwardSpeed = Math.max(strongestUpwardSpeed, -shot.linearVelocity.y);
       }
 
       expect(highestY).toBeLessThan(scene.min.y);
+      expect(strongestUpwardSpeed).toBeGreaterThan(20);
     });
   });
 });

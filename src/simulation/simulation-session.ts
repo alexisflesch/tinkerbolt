@@ -432,7 +432,7 @@ const SPRINGBOARD_FULL_SQUASH_SPEED = 8;
 const SPRINGBOARD_RELAX_RATE = 5;
 
 /** A short, forceful stroke that can launch a ball across the visible scene. */
-const PISTON_SPEED = 12;
+const PISTON_SPEED = 18;
 
 /** A box fixture covering a footprint given relative to the body's origin. */
 const rectBox = ({ x, y, width, height }: WorldRect) =>
@@ -1226,10 +1226,15 @@ class PlanckSimulationSession implements SimulationSession {
       const dy = position.y - piston.homePosition.y;
       const travelled = dx * piston.axis.x + dy * piston.axis.y;
       piston.extension = Math.max(0, Math.min(1, travelled / pistonGeometry.travel));
-      if (piston.phase === 'extending' && piston.extension >= 1) {
+      if (piston.extension >= 1 - 1e-6) {
+        piston.extension = 1;
+      } else if (piston.extension <= 1e-6) {
+        piston.extension = 0;
+      }
+      if (piston.phase === 'extending' && piston.extension === 1) {
         piston.phase = 'extended';
         if (!piston.buttonPressed) piston.phase = 'retracting';
-      } else if (piston.phase === 'retracting' && piston.extension <= 0) {
+      } else if (piston.phase === 'retracting' && piston.extension === 0) {
         piston.phase = 'retracted';
       }
     }

@@ -35,7 +35,7 @@ garde son état initial `on/off` au niveau et l’inverse temporairement sous
 l’appui d’un bouton ; seule la caisse métallique est attirée, dans une portée
 de 2,8 unités. La gate globale passe à 1 296 Vitest et 92 E2E v1. **C9c,
 piston, est livré** : gabarit proche du ventilateur, course de 0,414 unité et
-vitesse de 12 unités/s ; une balle posée dessus dépasse le bord haut d’une scène
+vitesse de 18 unités/s ; une balle posée dessus dépasse le bord haut d’une scène
 verticale de 10 unités. Il démarre fermé ; un appui même bref lance toute la
 course de sortie, il reste sorti tant que le bouton est maintenu, puis se
 rétracte automatiquement. Sa plaque propulse les corps dynamiques dans un puzzle
@@ -804,10 +804,11 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
 
 - Famille v3 `piston`, à géométrie composite (boîtier fixe, tige et plaque
   mobile), sans propriété d’état initial : il commence toujours fermé.
-- Retour de test de l’auteur intégré : gabarit réduit à 1,395 × 0,756 unité
-  monde, surface comparable au ventilateur ; course de 0,414 unité à 12 unités
-  monde/s. Une balle placée sur la tête, près du bas d’une scène verticale de
-  10 unités, est propulsée au-delà du bord haut.
+- Ajustement après le nouveau test de l’auteur : le sprite et l’empreinte sont
+  réduits à 1,248 × 0,643 unité monde, pour rapprocher le piston du gabarit du
+  ventilateur. La course reste de 0,414 unité ; la tête passe à 18 unités/s et
+  transmet plus de 20 unités/s à la balle, qui traverse toute la hauteur d’une
+  scène de 10 unités. Le puzzle de démonstration reste solvable à cette vitesse.
 - Un front du bouton lance toujours la course complète, même après un appui
   bref. Le piston reste sorti tant que le bouton est maintenu, puis revient
   automatiquement ; il est réutilisable. La rotation oriente la course.

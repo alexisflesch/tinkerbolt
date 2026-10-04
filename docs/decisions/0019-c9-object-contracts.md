@@ -39,10 +39,11 @@ Date : 2026-10-04
   relâché, elle se rétracte automatiquement. Un appui bref, comme celui d’un
   objet qui roule sur le bouton, produit donc une sortie puis une rétraction.
 - Le gabarit du piston est comparable au ventilateur : empreinte de sélection
-  1,395 × 0,756 unité monde (surface proche de celle du ventilateur). La course
-  est de 0,414 unité ; le déplacement de la tête à 12 unités monde par seconde
-  propulse une balle posée dessus au-delà du bord haut d’une scène de 10 unités,
-  en partant près du bord bas. Ce réglage est couvert par le test physique C9c.
+  1,248 × 0,643 unité monde. Après le retour de test, la course reste de 0,414
+  unité et la tête se déplace à 18 unités monde par seconde ; une balle posée
+  dessus atteint une vitesse verticale supérieure à 20 unités/s et traverse la
+  hauteur d’une scène de 10 unités. Un test physique couvre ce réglage, et un
+  puzzle vérifie que la puissance laisse le jeu solvable.
 
 ### Minuteur
 

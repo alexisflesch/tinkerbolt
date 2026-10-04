@@ -51,7 +51,10 @@ au catalogue, conservation de l’état sans fil, inversion temporaire par bouto
 et attraction de la seule caisse métallique dans un rayon de 2,8 unités. C9c
 ajoute le piston fermé au démarrage : un appui même bref déclenche la course
 complète ; il reste sorti tant que le bouton est maintenu, puis se rétracte
-automatiquement. Sa plaque propulse les corps dynamiques. Le minuteur reste à
+automatiquement. Après le test de jeu, son gabarit est de 1,248 × 0,643 unité et
+sa tête se déplace à 18 unités/s ; une balle dépasse l’écran vertical et le
+puzzle de démonstration reste solvable. Sa plaque propulse les corps dynamiques.
+Le minuteur reste à
 intégrer en C9d : son délai est un entier de 1 à 10 s, 3 s par défaut, avec
 affichage possible au dixième. La bille en acier reste hors C9.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas

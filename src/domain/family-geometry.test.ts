@@ -119,7 +119,7 @@ describe('géométrie des familles', () => {
     const pistonArea = pistonGeometry.footprint.width * pistonGeometry.footprint.height;
     const fanArea = fanGeometry.body.footprint.width * fanGeometry.body.footprint.height;
 
-    expect(pistonGeometry.footprint.width).toBeLessThan(fanGeometry.body.footprint.width * 1.2);
+    expect(pistonGeometry.footprint.width).toBeLessThan(fanGeometry.body.footprint.width * 1.05);
     expect(pistonGeometry.footprint.height).toBeLessThan(fanGeometry.body.footprint.height * 1.2);
     expect(pistonArea).toBeGreaterThan(fanArea * 0.7);
     expect(pistonArea).toBeLessThan(fanArea * 1.25);

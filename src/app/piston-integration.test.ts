@@ -149,12 +149,12 @@ describe('C9c piston', () => {
       y: 3,
     });
     expect(closed.find(({ assetKey }) => assetKey === 'piston-plate')?.layer.position).toEqual({
-      x: 3.299,
+      x: 3.254,
       y: 3,
     });
 
     const extended = projectLevel(document, {
-      bodyPoses: new Map([['piston', { position: { x: 3.713, y: 3 }, rotation: 0 }]]),
+      bodyPoses: new Map([['piston', { position: { x: 3.668, y: 3 }, rotation: 0 }]]),
       conveyorBelts: new Map(),
       devices: new Map(),
     }).objects.filter(({ id }) => id === 'piston');
@@ -162,7 +162,7 @@ describe('C9c piston', () => {
       3,
     );
     expect(extended.find(({ assetKey }) => assetKey === 'piston-plate')?.layer.position.x).toBe(
-      3.713,
+      3.668,
     );
   });
 
