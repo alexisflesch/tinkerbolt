@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 3,
+  "id": "tuto-6",
+  "metadata": {
+    "title": "tuto-6",
+    "description": "Utilisation du magnétisme",
+    "author": "Bolt"
+  },
+  "objects": [
+    {
+      "id": "goal-ball",
+      "transform": {
+        "position": {
+          "x": 3.48157864725653,
+          "y": 4.594285025619726
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "ball",
+      "props": {}
+    },
+    {
+      "id": "goal-basket",
+      "transform": {
+        "position": {
+          "x": 6.817813341779451,
+          "y": 5.566144411692496
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "basket",
+      "props": {}
+    },
+    {
+      "id": "placement-1",
+      "transform": {
+        "position": {
+          "x": 5.483319663171188,
+          "y": 2.7085875012387803
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "electro-magnet",
+      "props": {
+        "state": "off"
+      }
+    },
+    {
+      "id": "placement-2",
+      "transform": {
+        "position": {
+          "x": 5.555845724874665,
+          "y": 4.4347255982625695
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "box",
+      "props": {
+        "material": "metal"
+      }
+    },
+    {
+      "id": "placement-4",
+      "transform": {
+        "position": {
+          "x": 0.5079787432713663,
+          "y": 2.766608749003373
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "button",
+      "props": {}
+    },
+    {
+      "id": "placement-5",
+      "transform": {
+        "position": {
+          "x": 4.511460277098419,
+          "y": 5.145488871392409
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "conveyor",
+      "props": {
+        "direction": "right"
+      }
+    },
+    {
+      "id": "placement-6",
+      "transform": {
+        "position": {
+          "x": 6.1795776243598795,
+          "y": 3.1147372315954547
+        },
+        "rotation": 1.5707963267948966
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "beam",
+      "props": {
+        "size": "short"
+      }
+    },
+    {
+      "id": "placement-7",
+      "transform": {
+        "position": {
+          "x": 3.0336525029842782,
+          "y": 3.172758977362311
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "beam",
+      "props": {
+        "size": "long"
+      }
+    }
+  ],
+  "inventory": [
+    {
+      "id": "wire-a-placer",
+      "quantity": 1,
+      "type": "wire",
+      "props": {},
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": true
+      }
+    },
+    {
+      "id": "mass-a-placer",
+      "quantity": 1,
+      "permissions": {
+        "move": true,
+        "rotate": true,
+        "remove": true
+      },
+      "type": "mass",
+      "props": {
+        "weight": "10kg"
+      }
+    }
+  ],
+  "goal": {
+    "type": "basket",
+    "ballId": "goal-ball",
+    "basketId": "goal-basket"
+  },
+  "buildZones": [
+    {
+      "min": {
+        "x": 0,
+        "y": 0
+      },
+      "max": {
+        "x": 16,
+        "y": 9
+      }
+    }
+  ],
+  "scene": {
+    "min": {
+      "x": 0,
+      "y": 0
+    },
+    "max": {
+      "x": 16,
+      "y": 9
+    }
+  },
+  "wires": [],
+  "solution": {
+    "placements": [
+      {
+        "inventoryId": "mass-a-placer",
+        "transform": {
+          "position": {
+            "x": 0.5079787432713663,
+            "y": 1.9107923564620526
+          },
+          "rotation": 0
+        }
+      }
+    ],
+    "wires": [
+      {
+        "id": "wire-1",
+        "inventoryId": "wire-a-placer",
+        "sourceId": "placement-4",
+        "targetId": "placement-1"
+      }
+    ]
+  }
+}
