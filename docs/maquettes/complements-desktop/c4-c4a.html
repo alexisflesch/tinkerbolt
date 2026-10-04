@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>C4 / C4a — proposition desktop non approuvée</title>
+    <title>C4 / C4a — maquette desktop mise à jour</title>
     <link rel="stylesheet" href="c4-c4a.css" />
   </head>
   <body>
@@ -96,9 +96,9 @@
               <button
                 class="handle"
                 id="size-handle"
-                aria-label="Choisir la taille de la poutre"
-                aria-expanded="false"
-                aria-controls="size-menu"
+                aria-label="Redimensionner la poutre par glissement"
+                aria-description="Faire glisser le long de la poutre pour choisir l’une des trois tailles, ou utiliser les flèches."
+                aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
               >
                 <svg><use href="#move-horizontal" /></svg>
               </button>
@@ -110,15 +110,6 @@
             >
               <img id="beam-image" src="../../../public/assets/sprites/beam-medium@2x.png" alt="" />
             </button>
-            <section class="size-menu" id="size-menu" aria-label="Taille de la poutre" hidden>
-              <header>
-                Taille de la poutre<button id="close-size" aria-label="Fermer le choix de taille">
-                  <svg><use href="#x" /></svg>
-                </button>
-              </header>
-              <div id="size-options"></div>
-              <p id="inventory-note">Choisis l’une des trois tailles.</p>
-            </section>
           </div>
           <div class="basket">
             <img src="../../../public/assets/sprites/basket-back@2x.png" alt="Panier" /><img
@@ -195,7 +186,7 @@
       </section>
     </main>
     <footer class="review-note">
-      Proposition C4 / C4a · validation visuelle attendue
+      Maquette C4 / C4a · poignée C4 redimensionnable par glissement
       <nav>
         <a href="?etat=selection&mode=creation">Après pose</a
         ><a href="?etat=taille&mode=resolution">Taille et inventaire</a
@@ -219,29 +210,7 @@
       let angle = 0;
       let lastChange = null;
       const properties = byId('properties');
-      const sizeMenu = byId('size-menu');
       const selected = byId('selected-object');
-      const positionSizeMenu = () => {
-        if (sizeMenu.hidden) return;
-        const boardBounds = byId('board').getBoundingClientRect();
-        const selectedBounds = selected.getBoundingClientRect();
-        const handleBounds = byId('size-handle').getBoundingClientRect();
-        sizeMenu.style.maxHeight = `${boardBounds.height - 32}px`;
-        const menuBounds = sizeMenu.getBoundingClientRect();
-        const left = Math.max(
-          boardBounds.left + 16,
-          Math.min(handleBounds.right + 12, boardBounds.right - menuBounds.width - 16),
-        );
-        const top = Math.max(
-          boardBounds.top + 16,
-          Math.min(handleBounds.top - 42, boardBounds.bottom - menuBounds.height - 16),
-        );
-        sizeMenu.style.left = `${left - selectedBounds.left}px`;
-        sizeMenu.style.top = `${top - selectedBounds.top}px`;
-      };
-      window.addEventListener('resize', positionSizeMenu);
-      window.addEventListener('load', positionSizeMenu);
-      document.fonts.ready.then(positionSizeMenu);
       const say = (message) => {
         byId('notice').textContent = message;
       };
@@ -249,35 +218,10 @@
         properties.hidden = true;
         byId('open-properties').setAttribute('aria-expanded', 'false');
       };
-      const closeSize = () => {
-        sizeMenu.hidden = true;
-        byId('size-handle').setAttribute('aria-expanded', 'false');
-      };
       const openProperties = () => {
-        closeSize();
         properties.hidden = false;
         byId('open-properties').setAttribute('aria-expanded', 'true');
         byId('close-properties').focus();
-      };
-      const renderSizes = () => {
-        byId('size-options').replaceChildren();
-        Object.keys(names).forEach((value) => {
-          const button = document.createElement('button');
-          const unavailable = player && value !== size && quantities[value] === 0;
-          button.className = 'size-option';
-          button.setAttribute('aria-pressed', String(value === size));
-          button.disabled = unavailable;
-          button.innerHTML = `<img src="../../../public/assets/sprites/beam-${value}@2x.png" alt="" style="width:${lengths[value] / 3}px"><span><b>${names[value][0].toUpperCase() + names[value].slice(1)}</b><small>${value === size ? 'Taille actuelle' : unavailable ? 'Absente de ton inventaire' : player ? `${quantities[value]} disponible` : 'Disponible'}</small></span>${value === size ? '<svg><use href="#check" /></svg>' : ''}`;
-          button.addEventListener('click', () => {
-            changeSize(value);
-            closeSize();
-            byId('size-handle').focus();
-          });
-          byId('size-options').append(button);
-        });
-        byId('inventory-note').textContent = player
-          ? 'Changer de taille échange la poutre avec ton inventaire.'
-          : 'Trois tailles fixes, sans longueur libre.';
       };
       const renderBeam = () => {
         byId('beam-image').src = `../../../public/assets/sprites/beam-${size}@2x.png`;
@@ -298,15 +242,13 @@
           `Poutre ${names[size]} : ouvrir les propriétés`,
         );
         byId('property-size').value = size;
-        renderSizes();
-        positionSizeMenu();
       };
-      const changeSize = (value) => {
-        if (locked || value === size || (player && quantities[value] === 0)) return;
-        lastChange = { size, angle, quantities: { ...quantities } };
+      const changeSize = (value, previousSize = size) => {
+        if (locked || value === previousSize || (player && quantities[value] === 0)) return;
+        lastChange = { size: previousSize, angle, quantities: { ...quantities } };
         if (player) {
           quantities[value] -= 1;
-          quantities[size] += 1;
+          quantities[previousSize] += 1;
         }
         size = value;
         renderBeam();
@@ -342,19 +284,6 @@
         card.innerHTML = `<img src="../../../public/assets/sprites/thumbs/${asset}.png" alt=""><span><b>${title}</b><small>${subtitle}</small></span>`;
         byId('catalogue-list').append(card);
       });
-      byId('size-handle').addEventListener('click', () => {
-        closeProperties();
-        sizeMenu.hidden = !sizeMenu.hidden;
-        byId('size-handle').setAttribute('aria-expanded', String(!sizeMenu.hidden));
-        if (!sizeMenu.hidden) {
-          positionSizeMenu();
-          sizeMenu.querySelector('button.size-option:not(:disabled)').focus();
-        }
-      });
-      byId('close-size').addEventListener('click', () => {
-        closeSize();
-        byId('size-handle').focus();
-      });
       byId('close-properties').addEventListener('click', () => {
         closeProperties();
         byId('open-properties').focus();
@@ -363,9 +292,76 @@
       byId('select-beam').addEventListener('click', () => {
         selected.hidden = false;
         closeProperties();
-        closeSize();
         byId('open-properties').focus();
         say('Poutre sélectionnée. Active Propriétés pour la régler.');
+      });
+      let sizeDrag = null;
+      const sizeAtDistance = (drag, distance) => {
+        const requestedLength = lengths[drag.startSize] + 2 * distance;
+        const available = Object.keys(names).filter(
+          (candidate) => candidate === drag.startSize || !player || quantities[candidate] > 0,
+        );
+        return available.reduce((closest, candidate) =>
+          Math.abs(lengths[candidate] - requestedLength) <
+          Math.abs(lengths[closest] - requestedLength)
+            ? candidate
+            : closest,
+        );
+      };
+      byId('size-handle').addEventListener('pointerdown', (event) => {
+        if (locked || event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        byId('size-handle').setPointerCapture(event.pointerId);
+        closeProperties();
+        sizeDrag = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          startSize: size,
+          startAngle: angle,
+          previewSize: size,
+        };
+      });
+      byId('size-handle').addEventListener('pointermove', (event) => {
+        if (!sizeDrag || sizeDrag.pointerId !== event.pointerId) return;
+        event.preventDefault();
+        const dx = event.clientX - sizeDrag.startX;
+        const dy = event.clientY - sizeDrag.startY;
+        const radians = (sizeDrag.startAngle * Math.PI) / 180;
+        const distanceAlongBeam = dx * Math.cos(radians) + dy * Math.sin(radians);
+        const previewSize = sizeAtDistance(sizeDrag, distanceAlongBeam);
+        if (previewSize === sizeDrag.previewSize) return;
+        sizeDrag.previewSize = previewSize;
+        size = previewSize;
+        renderBeam();
+      });
+      byId('size-handle').addEventListener('pointerup', (event) => {
+        if (!sizeDrag || sizeDrag.pointerId !== event.pointerId) return;
+        const drag = sizeDrag;
+        sizeDrag = null;
+        if (drag.previewSize !== drag.startSize) changeSize(drag.previewSize, drag.startSize);
+      });
+      byId('size-handle').addEventListener('pointercancel', (event) => {
+        if (!sizeDrag || sizeDrag.pointerId !== event.pointerId) return;
+        size = sizeDrag.startSize;
+        sizeDrag = null;
+        renderBeam();
+      });
+      byId('size-handle').addEventListener('keydown', (event) => {
+        const direction =
+          event.key === 'ArrowRight' || event.key === 'ArrowDown'
+            ? 1
+            : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+              ? -1
+              : 0;
+        if (direction === 0) return;
+        event.preventDefault();
+        const available = Object.keys(names).filter(
+          (candidate) => candidate === size || !player || quantities[candidate] > 0,
+        );
+        const next = available[available.indexOf(size) + direction];
+        if (next !== undefined) changeSize(next);
       });
       let press = null;
       let dragged = false;
@@ -386,7 +382,6 @@
         if (Math.hypot(dx, dy) > 6) dragged = true;
         if (dragged) {
           closeProperties();
-          closeSize();
           selected.style.left = `${press.left + dx}px`;
           selected.style.top = `${press.top + dy}px`;
         }
@@ -409,7 +404,6 @@
         angle += delta;
         if (handle) {
           closeProperties();
-          closeSize();
         }
         renderBeam();
         say(`Rotation ${angle}°. Tu peux annuler ce changement.`);
@@ -445,32 +439,25 @@
         lastChange = null;
         renderBeam();
         closeProperties();
-        closeSize();
         say('Dernier changement de taille ou de rotation annulé.');
       });
       byId('delete-button').addEventListener('click', () => {
         selected.hidden = true;
         closeProperties();
-        closeSize();
         say('Poutre retirée de cette maquette. Recommencer la réaffiche.');
       });
       byId('reset-button').addEventListener('click', () => location.reload());
       document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
-        if (!sizeMenu.hidden) {
-          closeSize();
-          byId('size-handle').focus();
-        } else if (!properties.hidden) {
+        if (!properties.hidden) {
           closeProperties();
           byId('open-properties').focus();
         }
       });
       renderBeam();
       if (query.get('etat') === 'taille' && !locked) {
-        sizeMenu.hidden = false;
-        byId('size-handle').setAttribute('aria-expanded', 'true');
+        say('Fais glisser la poignée vers la droite pour agrandir, vers la gauche pour réduire.');
       }
-      positionSizeMenu();
       if (query.get('etat') === 'proprietes') {
         properties.hidden = false;
         byId('open-properties').setAttribute('aria-expanded', 'true');

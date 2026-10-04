@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { levelDocumentSchema, type LevelDocument } from '../domain/level-document';
-import { projectLevel, type BoardViewport } from './board-renderer';
+import {
+  beamSizeHandleGeometry,
+  projectLevel,
+  rotationHandleBounds,
+  type BoardViewport,
+} from './board-renderer';
 import { hitTestBoard, hitTestRotationHandle } from './board-hit-test';
 import {
   ROTATION_HANDLE_GAP_CSS_PIXELS,
@@ -162,5 +167,31 @@ describe('hit-test pur du plateau', () => {
     expect(hitTestRotationHandle({ x: 40, y: knobAt(0).y - 21 }, selectedBeam(0), viewport)).toBe(
       true,
     );
+  });
+
+  it('place l’icône de taille au milieu du bord droit et la fait suivre la rotation', () => {
+    const document = createDocument([
+      ball('ball-1', { x: 1, y: 1 }),
+      basket('basket-1', { x: 2, y: 1 }),
+      beam('sized-beam', { x: 5, y: 4 }),
+    ]);
+    const selected = projectLevel(document).objects.find((object) => object.id === 'sized-beam');
+    if (selected === undefined) throw new Error('La poutre sélectionnée est absente.');
+
+    const horizontal = beamSizeHandleGeometry(selected, viewport);
+    const rotationHandle = rotationHandleBounds(selected, viewport);
+    expect(horizontal.stem.start).toEqual({ x: 80, y: 40 });
+    expect(horizontal.stem.end).toEqual({ x: 110, y: 40 });
+    expect(horizontal.bounds).toEqual({ x: 88, y: 18, width: 44, height: 44 });
+    expect(horizontal.bounds.width).toBe(rotationHandle.width);
+    expect(horizontal.bounds.height).toBe(rotationHandle.height);
+
+    const vertical = beamSizeHandleGeometry({ ...selected, rotation: Math.PI / 2 }, viewport);
+    expect(vertical.stem.start.x).toBeCloseTo(40);
+    expect(vertical.stem.start.y).toBeCloseTo(80);
+    expect(vertical.stem.end.x).toBeCloseTo(40);
+    expect(vertical.stem.end.y).toBeCloseTo(110);
+    expect(vertical.bounds.x).toBeCloseTo(18);
+    expect(vertical.bounds.y).toBeCloseTo(88);
   });
 });

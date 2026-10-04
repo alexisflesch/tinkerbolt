@@ -1477,6 +1477,56 @@ select:focus-visible {
   pointer-events: none;
 }
 
+.beam-size-handle-stem {
+  position: absolute;
+  z-index: 2;
+  height: 2px;
+  transform-origin: left center;
+  background: #1e88e5;
+  pointer-events: none;
+}
+
+.beam-size-handle {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  padding: 0;
+  transform: translate(-50%, -50%);
+  place-items: center;
+  color: #1e88e5;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.beam-size-handle:active {
+  cursor: grabbing;
+}
+
+.beam-size-handle::before {
+  position: absolute;
+  z-index: 0;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #1e88e5;
+  border-radius: 50%;
+  background: #fff;
+  content: '';
+  pointer-events: none;
+}
+
+.beam-size-handle > svg {
+  position: relative;
+  z-index: 1;
+}
+
+.beam-size-handle:hover::before,
+.beam-size-handle:focus-visible::before {
+  background: var(--panel-bg-active);
+}
+
 /* Annonce du fantôme de placement, dessiné par le renderer (C1, U1). */
 .placement-preview-status {
   position: absolute;

@@ -29,8 +29,9 @@ catalogue et créer un objectif « déplacer la caisse » sont deux travaux dist
 
 **Décisions confirmées avec l’auteur le 3 octobre 2026 :**
 
-- **Poutres :** conserver les trois tailles actuelles, choisies par une icône
-  sur le plateau. Pas de longueur libre par glissement.
+- **Poutres :** conserver les trois tailles actuelles, choisies en faisant
+  glisser une poignée sur le plateau. La poutre s’aimante à ces variantes ;
+  aucune longueur libre n’est créée.
 - **Téléphone :** garder les propriétés dans un tiroir fermé par défaut.
   Poser ou déplacer un objet ne l’ouvre pas ; un toucher simple l’ouvre.
 - **Ordinateur :** propriétés également fermées par défaut et ouvertes à la
@@ -254,14 +255,16 @@ précise leurs dépendances supplémentaires.
 
 ### C4 — Choisir la taille d’une poutre depuis le plateau
 
-- Ajouter une icône explicite, comparable à l’accès à la rotation, qui permet
-  de choisir courte, moyenne ou longue. Valider sa forme sur une maquette.
-- Respecter les permissions du mode et les tailles de l’inventaire : l’icône
-  n’accorde pas gratuitement une taille absente d’un niveau.
-- Le choix produit une seule commande annulable ; une taille déjà choisie
-  ne crée pas une modification inutile. Préserver l’accès clavier et tactile.
-- **Sortie :** taille modifiable sans ouvrir l’inspecteur lorsque c’est permis ;
-  schéma et trois tailles conservés, comportement et annulation testés.
+- **Livré.** L’auteur a précisé le 4 octobre que la poignée doit avoir le même
+  diamètre visible que l’icône de rotation et redimensionner par glissement,
+  comme dans un logiciel de dessin. L’aperçu suit le curseur et s’aimante aux
+  tailles courte, moyenne ou longue ; un clic n’ouvre pas de sélecteur.
+- En jeu, la poignée respecte le stock et échange les poutres ; elle ne permet
+  pas d’obtenir gratuitement une taille absente. Le glissement validé produit
+  une commande annulable, tandis qu’un geste sans changement ne modifie pas
+  l’historique. La maquette C4/C4a est mise à jour pour montrer ce comportement.
+- Le diamètre visible du bouton est identique à celui de la poignée de rotation ;
+  sa zone d’action conserve 44 px. La recette visuelle finale est reportée à C10.
 
 ### C4a — Ouvrir les propriétés desktop à la demande
 
@@ -494,15 +497,19 @@ Le 4 octobre, l’auteur a demandé de terminer C3 avant de changer l’ordre de
 suite ; **C3 est maintenant livré**. C8 et C9a à C9d sont clôturés après
 l’audit, les arbitrages et l’intégration des quatre familles. L’ordre demandé
 par l’auteur, **C7 → C6 → C4/C4a → C10**, est consigné dans la
-[feuille de route active](feuille-de-route.md) : C7 et C6 sont livrés, la
-prochaine tâche est C4, puis C4a et C10. La disposition du splash et ses
+[feuille de route active](feuille-de-route.md) : C7, C6 et C4 sont livrés ;
+C4a puis C10 restent à faire. La disposition du splash et ses
 captures responsive ont été validées par l’auteur pour C6. L’auteur a
 confirmé l’ordre des familles, `box` avec variante matériau, le délai initial
 du minuteur et ses règles ; voir les ADR 0018, 0019 et l’amendement de 0009.
 Après le retour de test sur le minuteur, C9d ajoute un pivot d’aiguille centré
 sur le moyeu illustré et un affichage ambré à sept segments, au format secondes
 et dixièmes. La feuille de route reste seule propriétaire de la séquence, des
-dépendances et du journal.
+dépendances et du journal. La correction d’interaction C4 par l’auteur le
+4 octobre est appliquée dans le code et dans la maquette : poignée à la taille
+visible de celle de rotation, redimensionnement au glissement avec aperçu, sans
+sélecteur. La suite active après C4 reste C4a puis C10 ; la recette visuelle
+des compléments est regroupée à C10.
 
 Les critères visuels des sections préparatoires décrivent la recette finale,
 avec le report ci-dessus. Le journal et les étapes réellement livrées restent

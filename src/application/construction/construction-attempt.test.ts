@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { LevelDocument } from '../../domain/level-document';
 import { createHistory, executeCommand, redo, undo } from '../history';
 import {
+  beamSizeChoicesFor,
+  changeBeamSize,
   connectControlWire,
   createConstructionAttempt,
   disconnectControlWire,
@@ -114,6 +116,42 @@ const placeBeam = (context: ConstructionContext = 'player') =>
     placementId: 'placed-beam',
     transform: { position: { x: 4, y: 5 }, rotation: 0.25 },
   });
+
+const createResizableBeamAttempt = (includeOtherSizes = true, x = 4) => {
+  const level = createLevel();
+  const withBeamStock: LevelDocument = {
+    ...level,
+    inventory: [
+      ...level.inventory,
+      ...(includeOtherSizes
+        ? [
+            {
+              id: 'medium-beams',
+              type: 'beam' as const,
+              props: { size: 'medium' as const },
+              quantity: 1,
+              permissions: { move: true, rotate: true, remove: true },
+            },
+            {
+              id: 'long-beams',
+              type: 'beam' as const,
+              props: { size: 'long' as const },
+              quantity: 1,
+              permissions: { move: true, rotate: true, remove: true },
+            },
+          ]
+        : []),
+    ],
+  };
+  const result = placeFromInventory({
+    context: 'player',
+    inventoryEntryId: 'short-beams',
+    placementId: 'resizable-beam',
+    transform: { position: { x, y: 5 }, rotation: 0 },
+  }).execute(createConstructionAttempt(withBeamStock));
+  if (result.status !== 'accepted') throw new Error(result.reason);
+  return result.state;
+};
 
 const expectRejected = (
   result: ReturnType<ReturnType<typeof placeFromInventory>['execute']>,
@@ -648,6 +686,100 @@ describe('ConstructionAttempt', () => {
     );
 
     expect(result).toEqual({ status: 'accepted', history, recorded: false });
+  });
+
+  it('échange une poutre de joueur contre une taille disponible en une commande annulable', () => {
+    const initialAttempt = createResizableBeamAttempt();
+    const history = createHistory(initialAttempt);
+
+    const changed = executeCommand(
+      history,
+      changeBeamSize({ context: 'player', placementId: 'resizable-beam', size: 'medium' }),
+    );
+
+    expect(changed.status).toBe('accepted');
+    if (changed.status !== 'accepted') return;
+    expect(changed.recorded).toBe(true);
+    expect(changed.history.past).toHaveLength(1);
+    expect(
+      changed.history.state.document.objects.find(({ id }) => id === 'resizable-beam'),
+    ).toMatchObject({
+      type: 'beam',
+      props: { size: 'medium' },
+    });
+    expect(changed.history.state.document.inventory).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'short-beams', quantity: 1 }),
+        expect.objectContaining({ id: 'medium-beams', quantity: 0 }),
+      ]),
+    );
+    expect(changed.history.state.provenance['resizable-beam']).toBe('medium-beams');
+
+    const undone = undo(changed.history);
+    expect(undone.status).toBe('accepted');
+    if (undone.status !== 'accepted') return;
+    expect(undone.history.state).toEqual(initialAttempt);
+
+    const redone = redo(undone.history);
+    expect(redone.status).toBe('accepted');
+    if (redone.status !== 'accepted') return;
+    expect(redone.history.state).toEqual(changed.history.state);
+  });
+
+  it('propose au joueur la taille courante et les seules variantes encore en stock', () => {
+    const attempt = createResizableBeamAttempt(false);
+
+    expect(beamSizeChoicesFor(attempt, 'resizable-beam', 'player')).toEqual([
+      { size: 'short', isCurrent: true, isAvailable: true, quantity: 0 },
+      { size: 'medium', isCurrent: false, isAvailable: false, quantity: 0 },
+      { size: 'long', isCurrent: false, isAvailable: false, quantity: 0 },
+    ]);
+  });
+
+  it('garde les trois tailles disponibles à l’auteur même pour une poutre fixe', () => {
+    const attempt = createConstructionAttempt(createLevel());
+
+    expect(beamSizeChoicesFor(attempt, 'fixed-beam', 'author')).toEqual([
+      { size: 'short', isCurrent: false, isAvailable: true, quantity: null },
+      { size: 'medium', isCurrent: true, isAvailable: true, quantity: null },
+      { size: 'long', isCurrent: false, isAvailable: true, quantity: null },
+    ]);
+    expect(beamSizeChoicesFor(attempt, 'fixed-beam', 'player')).toBeNull();
+  });
+
+  it('ne crée aucune entrée d’historique quand la taille choisie est déjà courante', () => {
+    const history = createHistory(createResizableBeamAttempt(false));
+
+    expect(
+      executeCommand(
+        history,
+        changeBeamSize({ context: 'player', placementId: 'resizable-beam', size: 'short' }),
+      ),
+    ).toEqual({ status: 'accepted', history, recorded: false });
+  });
+
+  it('refuse une taille absente du stock sans modifier la construction', () => {
+    const attempt = createResizableBeamAttempt(false);
+
+    expect(
+      changeBeamSize({ context: 'player', placementId: 'resizable-beam', size: 'long' }).execute(
+        attempt,
+      ),
+    ).toEqual({ status: 'rejected', reason: 'inventory-depleted' });
+    expect(attempt.document.objects.find(({ id }) => id === 'resizable-beam')?.props).toEqual({
+      size: 'short',
+    });
+  });
+
+  it('refuse un redimensionnement joueur qui sortirait de la zone de construction', () => {
+    const attempt = createResizableBeamAttempt(true, 2);
+
+    expectRejected(
+      changeBeamSize({ context: 'player', placementId: 'resizable-beam', size: 'long' }).execute(
+        attempt,
+      ),
+      'outside-build-zone',
+    );
   });
 
   it('rejects a missing placement with a stable reason', () => {

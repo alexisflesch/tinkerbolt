@@ -388,4 +388,41 @@ describe('reprise de construction dans le jeu', () => {
     expect(canvas()).toHaveAttribute('data-simulation-step');
     expect(await placedState(actual)).toEqual(saved);
   });
+
+  it('redimensionne une poutre par glissement sans ouvrir de sélecteur ni créer de stock', async () => {
+    const repo = repository();
+    await renderStorageReady(
+      <App playerConstructionRepository={repo} progressRepository={testProgressRepository()} />,
+    );
+    await openCatalogue();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Poutre courte, quantité : 1' })),
+    );
+    await tapWorld(7, 4);
+
+    const beforeResize = await placedState(repo);
+    const handle = await screen.findByRole('button', { name: 'Redimensionner la poutre' });
+    const sendPointer = (type: 'pointerdown' | 'pointermove' | 'pointerup', clientX: number) => {
+      const event = new Event(type, { bubbles: true });
+      Object.defineProperties(event, {
+        pointerId: { configurable: true, value: 1 },
+        pointerType: { configurable: true, value: 'mouse' },
+        button: { configurable: true, value: 0 },
+        clientX: { configurable: true, value: clientX },
+        clientY: { configurable: true, value: 200 },
+      });
+      fireEvent(handle, event);
+    };
+    await storageAction(() => {
+      sendPointer('pointerdown', 200);
+      sendPointer('pointerup', 200);
+    });
+    expect(screen.queryByRole('group', { name: 'Taille de la poutre' })).not.toBeInTheDocument();
+    await storageAction(() => {
+      sendPointer('pointerdown', 200);
+      sendPointer('pointermove', 1200);
+      sendPointer('pointerup', 1200);
+    });
+    expect(await placedState(repo)).toEqual(beforeResize);
+  });
 });

@@ -76,6 +76,36 @@ const tapBoard = async (clientX: number, clientY: number): Promise<void> => {
   await storageAction();
 };
 
+const dragBeamSizeHandle = async (distanceX: number, distanceY: number): Promise<void> => {
+  const handle = await screen.findByRole('button', { name: 'Redimensionner la poutre' });
+  const initialTop = handle.style.top;
+  const sendPointer = (
+    type: 'pointerdown' | 'pointermove' | 'pointerup',
+    clientX: number,
+    clientY: number,
+  ) => {
+    const event = new Event(type, { bubbles: true });
+    Object.defineProperties(event, {
+      pointerId: { configurable: true, value: 1 },
+      pointerType: { configurable: true, value: 'mouse' },
+      button: { configurable: true, value: 0 },
+      clientX: { configurable: true, value: clientX },
+      clientY: { configurable: true, value: clientY },
+    });
+    fireEvent(handle, event);
+  };
+  await storageAction(() => {
+    sendPointer('pointerdown', 200, 200);
+  });
+  await storageAction(() => {
+    sendPointer('pointermove', 200 + distanceX, 200 + distanceY);
+  });
+  expect(handle.style.top).not.toBe(initialTop);
+  await storageAction(() => {
+    sendPointer('pointerup', 200 + distanceX, 200 + distanceY);
+  });
+};
+
 /** M11: level 2 can only be modified once level 1 is resolved (ADR 0015, ADR 0010). */
 const createProgressRepository = () => {
   const save = vi.fn((_progress: CampaignProgress) => {
@@ -249,6 +279,64 @@ describe('éditer un niveau de la campagne (U17)', () => {
     });
     await waitFor(() => {
       expect(levelTwo).toEqual(pristineLevelTwo);
+    });
+  });
+
+  it('redimensionne une poutre en la faisant glisser et annule le geste en une fois', async () => {
+    const draftId = 'campaign-02-poutre-redimensionnee';
+    await testDraftRepository(testClock).save(
+      creationFromLevel(levelTwo, { createId: () => draftId }),
+    );
+    window.history.replaceState(null, '', `/editor?draft=${draftId}`);
+    await renderStorageReady(<App progressRepository={levelTwoUnlocked()} />);
+    await tapWorldPoint(5.0, 3.6);
+
+    const zoom = Number(
+      within(screen.getByRole('region', { name: 'Plateau de jeu' }))
+        .getByRole('img', { name: 'Rendu du plateau' })
+        .getAttribute('data-camera-zoom'),
+    );
+    await dragBeamSizeHandle(0, zoom);
+    expect(screen.queryByRole('group', { name: 'Taille de la poutre' })).not.toBeInTheDocument();
+
+    await waitFor(async () => {
+      const stored = await testDraftRepository(testClock).load(draftId);
+      expect(
+        stored.status === 'ok'
+          ? stored.creation?.document.objects.find(({ id }) => id === 'wall')?.props
+          : undefined,
+      ).toEqual({ size: 'long' });
+    });
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
+    await waitFor(async () => {
+      const stored = await testDraftRepository(testClock).load(draftId);
+      expect(
+        stored.status === 'ok'
+          ? stored.creation?.document.objects.find(({ id }) => id === 'wall')?.props
+          : undefined,
+      ).toEqual({ size: 'medium' });
+    });
+    await storageAction(() =>
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Redimensionner la poutre' }), {
+        key: 'ArrowRight',
+      }),
+    );
+    await waitFor(async () => {
+      const stored = await testDraftRepository(testClock).load(draftId);
+      expect(
+        stored.status === 'ok'
+          ? stored.creation?.document.objects.find(({ id }) => id === 'wall')?.props
+          : undefined,
+      ).toEqual({ size: 'long' });
+    });
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
+    await waitFor(async () => {
+      const stored = await testDraftRepository(testClock).load(draftId);
+      expect(
+        stored.status === 'ok'
+          ? stored.creation?.document.objects.find(({ id }) => id === 'wall')?.props
+          : undefined,
+      ).toEqual({ size: 'medium' });
     });
   });
 

@@ -1,6 +1,7 @@
-import { useEffect, useRef, type RefObject } from 'react';
-import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
+import { Maximize2, MoveHorizontal, ZoomIn, ZoomOut } from 'lucide-react';
 
+import type { BeamSize, BeamSizeChoice } from '../application/construction';
 import {
   currentEditorAttempt,
   type EditorSession,
@@ -10,6 +11,7 @@ import { placementGhost } from '../app/placement-ghost';
 import type { BoardPointerHandlers } from '../app/use-board-pointers';
 import {
   createBoardRenderer,
+  beamSizeHandleGeometry,
   projectLevel,
   withAuthorRotation,
   type BoardDeviceView,
@@ -18,7 +20,38 @@ import {
 import type { Camera } from '../presentation/board-camera';
 import { createSpriteLoader, type SpriteLoader } from '../presentation/sprite-loader';
 import { type SimulationSnapshot } from '../simulation/simulation-session';
+import type { LevelDocument } from '../domain/level-document';
 import { createCanvasContextAdapter, createCanvasSpriteDecoder } from './board-canvas';
+
+const beamLength: Readonly<Record<BeamSize, number>> = { short: 2, medium: 4, long: 6 };
+
+interface BeamSizePreview {
+  readonly placementId: string;
+  readonly size: BeamSize;
+}
+
+const withBeamSize = (document: LevelDocument, preview: BeamSizePreview | null): LevelDocument => {
+  if (preview === null) return document;
+  return {
+    ...document,
+    objects: document.objects.map((object) =>
+      object.id === preview.placementId && object.type === 'beam'
+        ? { ...object, props: { size: preview.size } }
+        : object,
+    ),
+  };
+};
+
+const closestAvailableBeamSize = (length: number, choices: readonly BeamSizeChoice[]): BeamSize => {
+  const available = choices.filter((choice) => choice.isAvailable);
+  const closest = available.reduce<BeamSizeChoice | undefined>((best, choice) => {
+    if (best === undefined) return choice;
+    return Math.abs(beamLength[choice.size] - length) < Math.abs(beamLength[best.size] - length)
+      ? choice
+      : best;
+  }, undefined);
+  return closest?.size ?? 'short';
+};
 
 /**
  * Collects what a running simulation moves — the ball, the seesaw's board,
@@ -82,6 +115,8 @@ interface BoardViewProps {
   readonly cameraRef: RefObject<Camera>;
   readonly boardCanvasRef: RefObject<HTMLCanvasElement | null>;
   readonly boardPointerHandlers: BoardPointerHandlers;
+  readonly beamSizeChoices: readonly BeamSizeChoice[] | null;
+  readonly onBeamSizeChange: (size: BeamSize) => void;
   readonly onZoomIn: () => void;
   readonly onZoomOut: () => void;
   readonly onFitToScene: () => void;
@@ -107,12 +142,28 @@ export function BoardView({
   cameraRef,
   boardCanvasRef,
   boardPointerHandlers,
+  beamSizeChoices,
+  onBeamSizeChange,
   onZoomIn,
   onZoomOut,
   onFitToScene,
   onWheelZoom,
 }: BoardViewProps) {
   const boardRef = useRef<HTMLDivElement>(null);
+  const beamSizeHandleRef = useRef<HTMLButtonElement>(null);
+  const beamSizeDragRef = useRef<{
+    readonly pointerId: number;
+    readonly placementId: string;
+    readonly startX: number;
+    readonly startY: number;
+    readonly startSize: BeamSize;
+    readonly rotation: number;
+    readonly pixelsPerWorldUnit: number;
+    readonly choices: readonly BeamSizeChoice[];
+    previewSize: BeamSize;
+  } | null>(null);
+  const beamSizePreviewRef = useRef<BeamSizePreview | null>(null);
+  const [beamSizePreview, setBeamSizePreview] = useState<BeamSizePreview | null>(null);
   const spriteLoaderRef = useRef<SpriteLoader | null>(null);
   const boardRenderRef = useRef<(() => void) | null>(null);
   const boardRenderQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -137,15 +188,86 @@ export function BoardView({
 
   // Which balls the board draws red (the goal's) and blue, exposed for tests
   // and tools: the same projection the renderer draws.
-  const shownProjection = projectLevel(
-    (session.simulationSnapshot ?? currentEditorAttempt(session)).document,
-  );
+  const shownDocument = (session.simulationSnapshot ?? currentEditorAttempt(session)).document;
+  const shownProjection = projectLevel(withBeamSize(shownDocument, beamSizePreview));
   const projectedLayers = shownProjection.objects;
+  const selectedPlacementId = session.selectedPlacementId;
+  const selectedPlacement =
+    selectedPlacementId === null
+      ? undefined
+      : currentEditorAttempt(session).document.objects.find(({ id }) => id === selectedPlacementId);
+  const selectedBeam = selectedPlacement?.type === 'beam' ? selectedPlacement : undefined;
+  const selectedBeamProjection =
+    selectedBeam === undefined
+      ? undefined
+      : projectedLayers.find(({ id, family }) => id === selectedBeam.id && family === 'beam');
+  const canvasBounds = boardCanvasRef.current?.getBoundingClientRect();
+  const frameBounds = boardRef.current?.getBoundingClientRect();
+  const beamSizeGeometry =
+    selectedBeamProjection !== undefined &&
+    canvasBounds !== undefined &&
+    canvasBounds.width > 0 &&
+    canvasBounds.height > 0 &&
+    beamSizeChoices !== null &&
+    session.phase === 'construction' &&
+    session.manipulation === null
+      ? beamSizeHandleGeometry(selectedBeamProjection, {
+          cssWidth: canvasBounds.width,
+          cssHeight: canvasBounds.height,
+          origin: camera.origin,
+          pixelsPerWorldUnit: camera.pixelsPerWorldUnit,
+          devicePixelRatio: 1,
+        })
+      : null;
+  const frameOffset =
+    canvasBounds === undefined || frameBounds === undefined
+      ? { x: 0, y: 0 }
+      : { x: canvasBounds.left - frameBounds.left, y: canvasBounds.top - frameBounds.top };
+  const sizeHandleStyle =
+    beamSizeGeometry === null
+      ? undefined
+      : {
+          left: frameOffset.x + beamSizeGeometry.bounds.x + beamSizeGeometry.bounds.width / 2,
+          top: frameOffset.y + beamSizeGeometry.bounds.y + beamSizeGeometry.bounds.height / 2,
+        };
+  const sizeStemStyle =
+    beamSizeGeometry === null || selectedBeamProjection === undefined
+      ? undefined
+      : {
+          left: frameOffset.x + beamSizeGeometry.stem.start.x,
+          top: frameOffset.y + beamSizeGeometry.stem.start.y,
+          width: Math.hypot(
+            beamSizeGeometry.stem.end.x - beamSizeGeometry.stem.start.x,
+            beamSizeGeometry.stem.end.y - beamSizeGeometry.stem.start.y,
+          ),
+          transform: `rotate(${String(selectedBeamProjection.rotation)}rad)`,
+        };
   const ballColourIds = (assetKey: 'ball-base' | 'second-ball-base'): string =>
     projectedLayers
       .filter((object) => object.assetKey === assetKey)
       .map(({ id }) => id)
       .join(',');
+
+  beamSizePreviewRef.current = beamSizePreview;
+
+  const previewBeamSizeAt = (clientX: number, clientY: number): BeamSize | null => {
+    const drag = beamSizeDragRef.current;
+    if (drag === null) return null;
+    const distanceAlongBeam =
+      ((clientX - drag.startX) * Math.cos(drag.rotation) +
+        (clientY - drag.startY) * Math.sin(drag.rotation)) /
+      drag.pixelsPerWorldUnit;
+    return closestAvailableBeamSize(
+      beamLength[drag.startSize] + distanceAlongBeam * 2,
+      drag.choices,
+    );
+  };
+
+  const clearBeamSizeDrag = (): void => {
+    beamSizeDragRef.current = null;
+    beamSizePreviewRef.current = null;
+    setBeamSizePreview(null);
+  };
 
   // React's `onWheel` is passive: only a native listener can keep the page from scrolling.
   const onWheelZoomRef = useRef(onWheelZoom);
@@ -199,8 +321,10 @@ export function BoardView({
           const currentSession = sessionRef.current;
           const simulation = simulationStateRef.current;
           const simulationAttempt = currentSession.simulationSnapshot;
-          const displayedDocument = (simulationAttempt ?? currentEditorAttempt(currentSession))
-            .document;
+          const displayedDocument = withBeamSize(
+            (simulationAttempt ?? currentEditorAttempt(currentSession)).document,
+            beamSizePreviewRef.current,
+          );
           const ghostView =
             currentSession.phase === 'construction' ? placementGhost(currentSession) : null;
           const projection = projectLevel(
@@ -249,7 +373,7 @@ export function BoardView({
 
   useEffect(() => {
     boardRenderRef.current?.();
-  }, [session, simulationState, camera]);
+  }, [session, simulationState, camera, beamSizePreview]);
 
   return (
     <>
@@ -299,6 +423,93 @@ export function BoardView({
                   )}`
             }
           />
+          {beamSizeGeometry !== null &&
+            selectedBeam !== undefined &&
+            beamSizeChoices !== null &&
+            sizeHandleStyle !== undefined && (
+              <>
+                {sizeStemStyle !== undefined && (
+                  <span
+                    className="beam-size-handle-stem"
+                    style={sizeStemStyle}
+                    aria-hidden="true"
+                  />
+                )}
+                <button
+                  ref={beamSizeHandleRef}
+                  className="beam-size-handle"
+                  type="button"
+                  style={sizeHandleStyle}
+                  aria-label="Redimensionner la poutre"
+                  aria-description="Faire glisser le long de la poutre pour la redimensionner, ou utiliser les flèches du clavier."
+                  aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
+                  onPointerDown={(event) => {
+                    event.stopPropagation();
+                    if (event.button !== 0 || selectedBeamProjection === undefined) return;
+                    event.currentTarget.focus();
+                    if (typeof event.currentTarget.setPointerCapture === 'function') {
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                    }
+                    beamSizeDragRef.current = {
+                      pointerId: event.pointerId,
+                      placementId: selectedBeam.id,
+                      startX: event.clientX,
+                      startY: event.clientY,
+                      startSize: selectedBeam.props.size,
+                      rotation: selectedBeamProjection.rotation,
+                      pixelsPerWorldUnit: camera.pixelsPerWorldUnit,
+                      choices: beamSizeChoices,
+                      previewSize: selectedBeam.props.size,
+                    };
+                  }}
+                  onPointerMove={(event) => {
+                    event.stopPropagation();
+                    const drag = beamSizeDragRef.current;
+                    if (drag === null || drag.pointerId !== event.pointerId) return;
+                    const size = previewBeamSizeAt(event.clientX, event.clientY);
+                    if (size === null || size === drag.previewSize) return;
+                    drag.previewSize = size;
+                    const preview = { placementId: drag.placementId, size };
+                    beamSizePreviewRef.current = preview;
+                    setBeamSizePreview(preview);
+                  }}
+                  onPointerUp={(event) => {
+                    event.stopPropagation();
+                    const drag = beamSizeDragRef.current;
+                    if (drag === null || drag.pointerId !== event.pointerId) return;
+                    const size =
+                      previewBeamSizeAt(event.clientX, event.clientY) ?? drag.previewSize;
+                    clearBeamSizeDrag();
+                    if (size !== drag.startSize) onBeamSizeChange(size);
+                  }}
+                  onPointerCancel={(event) => {
+                    event.stopPropagation();
+                    if (beamSizeDragRef.current?.pointerId === event.pointerId) clearBeamSizeDrag();
+                  }}
+                  onKeyDown={(event) => {
+                    const direction =
+                      event.key === 'ArrowRight' || event.key === 'ArrowDown'
+                        ? 1
+                        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+                          ? -1
+                          : 0;
+                    if (direction === 0) return;
+                    event.preventDefault();
+                    const availableSizes = beamSizeChoices
+                      .filter((choice) => choice.isAvailable)
+                      .map((choice) => choice.size);
+                    const currentIndex = availableSizes.indexOf(selectedBeam.props.size);
+                    const targetSize = availableSizes[currentIndex + direction];
+                    if (targetSize !== undefined) onBeamSizeChange(targetSize);
+                  }}
+                  onLostPointerCapture={(event) => {
+                    if (beamSizeDragRef.current?.pointerId === event.pointerId) clearBeamSizeDrag();
+                  }}
+                >
+                  <MoveHorizontal size={16} aria-hidden="true" />
+                </button>
+              </>
+            )}
           {ghost?.isGhostValid === true && (
             <p className="placement-preview-status" role="status">
               Aperçu de placement valide

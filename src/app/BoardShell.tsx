@@ -5,6 +5,12 @@ import { ArrowLeft, CircleQuestionMark, Eye, Gamepad2, Upload } from 'lucide-rea
 import { revealAuthorSolution } from '../application/construction/authoring-commands';
 import { createConstructionAttempt } from '../application/construction/construction-attempt';
 import {
+  beamSizeChoicesFor,
+  changeBeamSize,
+  type BeamSize,
+  type ConstructionAttempt,
+} from '../application/construction';
+import {
   createEditorSession,
   currentEditorAttempt,
   selectEditorPlacement,
@@ -13,7 +19,6 @@ import type { EditorSession } from '../application/editor-session/editor-session
 import { puzzleFromWorkshop } from '../application/puzzle/puzzle-workshop';
 import type { LevelDocument } from '../domain/level-document';
 import type { AttemptOutcome } from '../domain/attempt-failure-evaluator';
-import type { ConstructionAttempt } from '../application/construction';
 import { AppFrame } from '../ui/AppFrame';
 import { BoardView } from '../ui/BoardView';
 import { ContextPanel } from '../ui/ContextPanel';
@@ -252,6 +257,34 @@ export function BoardShell({
     mode === 'creation' || currentEditorAttempt(session).document.inventory.length > 0;
 
   const hasSelection = session.selectedPlacementId !== null && session.phase === 'construction';
+  const beamSizeChoices =
+    hasSelection && pointers.placementTool === null && wiring.wiringStep === null
+      ? beamSizeChoicesFor(
+          currentEditorAttempt(session),
+          session.selectedPlacementId,
+          mode === 'creation' ? 'author' : 'player',
+        )
+      : null;
+
+  const changeSelectedBeamSize = (size: BeamSize): void => {
+    const selectedPlacementId = sessionRef.current.selectedPlacementId;
+    if (selectedPlacementId === null) return;
+    const placement = currentEditorAttempt(sessionRef.current).document.objects.find(
+      ({ id }) => id === selectedPlacementId,
+    );
+    if (placement?.type !== 'beam' || placement.props.size === size) return;
+    const result = executeCommand(
+      changeBeamSize({
+        context: mode === 'creation' ? 'author' : 'player',
+        placementId: selectedPlacementId,
+        size,
+      }),
+    );
+    if (result.status === 'accepted') {
+      const name = size === 'short' ? 'courte' : size === 'medium' ? 'moyenne' : 'longue';
+      setFeedback(`Poutre ${name}. Tu peux annuler ce changement.`);
+    }
+  };
 
   const resetDialogCopy =
     mode === 'creation'
@@ -572,6 +605,8 @@ export function BoardShell({
           cameraRef={boardCamera.cameraRef}
           boardCanvasRef={boardCamera.boardCanvasRef}
           boardPointerHandlers={pointers.boardPointerHandlers}
+          beamSizeChoices={beamSizeChoices}
+          onBeamSizeChange={changeSelectedBeamSize}
           onZoomIn={boardCamera.zoomIn}
           onZoomOut={boardCamera.zoomOut}
           onFitToScene={boardCamera.fitCameraToCurrentScene}

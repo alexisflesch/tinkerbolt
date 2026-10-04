@@ -323,6 +323,11 @@ small {
 #size-handle {
   top: 50%;
   left: calc(100% + 28px);
+  cursor: grab;
+  touch-action: none;
+}
+#size-handle:active {
+  cursor: grabbing;
 }
 .handle::before {
   content: '';
@@ -337,19 +342,6 @@ small {
   width: 18px;
   height: 18px;
 }
-.size-menu {
-  position: absolute;
-  top: -42px;
-  left: calc(50% + 72px);
-  width: 278px;
-  background: #fbf5e9;
-  border: 2px solid #34568c;
-  border-radius: 12px;
-  overflow: auto;
-  z-index: 3;
-  color: #2b2521;
-}
-.size-menu header,
 .properties header {
   display: flex;
   align-items: center;
@@ -360,47 +352,11 @@ small {
   padding: 2px 8px 2px 14px;
   font-weight: 900;
 }
-.size-menu header button,
 .properties header button {
   background: transparent;
   border: 0;
   width: 44px;
   padding: 8px;
-}
-#size-options {
-  padding: 8px;
-  display: grid;
-  gap: 6px;
-}
-.size-option {
-  background: #fffdf8;
-  border-color: #e3d5bd;
-  color: #2b2521;
-  justify-content: flex-start;
-  min-height: 60px;
-  padding: 8px;
-}
-.size-option img {
-  height: 8px;
-  object-fit: fill;
-  flex-shrink: 0;
-}
-.size-option span {
-  margin-left: auto;
-}
-.size-option small {
-  font-size: 10px;
-  color: #6d6158;
-}
-.size-option[aria-pressed='true'] {
-  background: #fff0c9;
-  border-color: #b08b29;
-}
-.size-menu p {
-  margin: 4px 12px 12px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: #6d6158;
 }
 .selection-bar {
   position: absolute;

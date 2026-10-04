@@ -64,8 +64,18 @@ interface ConstructionCommand extends Command<ConstructionAttempt> {
 
 type Placement = LevelDocument['objects'][number];
 type InventoryEntry = LevelDocument['inventory'][number];
+type BeamPlacement = Extract<Placement, { readonly type: 'beam' }>;
+export type BeamSize = BeamPlacement['props']['size'];
 type Transform = Placement['transform'];
 type WorldPosition = Transform['position'];
+
+export interface BeamSizeChoice {
+  readonly size: BeamSize;
+  readonly isCurrent: boolean;
+  readonly isAvailable: boolean;
+  /** Remaining matching entries; `null` means the author catalogue has no stock limit. */
+  readonly quantity: number | null;
+}
 
 interface PlaceFromInventoryInput {
   readonly context: ConstructionContext;
@@ -100,6 +110,12 @@ interface UpdatePlacementPropertiesInput {
   readonly context: ConstructionContext;
   readonly placementId: string;
   readonly props: Placement['props'];
+}
+
+interface ChangeBeamSizeInput {
+  readonly context: ConstructionContext;
+  readonly placementId: string;
+  readonly size: BeamSize;
 }
 
 /**
@@ -188,6 +204,62 @@ export const definitionsMatch = (placement: Placement, inventoryEntry: Inventory
     placement.permissions.rotate === inventoryEntry.permissions.rotate &&
     placement.permissions.remove === inventoryEntry.permissions.remove
   );
+};
+
+const BEAM_SIZES: readonly BeamSize[] = ['short', 'medium', 'long'];
+
+const matchingBeamEntries = (
+  attempt: ConstructionAttempt,
+  placement: BeamPlacement,
+  size: BeamSize,
+): readonly Extract<InventoryEntry, { readonly type: 'beam' }>[] => {
+  const resized = { ...placement, props: { size } };
+  return attempt.document.inventory.filter(
+    (entry): entry is Extract<InventoryEntry, { readonly type: 'beam' }> =>
+      entry.type === 'beam' && entry.props.size === size && definitionsMatch(resized, entry),
+  );
+};
+
+/**
+ * Choices for the board's beam-size affordance. In player mode the beam must
+ * come from inventory, and every alternative must be available in that same
+ * level's remaining stock; changing size cannot mint a piece.
+ */
+export const beamSizeChoicesFor = (
+  attempt: ConstructionAttempt,
+  placementId: string,
+  context: ConstructionContext,
+): readonly BeamSizeChoice[] | null => {
+  const placement = attempt.document.objects.find(({ id }) => id === placementId);
+  if (placement?.type !== 'beam') return null;
+  if (context === 'author') {
+    return BEAM_SIZES.map((size) => ({
+      size,
+      isCurrent: placement.props.size === size,
+      isAvailable: true,
+      quantity: null,
+    }));
+  }
+
+  if (!placement.permissions.move) return null;
+  const sourceId = attempt.provenance[placementId];
+  if (sourceId === undefined) return null;
+  const source = attempt.document.inventory.find(({ id }) => id === sourceId);
+  if (source?.type !== 'beam' || !definitionsMatch(placement, source)) return null;
+
+  return BEAM_SIZES.map((size) => {
+    const isCurrent = placement.props.size === size;
+    const quantity = matchingBeamEntries(attempt, placement, size).reduce(
+      (total, entry) => total + entry.quantity,
+      0,
+    );
+    return {
+      size,
+      isCurrent,
+      isAvailable: isCurrent || quantity > 0,
+      quantity,
+    };
+  });
 };
 
 const acceptCandidate = (
@@ -410,6 +482,70 @@ export const updatePlacementProperties = (
       ),
     };
     return acceptCandidate(documentCandidate, state.provenance);
+  },
+});
+
+/**
+ * Changes a beam's fixed size. Authors can choose any size; players exchange
+ * an inventory-sourced beam for a matching size from the same level's stock.
+ */
+export const changeBeamSize = (input: ChangeBeamSizeInput): ConstructionCommand => ({
+  execute: (state) => {
+    const placement = state.document.objects.find(({ id }) => id === input.placementId);
+    if (placement === undefined) return reject('placement-not-found');
+    if (placement.type !== 'beam') return reject('invalid-level-document');
+    if (placement.props.size === input.size) return { status: 'accepted', state };
+
+    const resizedPlacement: BeamPlacement = {
+      ...placement,
+      props: { size: input.size },
+    };
+    if (input.context === 'author') {
+      return acceptCandidate(
+        {
+          ...state.document,
+          objects: state.document.objects.map((entry) =>
+            entry.id === placement.id ? resizedPlacement : entry,
+          ),
+        },
+        state.provenance,
+      );
+    }
+
+    if (!placement.permissions.move) return reject('move-not-permitted');
+    const sourceId = state.provenance[placement.id];
+    if (sourceId === undefined) return reject('inventory-provenance-missing');
+    const source = state.document.inventory.find(({ id }) => id === sourceId);
+    if (source === undefined) return reject('inventory-source-not-found');
+    if (source.type !== 'beam' || !definitionsMatch(placement, source)) {
+      return reject('inventory-provenance-mismatch');
+    }
+
+    const target = matchingBeamEntries(state, placement, input.size).find(
+      (entry) => entry.quantity > 0,
+    );
+    if (target === undefined) return reject('inventory-depleted');
+    if (!isFootprintInsideBuildZone(state.document, placementFootprintCorners(resizedPlacement))) {
+      return reject('outside-build-zone');
+    }
+
+    const documentCandidate = {
+      ...state.document,
+      objects: state.document.objects.map((entry) =>
+        entry.id === placement.id ? resizedPlacement : entry,
+      ),
+      inventory: state.document.inventory.map((entry) =>
+        entry.id === source.id
+          ? { ...entry, quantity: entry.quantity + 1 }
+          : entry.id === target.id
+            ? { ...entry, quantity: entry.quantity - 1 }
+            : entry,
+      ),
+    };
+    return acceptCandidate(documentCandidate, {
+      ...state.provenance,
+      [placement.id]: target.id,
+    });
   },
 });
 

@@ -2,9 +2,9 @@
 
 Dernière mise à jour : 4 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
-C3.2, C8, C9a à C9d, C7 et C6 livrés**. La suite prioritaire est C4, puis
-C4a et C10. C5 est implémenté ; sa recette visuelle reste différée. Dernière
-gate globale verte après C6 : 1 340 tests Vitest et 97 E2E v1. U3 reste
+C3.2, C4, C8, C9a à C9d, C7 et C6 livrés**. La suite prioritaire est C4a,
+puis C10. C5 est implémenté ; sa recette visuelle reste différée. Dernière
+gate C4 : 1 349 tests Vitest et 97 E2E v1 réussis. U3 reste
 abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
@@ -35,9 +35,13 @@ secours. C3.2 est terminé ; ses parcours sont consignés dans la feuille de rou
 Les [maquettes C4/C4a](maquettes/complements-desktop/c4-c4a.html) et leurs captures
 aux deux formats dans `tmp/c4/captures/` ont été examinées par l’auteur. Les
 positions demandées sont corrigées : rotation au coin haut gauche, taille à
-droite centrée ; la poursuite est autorisée. Aucun de ces nouveaux contrôles
-n’est implémenté dans l’application. La recette visuelle est différée sur instruction de l’auteur ; elle ne bloque
-pas l’implémentation autorisée. Les comportements principaux des nouvelles
+droite centrée ; la poursuite est autorisée. **C4 est maintenant implémenté** :
+la poignée de taille a le même diamètre visible que celle de rotation ; le
+glissement affiche un aperçu et s’aimante aux trois variantes. Aucun sélecteur
+ne s’ouvre au clic. En jeu, l’inventaire limite les tailles accessibles.
+La maquette est mise à jour avec cette correction. C4a reste à faire. La recette
+visuelle est différée sur instruction de l’auteur ; elle ne bloque pas
+l’implémentation autorisée. Les comportements principaux des nouvelles
 familles sont confirmés ; leurs détails de modèle et d’équilibrage restent
 consignés dans les tâches C9. Pour C9a à C9c, la recette visuelle est différée
 selon l’instruction de l’auteur.
@@ -995,6 +999,13 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après C4 (4 octobre 2026) : **passe** — typecheck, lint,
+formatage, Knip, contenu (6 documents), 1 349 tests Vitest (102 fichiers),
+build (77 entrées de précache) et 97 E2E v1. La gate a été relancée avec les
+permissions locales nécessaires à `tsx` et au serveur Preview de Playwright.
+Le fichier d’essai de l’auteur a été restauré avec son SHA-256 attendu
+`1113625e…a92907`.
 
 `pnpm check` après C6 (4 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu (6 documents), 1 340 tests Vitest (102 fichiers),

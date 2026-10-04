@@ -1134,6 +1134,48 @@ export const rotationHandleBounds = (
   };
 };
 
+const BEAM_SIZE_HANDLE_GAP_CSS_PIXELS = 8;
+const BEAM_SIZE_HANDLE_SIZE_CSS_PIXELS = ROTATION_HANDLE_SIZE_CSS_PIXELS;
+
+interface BeamSizeHandleGeometry {
+  readonly bounds: BoardDestination;
+  /** Centre-line from the middle of the beam's right edge to the handle. */
+  readonly stem: Readonly<{ readonly start: BoardPoint; readonly end: BoardPoint }>;
+}
+
+/** Places the size control midway along the selected beam's right edge. */
+export const beamSizeHandleGeometry = (
+  object: ProjectedBoardObject,
+  viewport: BoardViewport,
+): BeamSizeHandleGeometry => {
+  const objectCenter = worldToPixels(object.position, viewport);
+  const destination = destinationToPixels(object.destination, viewport);
+  const cosine = Math.cos(object.rotation);
+  const sine = Math.sin(object.rotation);
+  const edgeOffset = {
+    x: destination.x + destination.width,
+    y: destination.y + destination.height / 2,
+  };
+  const start = {
+    x: objectCenter.x + edgeOffset.x * cosine - edgeOffset.y * sine,
+    y: objectCenter.y + edgeOffset.x * sine + edgeOffset.y * cosine,
+  };
+  const handleDistance = BEAM_SIZE_HANDLE_GAP_CSS_PIXELS + BEAM_SIZE_HANDLE_SIZE_CSS_PIXELS / 2;
+  const center = {
+    x: start.x + handleDistance * cosine,
+    y: start.y + handleDistance * sine,
+  };
+  return {
+    bounds: {
+      x: center.x - BEAM_SIZE_HANDLE_SIZE_CSS_PIXELS / 2,
+      y: center.y - BEAM_SIZE_HANDLE_SIZE_CSS_PIXELS / 2,
+      width: BEAM_SIZE_HANDLE_SIZE_CSS_PIXELS,
+      height: BEAM_SIZE_HANDLE_SIZE_CSS_PIXELS,
+    },
+    stem: { start, end: center },
+  };
+};
+
 const selectedObject = (projection: BoardProjection): ProjectedBoardObject | undefined => {
   if (projection.selectedPlacementId === undefined) return undefined;
 

@@ -23,6 +23,8 @@ export {
 } from './authoring-commands';
 
 export {
+  beamSizeChoicesFor,
+  changeBeamSize,
   connectControlWire,
   createConstructionAttempt,
   disconnectControlWire,
@@ -34,6 +36,8 @@ export {
 } from './construction-attempt';
 
 export type {
+  BeamSize,
+  BeamSizeChoice,
   ConstructionAttempt,
   ConstructionContext,
   ConstructionErrorCode,

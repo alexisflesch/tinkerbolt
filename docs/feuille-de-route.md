@@ -24,7 +24,11 @@ recette visuelle reste différée. C3.1 et C3.2 sont livrés ; la dernière gate
 globale passe avec 1 236 tests Vitest et 92 E2E v1. Le jeu reprend maintenant
 les constructions de campagne et reçues avant toute simulation.
 C4/C4a ont été examinées par l’auteur : rotation au coin haut gauche et taille
-au milieu du bord droit, puis poursuite autorisée.
+au milieu du bord droit, puis poursuite autorisée. L’auteur a précisé pour C4
+que la poignée de taille a le même diamètre visible que celle de rotation et
+redimensionne par glissement, avec aperçu direct et aimantation aux trois
+tailles ; aucun sélecteur ne s’ouvre au clic et aucune longueur libre n’est
+créée.
 C8 est livré après validation auteur : format v3, comportements, variante de
 caisse, délai du minuteur et ordre **caisses → électroaimant → piston → minuteur**
 sont consignés dans les ADR 0018/0019 et 0009. **C9a caisses est livré**, gate
@@ -63,7 +67,13 @@ L’auteur prévoit une passe esthétique ultérieure avec Opus. Gate complète 
 
 **C6, icônes et splash, est livré** après validation par l’auteur de la
 disposition du splash : image adaptée au format, barre et crédit centrés en bas.
-La prochaine tâche est C4, puis C4a et C10.
+**C4, redimensionnement des poutres, est livré** : poignée de 28 px visible
+(cible de 44 px), centrée au bord droit et tournée avec la poutre ; glissement
+avec aperçu direct, choix aimanté aux tailles 2/4/6 unités, une commande
+annulable au relâchement. En jeu, l’aperçu et la commande respectent le stock,
+sans taille offerte. 1 349 tests Vitest, build et 97 E2E v1 passent ; le détail
+de la gate C4 est consigné dans `etat.md`. **La prochaine tâche est C4a, puis
+C10.**
 
 ## Règles de la reprise active
 
@@ -180,19 +190,19 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
 | Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
 | Livré                 | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| 1                     | C4   | Icône de taille des poutres                                             | Décision des trois tailles ; maquette validée.                  |
-| 2                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
+| Livré                 | C4   | Poignée de redimensionnement des poutres par glissement                  | Trois tailles fixes ; aperçu direct et une commande annulable.  |
+| 1                     | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5   | Résultat et modale de victoire synchronisés                             | C0.                                                             |
-| 3                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
-| 4                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
-| 5                     | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
-| 6                     | M2   | Interface portrait                                                      | M1.                                                             |
-| 7                     | M3   | Interface paysage                                                       | M2.                                                             |
-| 8                     | M4   | Recette téléphone et gate v2                                            | M1 à M3.                                                        |
-| 9                     | F0   | Dépôt et hébergement Forge opérationnels                                | M4 ; destination et stratégie de bascule définies.              |
-| 10                    | F1   | Contrat et prototype du parcours Grist                                  | F0 ; accès à l’instance et décision Q8.                         |
-| 11                    | F2   | Proposition d’un niveau depuis l’application                            | F1.                                                             |
-| 12                    | F3   | Récupération, modération et recette v3                                  | F2.                                                             |
+| 2                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, ou reports explicitement décidés avec l’auteur. |
+| 3                     | M0   | Spécification et maquettes téléphone                                    | C10 ; décisions téléphone confirmées.                           |
+| 4                     | M1   | Séparation toucher simple / pose / déplacement                          | M0 ; C1 et C4a.                                                 |
+| 5                     | M2   | Interface portrait                                                      | M1.                                                             |
+| 6                     | M3   | Interface paysage                                                       | M2.                                                             |
+| 7                     | M4   | Recette téléphone et gate v2                                            | M1 à M3.                                                        |
+| 8                     | F0   | Dépôt et hébergement Forge opérationnels                                | M4 ; destination et stratégie de bascule définies.              |
+| 9                     | F1   | Contrat et prototype du parcours Grist                                  | F0 ; accès à l’instance et décision Q8.                         |
+| 10                    | F2   | Proposition d’un niveau depuis l’application                            | F1.                                                             |
+| 11                    | F3   | Récupération, modération et recette v3                                  | F2.                                                             |
 
 La recette visuelle C5 reste différée sur instruction de l’auteur.
 
@@ -296,14 +306,16 @@ de l’ADR 0017 ; ce découpage ne crée aucune nouvelle décision produit.
 
 ### C4 — Choisir la taille d’une poutre depuis le plateau
 
-- Ajouter une icône explicite, comparable à l’accès à la rotation, qui permet
-  de choisir courte, moyenne ou longue. Valider sa forme sur une maquette.
-- Respecter les permissions du mode et les tailles de l’inventaire : l’icône
-  n’accorde pas gratuitement une taille absente d’un niveau.
-- Le choix produit une seule commande annulable ; une taille déjà choisie
-  ne crée pas une modification inutile. Préserver l’accès clavier et tactile.
-- **Sortie :** taille modifiable sans ouvrir l’inspecteur lorsque c’est permis ;
-  schéma et trois tailles conservés, comportement et annulation testés.
+- **Livré.** La poignée au milieu du bord droit a le même diamètre visible que
+  celle de rotation. La faire glisser redimensionne la poutre avec aperçu direct
+  et aimantation aux trois tailles fixes (2, 4 ou 6 unités) ; un clic seul ne
+  déclenche ni menu ni changement.
+- En jeu, seules les tailles présentes dans l’inventaire sont atteignables ;
+  le changement échange les pièces. Le geste validé produit une seule commande
+  annulable et un aller-retour sans changement n’ajoute pas d’entrée d’historique.
+- L’implémentation est couverte par les tests de commande, d’intégration auteur
+  et de mode joueur. Les E2E v1 confirment l’absence de régression. La recette
+  visuelle finale reste regroupée dans C10 selon l’instruction de l’auteur.
 
 ### C4a — Ouvrir les propriétés desktop à la demande
 
