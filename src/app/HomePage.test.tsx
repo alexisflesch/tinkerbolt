@@ -73,7 +73,7 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
     });
     const hints = container.querySelector('.home-board .home-hints');
     expect(hints).toHaveAttribute('aria-hidden', 'true');
-    expect(hints?.getAttribute('viewBox')).toBe('0 0 16 9');
+    expect(hints?.getAttribute('viewBox')).toBe('0 0.75 16 9');
     // Quatre flèches : une trajectoire pointillée et une pointe chacune.
     expect(hints?.querySelectorAll('path')).toHaveLength(8);
     expect(hero.closest('.home-frame')).not.toBeNull();

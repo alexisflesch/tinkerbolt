@@ -23,7 +23,9 @@ Les trois lots sont commités, non poussés. Bolt (todo § 5) n’est pas commen
 C10 reste en cours :
 la recette visuelle de l’auteur reste à faire sur les captures
 `maquettes/complements-desktop/captures/reprise-05-10/final-*.png`. U3 reste
-abandonnée.
+abandonnée. La page Paramètres suit la nouvelle référence
+`art/refs/settings.png` ; captures de recette dans
+`tmp/settings-reprise/captures/`. Sa validation visuelle reste attendue.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -585,11 +587,13 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   plus montés.
 
 - **Accueil `/`** (V7, identité visuelle C7a du 5 octobre, maquette
-  `maquettes/identite/`) : scène d’atelier en parchemin ; « Amène la balle
-  jusqu’au panier. » en Baloo 2 sur une feuille épinglée, un paragraphe,
+  `maquettes/identite/`) : fond d’atelier illustré (`art/background.png`) ;
+  « Amène la balle jusqu’au panier. » en Baloo 2 sur une feuille épinglée, un
+  paragraphe,
   « Jouer » (→ `/levels`) et « Créer un niveau » (→ `/editor`) ; Bolt détouré
   et, dans un cadre en bois, le tutoriel 5 dessiné avec sa solution posée
-  (`withSolutionPlaced`, `LevelPreview`) et quatre flèches décoratives ; trois
+  (`withSolutionPlaced`, `LevelPreview`), fenêtre décalée vers le haut de 0,75
+  unité pour montrer tout le tremplin, et quatre flèches décoratives ; trois
   cartes Campagne (progression `résolus / total`, barre et texte), Atelier et
   Mes niveaux, illustrées par une vignette de sprite. Sous 861 px la scène
   s’empile, les deux boutons disparaissent et la carte Campagne devient
@@ -1050,15 +1054,15 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
 
 ## Dernière exécution de la gate
 
-`pnpm check` après la reprise des tests C7b/C7c (5 octobre 2026) : **passe** —
-typecheck, lint, formatage, Knip, contenu (8 documents), 1 383 tests Vitest
-(106 fichiers), build (88 entrées de précache) et 103 E2E v1. Les tests couvrent
-la nouvelle coque, les pages de contenu et les interactions remaniées. Le test
-d’annulation vérifie la disparition de l’objet au point joué sans comparer le
-cadrage complet. Le contrôle à 320 px a révélé puis corrigé le débordement des
-actions dans l’en-tête ; sa validation visuelle reste à l’auteur. Le fichier
-d’essai local a été restauré avec son SHA-256 attendu
-`1113625e…a92907`.
+`pnpm check` après les Paramètres, le fond partagé et le cadrage du tremplin
+(5 octobre 2026) : **passe** — typecheck, lint, formatage, Knip, contenu
+(8 documents), 1 385 tests Vitest (106 fichiers), build (89 entrées de
+précache, 5 639,07 Kio) et 103 E2E v1. Les tests de paramètres couvrent le
+panneau À propos et la jauge accessible ; les tests de l’accueil vérifient le
+cadrage décalé. Le fichier d’essai local a été restauré avec son SHA-256
+attendu `1113625e…a92907`. La recette visuelle de l’auteur reste attendue sur
+`tmp/settings-reprise/captures/` et
+`tmp/landing-background/landing-pan-{1440x900,1280x720,390x844}.png`.
 
 `pnpm check` après le lot 3 de la reprise du 5 octobre (5 octobre 2026) :
 **passe**, mêmes chiffres que le lot 2 ci-dessous.

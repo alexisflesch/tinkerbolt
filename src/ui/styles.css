@@ -435,7 +435,7 @@ select:focus-visible {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--night-900);
+  background: url('../../art/background.png') center / cover no-repeat fixed;
   isolation: isolate;
 }
 
@@ -651,9 +651,6 @@ select:focus-visible {
   padding: 0;
   overflow: clip;
   color: #4a4037;
-  background:
-    linear-gradient(rgb(226 196 140 / 34%), rgb(226 196 140 / 34%)),
-    #f0e2c6 url('/assets/home/papier.webp') 0 0 / 320px;
 }
 
 .home-page > .pwa-invitation,
@@ -3301,9 +3298,6 @@ select:focus-visible {
   --desk-paper: #fdf6e6;
 
   color: #4a4037;
-  background:
-    linear-gradient(rgb(226 196 140 / 34%), rgb(226 196 140 / 34%)),
-    #f0e2c6 url('/assets/home/papier.webp') 0 0 / 320px;
 }
 
 .app-shell-desk .app-main {
@@ -4088,9 +4082,6 @@ select:focus-visible {
  */
 .app-shell-page {
   color: #4a4037;
-  background:
-    linear-gradient(rgb(226 196 140 / 34%), rgb(226 196 140 / 34%)),
-    #f0e2c6 url('/assets/home/papier.webp') 0 0 / 320px;
 }
 
 .app-shell-page .app-main {
@@ -5020,4 +5011,321 @@ select:focus-visible {
   .victory-tier[data-earned='true'] .victory-tier-name {
     font-size: 12.5px;
   }
+}
+
+/* Paramètres : carte de profil, progression et informations du projet. */
+.app-shell-page:has(.settings-page) {
+  background:
+    linear-gradient(rgb(255 248 230 / 24%), rgb(255 248 230 / 24%)),
+    url('../../art/background.png') center / cover no-repeat fixed;
+}
+
+.app-shell-page:has(.settings-page) .app-header {
+  padding-right: max(20px, calc((100vw - 992px) / 2));
+  padding-left: max(20px, calc((100vw - 992px) / 2));
+}
+
+.app-shell-page:has(.settings-page) .app-header:has(.main-nav) .header-actions {
+  width: 0;
+  min-width: 0;
+}
+
+.page-head:has(+ .settings-page),
+.app-shell-page .app-main .settings-page {
+  width: min(100% - 48px, 836px);
+}
+
+.page-head:has(+ .settings-page) {
+  padding-top: 24px;
+}
+
+.app-shell-page .app-main .settings-page {
+  gap: 24px;
+}
+
+.app-shell-page .app-main .settings-page > .panel {
+  max-width: none;
+}
+
+.app-shell-page .app-main .settings-panel {
+  overflow: hidden;
+  border: 1px solid #d6c29c;
+  border-radius: 16px;
+  background: rgb(255 251 241 / 94%);
+  box-shadow: 0 4px 10px rgb(91 62 21 / 22%);
+}
+
+.app-shell-page .app-main .settings-panel .panel-header {
+  min-height: 53px;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 0;
+  border-bottom: 1px solid #e8d9bc;
+  color: #17233d;
+}
+
+.settings-panel-profile {
+  --settings-accent: #ffb70c;
+}
+
+.settings-panel-progress {
+  --settings-accent: #5aa64f;
+}
+
+.settings-panel-about {
+  --settings-accent: #3284ed;
+}
+
+.app-shell-page .app-main .settings-panel .panel-header::before {
+  width: 7px;
+  align-self: stretch;
+  flex: 0 0 7px;
+  background: var(--settings-accent);
+  content: '';
+}
+
+.app-shell-page .app-main .settings-panel .panel-title {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  align-items: center;
+  gap: 14px;
+  overflow: visible;
+  color: #17233d;
+  font-family: var(--font-title);
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-overflow: clip;
+  text-transform: none;
+}
+
+.settings-panel-symbol {
+  display: grid;
+  width: 70px;
+  height: 100%;
+  flex: 0 0 70px;
+  place-items: center;
+  border-right: 1px solid #e8d9bc;
+}
+
+.settings-panel-symbol svg {
+  stroke-width: 2.1;
+}
+
+.app-shell-page .app-main .settings-panel .panel-body {
+  gap: 8px;
+  padding: 14px 32px 18px;
+}
+
+.settings-panel-profile .export-link {
+  gap: 7px;
+  color: #17233d;
+  font-size: 16px;
+}
+
+.settings-panel-profile .export-name-field {
+  min-height: 46px;
+  padding: 0 13px;
+  border: 2px solid #17233d;
+  border-radius: 11px;
+  background: rgb(255 255 255 / 30%);
+}
+
+.settings-panel-profile .panel-note {
+  color: #777d87;
+  font-size: 14px;
+}
+
+.settings-panel-profile .level-result-actions {
+  gap: 12px;
+  margin-top: 5px;
+}
+
+.settings-panel-profile .level-result-actions .btn {
+  min-height: 52px;
+  border-radius: 12px;
+  font-size: 17px;
+}
+
+.app-shell-page .app-main .settings-panel .btn-go {
+  color: #17233d;
+  background: linear-gradient(#ffd365, #ffb71e);
+}
+
+.settings-progress-caption,
+.settings-progress-count,
+.settings-about-heading {
+  margin: 0;
+  color: #17233d;
+  font-size: 16px;
+}
+
+.settings-progress-caption,
+.settings-about-heading {
+  font-weight: 800;
+}
+
+.settings-progress-count {
+  font-weight: 500;
+}
+
+.app-shell-page .app-main .settings-panel-progress .panel-body {
+  gap: 8px;
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+
+.settings-progress-meter {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 16px;
+  margin-top: -4px;
+  color: #17233d;
+  font-weight: 800;
+}
+
+.settings-progress-meter > span {
+  white-space: nowrap;
+}
+
+.settings-progress-meter progress {
+  width: 100%;
+  height: 15px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  appearance: none;
+  background: #e6ddca;
+}
+
+.settings-progress-meter progress::-webkit-progress-bar {
+  border-radius: 10px;
+  background: #e6ddca;
+}
+
+.settings-progress-meter progress::-webkit-progress-value {
+  border-radius: 10px;
+  background: #5aa64f;
+}
+
+.settings-progress-meter progress::-moz-progress-bar {
+  border-radius: 10px;
+  background: #5aa64f;
+}
+
+.settings-panel-progress > .panel-body > .btn-reset {
+  min-height: 50px;
+  margin-top: 0;
+  border-radius: 11px;
+  background: linear-gradient(#f48b23, #ed741c);
+  font-size: 16px;
+}
+
+.settings-about-list {
+  display: grid;
+  width: calc(100% - 16px);
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0 0 0 16px;
+  padding: 5px 14px 5px 0;
+  border: 1px solid #e3d6bf;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 45%);
+}
+
+.settings-about-details {
+  display: grid;
+  margin: 0;
+}
+
+.settings-about-details > div {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  border-bottom: 1px solid #e9e2d5;
+  color: #17233d;
+  font-size: 14px;
+}
+
+.settings-about-details dt {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-weight: 800;
+}
+
+.settings-about-details dt svg {
+  width: 20px;
+  flex: 0 0 20px;
+  color: #17233d;
+}
+
+.settings-about-details dd {
+  margin: 0 0 0 4px;
+  color: #59677d;
+}
+
+.settings-repository-link {
+  display: flex;
+  min-height: 37px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 0 12px;
+  border: 1px solid #cbd9e6;
+  border-radius: 9px;
+  color: #1672d2;
+  background: #f0f5f8;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.settings-repository-link:hover {
+  background: #e7f0f6;
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .page-head:has(+ .settings-page),
+  .app-shell-page .app-main .settings-page {
+    width: calc(100% - 24px);
+  }
+
+  .app-shell-page .app-main .settings-panel .panel-body {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .settings-panel-profile .level-result-actions .btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1500px) {
+  .app-shell-page:has(.settings-page) .page-prop-plans {
+    top: 42px;
+    right: -90px;
+  }
+
+  .app-shell-page:has(.settings-page) .page-prop-screwdriver {
+    top: 610px;
+  }
+
+  .app-shell-page:has(.settings-page) .page-prop-square {
+    top: 696px;
+  }
+}
+
+.app-shell-page .app-main .settings-panel-about .panel-header {
+  min-height: 52px;
+}
+
+.app-shell-page .app-main .settings-panel-about .panel-body {
+  padding-bottom: 12px;
+}
+
+.settings-repository-link {
+  min-height: 36px;
 }

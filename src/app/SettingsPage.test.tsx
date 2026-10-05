@@ -90,6 +90,20 @@ afterEach(() => {
 });
 
 describe('Paramètres — pseudo retenu (U11, ADR 0016 § Pseudo)', () => {
+  it('présente la version, la licence et le dépôt du projet', async () => {
+    await renderSettings();
+
+    const about = screen.getByRole('region', { name: 'À propos de TinkerBolt' });
+    await waitFor(() => {
+      expect(about).toHaveTextContent(/Version\s*:\s*1\.0/);
+    });
+    expect(about).toHaveTextContent(/Licence\s*:\s*AGPL-3\.0-or-later/);
+    expect(within(about).getByRole('link', { name: 'Voir le dépôt' })).toHaveAttribute(
+      'href',
+      'https://github.com/alexisflesch/tinkerbolt',
+    );
+  });
+
   it('affiche le pseudo retenu', async () => {
     await seed({ [preferencesKey]: preferencesEnvelope({ author: 'Lili' }) });
     await renderSettings();
@@ -271,6 +285,17 @@ describe('Paramètres — pseudo retenu (U11, ADR 0016 § Pseudo)', () => {
 });
 
 describe('Paramètres — remettre la progression à zéro (U11, ADR 0010, ADR 0011)', () => {
+  it('affiche une jauge accessible avec le nombre de niveaux résolus', async () => {
+    await seed({ [progressKey]: progressEnvelope });
+    await renderSettings();
+
+    const meter = screen.getByRole('progressbar', { name: 'Progression de la campagne' });
+    await waitFor(() => {
+      expect(meter).toHaveAttribute('value', '2');
+    });
+    expect(meter).toHaveAttribute('max', '7');
+  });
+
   it('demande confirmation, « Annuler » ciblé, et « Annuler » ne change rien', async () => {
     await seed({ ...untouchedEntries, [progressKey]: progressEnvelope });
     await renderSettings();

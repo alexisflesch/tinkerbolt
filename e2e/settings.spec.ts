@@ -220,7 +220,7 @@ test('U11 — captures des paramètres aux trois formats', async ({ page }, test
 
     await pseudoField(page).fill('Li li');
     await expect(pseudoPanel(page).getByRole('alert')).toBeVisible();
-    await page.getByRole('heading', { name: 'Pseudo' }).tap();
+    await page.getByRole('heading', { name: 'Profil' }).tap();
     await page.waitForTimeout(200);
     await shot('pseudo-invalide');
     await pseudoField(page).fill('Lili');

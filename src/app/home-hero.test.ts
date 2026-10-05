@@ -13,6 +13,8 @@ describe('niveau résolu de l’accueil', () => {
     const solved = withSolutionPlaced(tutorial5);
 
     const added = solved.objects.slice(tutorial5.objects.length);
+    expect(solved.scene.min.y).toBeCloseTo(tutorial5.scene.min.y + 0.75);
+    expect(solved.scene.max.y).toBeCloseTo(tutorial5.scene.max.y + 0.75);
     expect(added.map(({ type }) => type)).toEqual(['ball', 'springboard']);
     expect(added.map(({ transform }) => transform)).toEqual(
       tutorial5.solution?.placements.map(({ transform }) => transform),

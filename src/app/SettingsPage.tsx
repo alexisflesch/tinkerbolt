@@ -1,5 +1,16 @@
-import { useCallback, useId, useRef, useState } from 'react';
-import { RotateCcw, Save, X } from 'lucide-react';
+import { useCallback, useId, useRef, useState, type ReactNode } from 'react';
+import {
+  Code2,
+  ExternalLink,
+  FileText,
+  Gauge,
+  Info,
+  Package,
+  RotateCcw,
+  Save,
+  UserRound,
+  X,
+} from 'lucide-react';
 
 import { rememberAuthor } from '../application/preferences/remember-author';
 import { AppFrame } from '../ui/AppFrame';
@@ -21,13 +32,34 @@ const storageMessage = (code: string): string =>
 
 type Notice = { readonly tone: 'status' | 'alert'; readonly message: string } | null;
 
+function SettingsPanelTitle({
+  icon,
+  children,
+}: {
+  readonly icon: ReactNode;
+  readonly children: string;
+}) {
+  return (
+    <>
+      <span className="settings-panel-symbol" aria-hidden="true">
+        {icon}
+      </span>
+      <span>{children}</span>
+    </>
+  );
+}
+
 /** U11: the remembered pseudonym (M14), shown, changed or forgotten. */
 function PseudoSettings() {
   const preferences = usePreferencesRepository();
   const initial = useStorageRead(useCallback(() => preferences.load(), [preferences]));
   if (initial === null)
     return (
-      <Panel title="Pseudo">
+      <Panel
+        label="Pseudo"
+        title={<SettingsPanelTitle icon={<UserRound size={30} />}>Profil</SettingsPanelTitle>}
+        className="settings-panel settings-panel-profile"
+      >
         <p role="status">Chargement des préférences…</p>
       </Panel>
     );
@@ -81,7 +113,11 @@ function PseudoForm({
   };
 
   return (
-    <Panel title="Pseudo">
+    <Panel
+      label="Pseudo"
+      title={<SettingsPanelTitle icon={<UserRound size={30} />}>Profil</SettingsPanelTitle>}
+      className="settings-panel settings-panel-profile"
+    >
       <label className="export-link">
         <span className="export-link-label">Pseudo retenu</span>
         <input
@@ -164,11 +200,29 @@ function ProgressSettings() {
     );
   };
 
+  const progressPercent =
+    campaign.length === 0 ? 0 : Math.round((resolvedCount / campaign.length) * 100);
+
   return (
     <>
-      <Panel title="Progression de la campagne">
+      <Panel
+        label="Progression de la campagne"
+        title={<SettingsPanelTitle icon={<Gauge size={30} />}>Progression</SettingsPanelTitle>}
+        className="settings-panel settings-panel-progress"
+      >
         {known && (
-          <p className="panel-note">{`Niveaux résolus : ${String(resolvedCount)} sur ${String(campaign.length)}.`}</p>
+          <>
+            <p className="settings-progress-caption">Progression de la campagne</p>
+            <p className="settings-progress-count">{`Niveaux résolus : ${String(resolvedCount)} sur ${String(campaign.length)}.`}</p>
+            <div className="settings-progress-meter">
+              <progress
+                max={campaign.length}
+                value={resolvedCount}
+                aria-label="Progression de la campagne"
+              />
+              <span>{`${String(progressPercent)} %`}</span>
+            </div>
+          </>
         )}
         {!loading && !known && (
           <p className="panel-note" role="alert">
@@ -240,9 +294,55 @@ function ProgressSettings() {
   );
 }
 
+function AboutSettings() {
+  return (
+    <Panel
+      label="À propos de TinkerBolt"
+      title={<SettingsPanelTitle icon={<Info size={30} />}>À propos</SettingsPanelTitle>}
+      className="settings-panel settings-panel-about"
+    >
+      <p className="settings-about-heading">À propos de TinkerBolt</p>
+      <div className="settings-about-list">
+        <dl className="settings-about-details">
+          <div>
+            <dt>
+              <Package size={20} aria-hidden="true" />
+              Version :
+            </dt>
+            <dd>1.0</dd>
+          </div>
+          <div>
+            <dt>
+              <FileText size={20} aria-hidden="true" />
+              Licence :
+            </dt>
+            <dd>AGPL-3.0-or-later</dd>
+          </div>
+          <div>
+            <dt>
+              <Code2 size={20} aria-hidden="true" />
+              Code source :
+            </dt>
+            <dd>dépôt sur la Forge</dd>
+          </div>
+        </dl>
+        <a
+          className="settings-repository-link"
+          href="https://github.com/alexisflesch/tinkerbolt"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <ExternalLink size={20} aria-hidden="true" />
+          Voir le dépôt
+        </a>
+      </div>
+    </Panel>
+  );
+}
+
 /**
- * `/settings` (ADR 0008), U11: the remembered pseudonym and the campaign
- * progress reset — nothing else, until a real need asks for another setting.
+ * `/settings` (ADR 0008), U11: profile and campaign controls, followed by
+ * concise project information.
  */
 export function SettingsPage() {
   return (
@@ -250,6 +350,7 @@ export function SettingsPage() {
       <div className="page-content settings-page">
         <PseudoSettings />
         <ProgressSettings />
+        <AboutSettings />
       </div>
     </AppFrame>
   );

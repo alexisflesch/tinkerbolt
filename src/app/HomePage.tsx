@@ -143,7 +143,7 @@ export function HomePage() {
                 >
                   <div className="home-board-scene">
                     <LevelPreview document={heroLevel} />
-                    <svg className="home-hints" viewBox="0 0 16 9" aria-hidden="true">
+                    <svg className="home-hints" viewBox="0 0.75 16 9" aria-hidden="true">
                       {heroHints.map(({ path, head }) => (
                         <g key={path}>
                           <path className="home-hint-trail" d={path} />

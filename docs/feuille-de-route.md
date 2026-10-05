@@ -1085,21 +1085,24 @@ conversation.
   `public/assets/home/` ; Baloo 2 est embarquée (`public/fonts/`, SIL OFL 1.1).
   `HomePage` : scène d’atelier, Bolt détouré, cadre en bois autour de
   `LevelPreview`, trois cartes. `withSolutionPlaced` (`src/app/home-hero.ts`)
-  pose la solution de référence du tutoriel 5 sur une copie valide, sans
-  toucher au niveau embarqué ; les quatre flèches sont des tracés en unités du
-  monde, liés à ce niveau. En-tête commun : le logo dessiné remplace la
-  pastille « + » et le nom ; sans titre de page (accueil), la navigation
+  pose la solution de référence du tutoriel 5 sur une copie valide et décale
+  sa fenêtre de prévisualisation de 0,75 unité pour montrer tout le tremplin,
+  sans toucher au niveau embarqué ; les quatre flèches suivent ce cadrage.
+  En-tête commun : le logo dessiné remplace la pastille « + » et le nom ; sans
+  titre de page (accueil), la navigation
   principale Accueil · Campagne · Atelier · Mes niveaux prend la place du
   titre et se masque sous 761 px. Le menu garde Paramètres ; le pied de page
-  de l’accueil est supprimé.
+  de l’accueil est supprimé. À la demande du 5 octobre, `art/background.png`
+  remplace le fond uni sur tous les écrans, y compris les pages de contenu,
+  l’atelier et le plateau.
 - **Tests.** `home-hero.test.ts`, `HomePage.test.tsx`, `AppHeader.test.tsx` et
   `e2e/home.spec.ts` repris : sous 861 px, la commande de lancement testée est
   la carte « Campagne ».
 - **Points ouverts.** Validation visuelle de l’auteur sur l’application
-  (captures dans `maquettes/identite/captures/app/`). L’auteur prévoit un
-  niveau dédié à l’accueil : les flèches seront alors à retracer. Le reste de
-  l’application (campagne, Mes niveaux, plateau, splash) garde l’ancienne
-  identité. `public/assets/bolt/bolt-explaining.webp` n’est plus affiché.
+  (captures `tmp/landing-background/landing-pan-{1440x900,1280x720,390x844}.png`).
+  L’auteur prévoit un niveau dédié à l’accueil : les flèches seront alors à retracer. Les écrans
+  gardent leurs composants actuels ; le splash garde son habillage.
+  `public/assets/bolt/bolt-explaining.webp` n’est plus affiché.
 
 ### C7b — Écrans de plateau en grand format — implémenté, tests repris — 5 octobre 2026
 
@@ -1163,16 +1166,24 @@ conversation.
 - **Livré.** `AppFrame` : toute page de contenu titrée montre la navigation
   principale dans l’en-tête (section courante déduite du titre ou du contexte)
   et un titre de page commun, avec à droite l’action que la page lui confie
-  (progression de la campagne, « Importer » et « Nouveau niveau »). Styles
-  communs sous `.app-shell-page` : parchemin, sections, grille de 2 à 5 colonnes
+  (progression de la campagne, « Importer » et « Nouveau niveau »).
+  `art/background.png` habille le fond de la coque commune ; styles partagés
+  sous `.app-shell-page` pour les sections, la grille de 2 à 5 colonnes
   (cinq à partir de 1700 px), carte de niveau en papier, boutons à plat,
   accessoires dans les marges à partir de 1500 px. `LevelCard` et
   `LevelSection` ne changent pas de structure. Paramètres et les autres pages
   titrées héritent du même habillage. Tuiles du catalogue de l’atelier : bord
-  adouci de la même façon.
+  adouci de la même façon. Paramètres reprend maintenant la référence
+  `art/refs/settings.png` : fond `art/background.png`, cartes Profil,
+  Progression (jauge accessible) et À propos, avec les contrôles U11 conservés.
+- **Captures et validation.** Captures finales du rendu 1672 × 941, 1440 × 900
+  et 1280 × 720 : `tmp/settings-reprise/captures/settings-{reference,1440x900,1280x720}.png`.
+  La validation visuelle par l’auteur reste attendue.
 - **Tests repris.** Les tests de navigation, des pages de contenu, des dialogues
   et des parcours E2E ont été réalignés sur les nouveaux titres, actions et
-  cartes, sans supprimer les contrats de navigation ou de persistance.
+  cartes, sans supprimer les contrats de navigation ou de persistance. Les
+  tests de paramètres couvrent aussi les informations du projet et la valeur
+  accessible de la jauge ; la capture E2E utilise le titre visible « Profil ».
 - **Points ouverts.** La validation visuelle des panneaux de Paramètres et des
   messages de Mes niveaux reste à l’auteur. Dialogues inchangés.
 
