@@ -5,6 +5,10 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 
 ## [Non publié]
 
+Aucun changement notable pour le moment.
+
+## [0.2.0] - 2026-10-05
+
 - Les paramètres affichent la version de l’application et le SHA court du build.
 - La commande `pnpm release X.Y.Z` prépare, vérifie et publie une release ;
   elle utilise les identifiants Git habituels et GitHub Actions pour la publication.
