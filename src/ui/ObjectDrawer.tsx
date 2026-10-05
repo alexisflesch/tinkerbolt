@@ -1,4 +1,5 @@
-import { Check, Plus } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 
 import {
   currentEditorAttempt,
@@ -23,6 +24,20 @@ import {
 
 /** The same art the board draws, pre-composed, so a catalogue card looks like the object it places. */
 const beamSizeLabels = { short: 'courte', medium: 'moyenne', long: 'longue' } as const;
+
+const categoryThumbnails: Readonly<Record<CatalogueCategory, SpriteThumbnail>> = {
+  'Ce qui bouge': 'second-ball',
+  Structures: 'box-wood',
+  Appareils: 'fan',
+  Commandes: 'lever',
+};
+
+const searchText = (text: string): string =>
+  text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase('fr')
+    .trim();
 
 /** A ball from the player's inventory is never the goal's: it is drawn blue. */
 const playerThumbnail = (family: Exclude<SpriteFamily, 'box'>): SpriteThumbnail =>
@@ -202,6 +217,35 @@ export function ObjectDrawer({
   isWiringActive,
   onSelectWire,
 }: ObjectDrawerProps) {
+  const searchId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [collapsedCategories, setCollapsedCategories] = useState<ReadonlySet<CatalogueCategory>>(
+    () => new Set(),
+  );
+  const [searchCollapsedCategories, setSearchCollapsedCategories] = useState<
+    ReadonlySet<CatalogueCategory>
+  >(() => new Set());
+  const term = searchText(query);
+  useEffect(() => {
+    if (searchOpen) inputRef.current?.focus();
+  }, [searchOpen]);
+  const closeSearch = (): void => {
+    setQuery('');
+    setSearchOpen(false);
+    searchButtonRef.current?.focus();
+  };
+  const toggleCategory = (category: CatalogueCategory): void => {
+    const setCollapsed = term === '' ? setCollapsedCategories : setSearchCollapsedCategories;
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  };
   const inventory =
     session.mode === 'resolution' ? currentEditorAttempt(session).document.inventory : null;
   const drawerCards =
@@ -214,6 +258,13 @@ export function ObjectDrawer({
       ? `${String(drawerCards.length)} objets`
       : `${String(entryCount)} ${entryCount === 1 ? 'entrée' : 'entrées'}`;
   const isConstruction = session.phase === 'construction';
+  const filteredCards = drawerCards.filter((card) =>
+    searchText(`${card.name} ${card.accessibleName}`).includes(term),
+  );
+  const matchesWire = searchText('Fil de commande').includes(term);
+  const filteredWireEntries = matchesWire ? wireEntries : [];
+  const resultCount =
+    filteredCards.length + (inventory === null && matchesWire ? 1 : filteredWireEntries.length);
 
   const renderCard = (card: DrawerCard) => {
     const isSelected = selectedObject === card.kind && selectedEntryKey === card.key;
@@ -254,10 +305,47 @@ export function ObjectDrawer({
       <section className="object-drawer" aria-label="Objets disponibles">
         <div className="drawer-heading">
           <div>
-            <span className="eyebrow">Catalogue</span>
-            <h2>Objets disponibles</h2>
+            <h2>Catalogue</h2>
+            <span className="object-count">{objectCountLabel}</span>
           </div>
-          <span className="object-count">{objectCountLabel}</span>
+          <button
+            ref={searchButtonRef}
+            type="button"
+            className="drawer-search-toggle"
+            aria-label={searchOpen ? 'Fermer la recherche' : 'Rechercher un objet'}
+            aria-expanded={searchOpen}
+            aria-controls={searchId}
+            onClick={() => {
+              if (searchOpen) closeSearch();
+              else setSearchOpen(true);
+            }}
+          >
+            {searchOpen ? (
+              <X size={21} aria-hidden="true" />
+            ) : (
+              <Search size={21} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+
+        <div className="drawer-search" id={searchId} hidden={!searchOpen}>
+          <input
+            ref={inputRef}
+            type="search"
+            aria-label="Rechercher dans le catalogue"
+            placeholder="Rechercher un objet…"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.currentTarget.value);
+              setSearchCollapsedCategories(new Set());
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.stopPropagation();
+                closeSearch();
+              }
+            }}
+          />
         </div>
 
         <div className="drawer-content">
@@ -266,25 +354,63 @@ export function ObjectDrawer({
             id="object-list"
           >
             {inventory === null
-              ? catalogueCategories.map((category) => (
-                  <div className="object-group" key={category} role="group" aria-label={category}>
-                    <h3 className="object-group-title">{category}</h3>
-                    {drawerCards.filter((card) => card.category === category).map(renderCard)}
-                    {category === 'Commandes' && (
-                      <WireCard
-                        accessibleName="Fil de commande"
-                        detail="Relie une commande à un appareil"
-                        isActive={isWiringActive}
-                        isDisabled={!isConstruction}
-                        onSelect={() => {
-                          onSelectWire();
-                        }}
-                      />
-                    )}
-                  </div>
-                ))
-              : drawerCards.map(renderCard)}
-            {wireEntries.map((entry) => (
+              ? catalogueCategories.map((category, index) => {
+                  const cards = filteredCards.filter((card) => card.category === category);
+                  const hasWire = category === 'Commandes' && matchesWire;
+                  if (cards.length === 0 && !hasWire) return null;
+                  const collapsed = (
+                    term === '' ? collapsedCategories : searchCollapsedCategories
+                  ).has(category);
+                  const groupId = `${searchId}-group-${String(index)}`;
+                  return (
+                    <div className="object-group" key={category} role="group" aria-label={category}>
+                      <h3 className="object-group-title">
+                        <button
+                          type="button"
+                          className="object-group-toggle"
+                          aria-label={category}
+                          aria-expanded={!collapsed}
+                          aria-controls={groupId}
+                          onClick={() => {
+                            toggleCategory(category);
+                          }}
+                        >
+                          <img
+                            src={spriteThumbnailPath(categoryThumbnails[category])}
+                            alt=""
+                            aria-hidden="true"
+                            draggable={false}
+                          />
+                          <span>{category === 'Ce qui bouge' ? 'Bouge' : category}</span>
+                          <ChevronDown size={20} aria-hidden="true" />
+                        </button>
+                      </h3>
+                      <div className="object-group-panel" data-expanded={!collapsed}>
+                        <div
+                          className="object-group-cards"
+                          id={groupId}
+                          aria-hidden={collapsed}
+                          inert={collapsed}
+                        >
+                          {cards.map(renderCard)}
+                          {hasWire && (
+                            <WireCard
+                              accessibleName="Fil de commande"
+                              detail="Relie une commande à un appareil"
+                              isActive={isWiringActive}
+                              isDisabled={!isConstruction}
+                              onSelect={() => {
+                                onSelectWire();
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              : filteredCards.map(renderCard)}
+            {filteredWireEntries.map((entry) => (
               <WireCard
                 key={entry.id}
                 accessibleName={`Fil de commande, quantité : ${String(entry.quantity)}`}
@@ -299,7 +425,11 @@ export function ObjectDrawer({
           </div>
 
           <p className="drawer-hint" aria-live="polite">
-            Choisis un objet pour le placer.
+            {term === ''
+              ? 'Choisis un objet pour le placer.'
+              : resultCount === 0
+                ? 'Aucun objet ne correspond à ta recherche.'
+                : `${String(resultCount)} résultat${resultCount === 1 ? '' : 's'}`}
           </p>
         </div>
       </section>

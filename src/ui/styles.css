@@ -1325,6 +1325,16 @@ select:focus-visible {
   line-height: 1.15;
 }
 
+.level-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.level-section-heading {
+  min-width: 0;
+}
+
 .level-section-count {
   color: var(--on-night-muted);
   font-weight: 700;
@@ -3466,16 +3476,17 @@ select:focus-visible {
   transform: translateX(-50%);
 }
 
-/* Le catalogue : des cartes de papier déchiré, sur deux colonnes, posées sur le mur. */
+/* Le catalogue garde son rail : une feuille, des catégories en bois, des vignettes. */
 .app-shell-desk .object-drawer {
   position: relative;
-  z-index: auto;
+  z-index: 0;
   inset: auto;
   width: 252px;
   height: auto;
   max-height: 100%;
   flex: 0 0 252px;
-  padding: 0;
+  padding: 12px 10px 14px;
+  overflow: visible;
   border: 0;
   border-radius: 0;
   color: var(--desk-ink);
@@ -3485,6 +3496,28 @@ select:focus-visible {
   transition: none;
 }
 
+.app-shell-desk .object-drawer::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #ffedc7 url('/assets/home/papier.webp') 0 0 / 320px;
+  background-blend-mode: multiply;
+  mask: url('/assets/campaign/paper-edge.svg') 0 0 / 100% 100% no-repeat;
+  content: '';
+  pointer-events: none;
+}
+
+.app-shell-desk .object-drawer::after {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  width: 30px;
+  height: 30px;
+  background: url('/assets/campaign/pin2.png') center / contain no-repeat;
+  content: '';
+  pointer-events: none;
+}
+
 .app-shell-desk .drawer-content {
   min-width: 0;
   scrollbar-gutter: auto;
@@ -3492,32 +3525,61 @@ select:focus-visible {
 
 .app-shell-desk .drawer-heading {
   min-height: 0;
-  align-items: baseline;
+  align-items: center;
   margin: 0;
-  padding: 6px 6px 8px;
+  padding: 7px 5px 12px;
   color: var(--desk-ink);
   background: none;
 }
 
-.app-shell-desk .drawer-heading .eyebrow {
-  display: none;
-}
-
 .app-shell-desk .drawer-heading h2 {
   font-family: var(--font-title);
-  font-size: 21px;
+  font-size: 25px;
   font-weight: 800;
 }
 
 .app-shell-desk .object-count {
+  display: block;
   color: #7a6a58;
   background: none;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 
+.drawer-search-toggle {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  padding: 0;
+  place-items: center;
+  border: 2px solid #cdbb98;
+  border-radius: 10px;
+  color: #17233d;
+  background: #fff8e8;
+  cursor: pointer;
+}
+
+.drawer-search {
+  flex: 0 0 auto;
+  padding-bottom: 10px;
+}
+
+.drawer-search input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 6px 10px;
+  border: 2px solid #cdbb98;
+  border-radius: 8px;
+  color: #17233d;
+  background: #fffaf0;
+  font-size: 13px;
+}
+
 .app-shell-desk .object-list,
-.app-shell-desk .object-group {
+.app-shell-desk .object-group,
+.app-shell-desk .object-group-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
@@ -3527,134 +3589,124 @@ select:focus-visible {
   padding: 0 2px 4px;
 }
 
+.object-group-cards {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  gap: var(--space-2);
+}
+
+.object-group-panel {
+  display: grid;
+  min-width: 0;
+  grid-column: 1 / -1;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms ease-out;
+}
+
+.object-group-panel[data-expanded='true'] {
+  grid-template-rows: 1fr;
+}
+
+.object-group-panel > .object-group-cards {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.object-group-panel[data-expanded='true'] > .object-group-cards {
+  opacity: 1;
+}
+
 .app-shell-desk .object-group,
 .app-shell-desk .object-group-title {
   grid-column: 1 / -1;
 }
 
+.app-shell-desk .object-group + .object-group {
+  margin-top: 5px;
+}
+
 .app-shell-desk .object-group-title {
-  margin: 6px 4px -2px;
-  color: #8a6a3c;
-  font-size: 11.5px;
+  margin: 0;
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.object-group-toggle {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid #805025;
+  border-radius: 6px;
+  color: #fffaf0;
+  background: #a66b30 url('/assets/catalogue/wood.svg') center / 100% 100%;
+  box-shadow:
+    inset 0 0 0 2px rgb(243 215 171 / 24%),
+    0 2px 2px rgb(85 50 18 / 16%);
+  font-family: var(--font-title);
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  line-height: 1.1;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Quatre petites vis dans le bois, à l'écart du texte. */
+.object-group-toggle::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 5px 5px, #73563b 1px, #dbb77c 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 5px) 5px, #73563b 1px, #dbb77c 2px, transparent 3px),
+    radial-gradient(circle at 5px calc(100% - 5px), #73563b 1px, #dbb77c 2px, transparent 3px),
+    radial-gradient(
+      circle at calc(100% - 5px) calc(100% - 5px),
+      #73563b 1px,
+      #dbb77c 2px,
+      transparent 3px
+    );
+  content: '';
+  pointer-events: none;
+}
+
+.object-group-toggle img {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.object-group-toggle svg {
+  flex: 0 0 20px;
+  margin-left: auto;
+  transition: transform 180ms ease-out;
+}
+
+.object-group-toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
 }
 
 .app-shell-desk .object-card {
-  min-height: 0;
+  min-height: 86px;
   flex-direction: column;
-  gap: 2px;
-  padding: 6px 4px;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px;
   border: 0;
-  border-radius: 0;
+  border-radius: 8px;
   color: var(--desk-ink);
-  background:
-    linear-gradient(rgb(255 252 244 / 78%), rgb(255 252 244 / 78%)),
-    url('/assets/home/papier.webp') 0 0 / 320px;
-  clip-path: polygon(
-    0% 0.3px,
-    11% 0.8px,
-    22% 0.5px,
-    33% 0.8px,
-    44% 0.9px,
-    56% 0.1px,
-    67% 0px,
-    78% 1.2px,
-    89% 0.4px,
-    calc(100% - 0.3px) 0%,
-    calc(100% - 1.4px) 20%,
-    calc(100% - 0.7px) 40%,
-    calc(100% - 1.2px) 60%,
-    calc(100% - 0.7px) 80%,
-    100% calc(100% - 0.9px),
-    89% calc(100% - 0.2px),
-    78% calc(100% - 0.9px),
-    67% calc(100% - 1.2px),
-    56% calc(100% - 0.7px),
-    44% calc(100% - 1px),
-    33% calc(100% - 0.9px),
-    22% calc(100% - 0.1px),
-    11% calc(100% - 1.1px),
-    0.8px 100%,
-    0.4px 80%,
-    0px 60%,
-    1.2px 40%,
-    0.7px 20%
-  );
+  background: rgb(255 252 244 / 90%);
   text-align: center;
-}
-
-.app-shell-desk .object-card:nth-of-type(3n + 2) {
-  background-position:
-    0 0,
-    120px 80px;
-  clip-path: polygon(
-    0% 0.6px,
-    11% 0.8px,
-    22% 1.3px,
-    33% 0.7px,
-    44% 0.7px,
-    56% 0.8px,
-    67% 0.3px,
-    78% 0.7px,
-    89% 0.9px,
-    calc(100% - 1.1px) 0%,
-    calc(100% - 0.1px) 20%,
-    calc(100% - 0.4px) 40%,
-    calc(100% - 0.1px) 60%,
-    calc(100% - 1.1px) 80%,
-    100% calc(100% - 1px),
-    89% calc(100% - 0.1px),
-    78% calc(100% - 1.4px),
-    67% calc(100% - 1.4px),
-    56% calc(100% - 0.9px),
-    44% calc(100% - 0.9px),
-    33% calc(100% - 0.2px),
-    22% calc(100% - 0px),
-    11% calc(100% - 0.7px),
-    0.1px 100%,
-    0.3px 80%,
-    0.3px 60%,
-    0px 40%,
-    0.6px 20%
-  );
-}
-
-.app-shell-desk .object-card:nth-of-type(3n) {
-  background-position:
-    0 0,
-    60px 200px;
-  clip-path: polygon(
-    0% 1.3px,
-    11% 1.3px,
-    22% 1.2px,
-    33% 0.1px,
-    44% 0.8px,
-    56% 0.6px,
-    67% 0.7px,
-    78% 0.2px,
-    89% 0.3px,
-    calc(100% - 0.6px) 0%,
-    calc(100% - 0.3px) 20%,
-    calc(100% - 0.6px) 40%,
-    calc(100% - 0px) 60%,
-    calc(100% - 0.1px) 80%,
-    100% calc(100% - 1px),
-    89% calc(100% - 0.6px),
-    78% calc(100% - 0.7px),
-    67% calc(100% - 1px),
-    56% calc(100% - 0.5px),
-    44% calc(100% - 0.1px),
-    33% calc(100% - 1.1px),
-    22% calc(100% - 0.8px),
-    11% calc(100% - 0.9px),
-    0.9px 100%,
-    1.4px 80%,
-    0.5px 60%,
-    1.1px 40%,
-    0.5px 20%
-  );
 }
 
 .app-shell-desk .object-card-selected {
@@ -3662,9 +3714,9 @@ select:focus-visible {
 }
 
 .app-shell-desk .object-thumb {
-  width: 58px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 64px;
+  height: 48px;
+  flex: 0 0 48px;
 }
 
 .app-shell-desk .object-thumb svg {
@@ -3850,6 +3902,7 @@ select:focus-visible {
   .app-shell-desk .object-drawer {
     width: 92px;
     flex-basis: 92px;
+    padding: 0;
   }
 
   .app-shell-desk .drawer-heading {
@@ -3863,20 +3916,35 @@ select:focus-visible {
   }
 
   .app-shell-desk .object-list,
-  .app-shell-desk .object-group {
+  .app-shell-desk .object-group,
+  .app-shell-desk .object-group-cards {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Les catégories ne sont plus nommées : un filet les sépare. */
   .app-shell-desk .object-group-title {
-    height: 2px;
-    margin: 2px 6px;
-    overflow: hidden;
-    background: #e2d0a9;
-    font-size: 0;
+    height: auto;
+    margin: 0;
+    overflow: visible;
   }
 
-  .app-shell-desk .object-group:first-child .object-group-title {
+  .app-shell-desk .object-group-toggle {
+    min-height: 34px;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .app-shell-desk .object-group-toggle img {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+  }
+
+  .app-shell-desk .object-group-toggle span {
+    display: none;
+  }
+
+  .app-shell-desk .object-drawer::after {
     display: none;
   }
 
@@ -4026,9 +4094,13 @@ select:focus-visible {
     flex: 0 0 auto;
   }
 
-  .app-shell-desk .drawer-heading,
-  .app-shell-desk .object-group-title {
+  .app-shell-desk .drawer-heading {
     display: none;
+  }
+
+  .app-shell-desk .object-group-title {
+    flex: 0 0 36px;
+    align-self: stretch;
   }
 
   .app-shell-desk .drawer-content {
@@ -4042,11 +4114,76 @@ select:focus-visible {
   }
 
   .app-shell-desk .object-group {
-    display: contents;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: stretch;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .app-shell-desk .object-group-toggle {
+    width: 36px;
+    height: 100%;
+    min-height: 74px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+    border-radius: 4px;
+    background-image: url('/assets/catalogue/wood-vertical.svg');
+  }
+
+  .app-shell-desk .object-group-toggle img {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
+  }
+
+  .app-shell-desk .object-group-toggle svg {
+    width: 10px;
+    height: 10px;
+    flex-basis: 10px;
+    margin-left: 0;
+    transform: rotate(-90deg);
+  }
+
+  .app-shell-desk .object-group-toggle[aria-expanded='true'] svg {
+    transform: rotate(90deg);
+  }
+
+  .app-shell-desk .object-group-panel {
+    grid-template-columns: 0fr;
+    grid-template-rows: 1fr;
+    transition: grid-template-columns 180ms ease-out;
+  }
+
+  .app-shell-desk .object-group-panel[data-expanded='true'] {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell-desk .object-group-cards {
+    display: flex;
+    gap: 4px;
   }
 
   .app-shell-desk .object-card {
-    flex: 0 0 78px;
+    min-width: 0;
+    min-height: 74px;
+    flex: 0 0 58px;
+    gap: 3px;
+    padding: 5px 2px;
+    border-radius: 5px;
+  }
+
+  .app-shell-desk .object-thumb {
+    width: 44px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+
+  .app-shell-desk .object-card-copy strong {
+    font-size: 9px;
+    line-height: 1.15;
   }
 }
 
@@ -4296,172 +4433,100 @@ select:focus-visible {
   font-weight: 700;
 }
 
-/* La grille : autant de colonnes que la largeur en offre, jamais plus de cinq. */
+/* La grille garde de l'air autour des fixations et des feuilles inclinées. */
 .app-shell-page .level-cards {
-  grid-template-columns: repeat(auto-fill, minmax(max(236px, (100% - 4 * 18px) / 5 - 1px), 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(max(236px, (100% - 4 * 22px) / 5 - 1px), 1fr));
+  gap: 28px 22px;
+  padding: 0 0 6px;
 }
 
-/* La carte de niveau commune : une feuille au bord à peine déchiré, l'aperçu collé dessus. */
+/* Le papier seul est découpé : la fixation et l'ombre débordent de la feuille. */
 .app-shell-page .level-card {
-  padding: 9px 9px 11px;
+  position: relative;
+  z-index: 0;
+  padding: 13px 13px 12px;
   overflow: visible;
   border: 0;
   border-radius: 0;
-  background:
-    linear-gradient(rgb(255 252 244 / 80%), rgb(255 252 244 / 80%)),
-    url('/assets/home/papier.webp') 0 0 / 320px;
-  clip-path: polygon(
-    0% 1px,
-    9% 1.2px,
-    18% 1.3px,
-    27% 1.5px,
-    36% 1.2px,
-    45% 1.5px,
-    55% 0px,
-    64% 0.7px,
-    73% 1.5px,
-    82% 1px,
-    91% 1.4px,
-    calc(100% - 0.2px) 0%,
-    calc(100% - 0.8px) 11%,
-    calc(100% - 0.4px) 22%,
-    calc(100% - 0.9px) 33%,
-    calc(100% - 0.9px) 44%,
-    calc(100% - 0px) 56%,
-    calc(100% - 0.3px) 67%,
-    calc(100% - 0.4px) 78%,
-    calc(100% - 1.5px) 89%,
-    100% calc(100% - 1.2px),
-    91% calc(100% - 0.3px),
-    82% calc(100% - 1.3px),
-    73% calc(100% - 0.2px),
-    64% calc(100% - 1px),
-    55% calc(100% - 0.2px),
-    45% calc(100% - 0px),
-    36% calc(100% - 1.4px),
-    27% calc(100% - 0.3px),
-    18% calc(100% - 0.3px),
-    9% calc(100% - 1.6px),
-    1.4px 100%,
-    0.5px 89%,
-    1.5px 78%,
-    0.9px 67%,
-    1.1px 56%,
-    0.3px 44%,
-    1.5px 33%,
-    1.1px 22%,
-    1.5px 11%
-  );
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(2px 5px 4px rgb(94 65 26 / 22%));
+  transform: rotate(var(--card-tilt));
+  transform-origin: 50% 12px;
   container-type: inline-size;
   transition: none;
 }
 
-.app-shell-page .level-card:nth-child(3n + 2) {
+.app-shell-page .level-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(rgb(255 252 244 / 80%), rgb(255 252 244 / 80%)),
+    url('/assets/home/papier.webp') 0 0 / 320px;
+  mask: url('/assets/campaign/paper-edge.svg') 0 0 / 100% 100% no-repeat;
+  content: '';
+  pointer-events: none;
+}
+
+.app-shell-page .level-card:nth-child(3n + 2)::before {
   background-position:
     0 0,
     140px 90px;
-  clip-path: polygon(
-    0% 0.8px,
-    9% 1.3px,
-    18% 1.5px,
-    27% 0.5px,
-    36% 1.2px,
-    45% 1.1px,
-    55% 1.1px,
-    64% 0.2px,
-    73% 0px,
-    82% 0.6px,
-    91% 1.2px,
-    calc(100% - 0.4px) 0%,
-    calc(100% - 0.8px) 11%,
-    calc(100% - 0.5px) 22%,
-    calc(100% - 1.4px) 33%,
-    calc(100% - 1.5px) 44%,
-    calc(100% - 0.6px) 56%,
-    calc(100% - 1.6px) 67%,
-    calc(100% - 0.1px) 78%,
-    calc(100% - 1.3px) 89%,
-    100% calc(100% - 1.4px),
-    91% calc(100% - 0.2px),
-    82% calc(100% - 1.1px),
-    73% calc(100% - 0.9px),
-    64% calc(100% - 1.5px),
-    55% calc(100% - 0.3px),
-    45% calc(100% - 0.9px),
-    36% calc(100% - 1.4px),
-    27% calc(100% - 1px),
-    18% calc(100% - 0.5px),
-    9% calc(100% - 0.1px),
-    1.5px 100%,
-    0.8px 89%,
-    1.6px 78%,
-    0.2px 67%,
-    1.3px 56%,
-    1.3px 44%,
-    1.5px 33%,
-    0px 22%,
-    0.6px 11%
-  );
+  /* Une autre tranche du même papier, retournée pour varier les déchirures. */
+  transform: scale(-1, 1);
 }
 
-.app-shell-page .level-card:nth-child(3n) {
+.app-shell-page .level-card:nth-child(3n)::before {
   background-position:
     0 0,
     60px 210px;
-  clip-path: polygon(
-    0% 0.9px,
-    9% 0.6px,
-    18% 1.4px,
-    27% 0.5px,
-    36% 0.8px,
-    45% 0.6px,
-    55% 0.7px,
-    64% 1.6px,
-    73% 0.2px,
-    82% 0.7px,
-    91% 0.4px,
-    calc(100% - 0.6px) 0%,
-    calc(100% - 1.6px) 11%,
-    calc(100% - 0.5px) 22%,
-    calc(100% - 1px) 33%,
-    calc(100% - 0.7px) 44%,
-    calc(100% - 1.2px) 56%,
-    calc(100% - 0.7px) 67%,
-    calc(100% - 0.3px) 78%,
-    calc(100% - 0.7px) 89%,
-    100% calc(100% - 0.7px),
-    91% calc(100% - 1.3px),
-    82% calc(100% - 0.9px),
-    73% calc(100% - 0.3px),
-    64% calc(100% - 1.1px),
-    55% calc(100% - 0.5px),
-    45% calc(100% - 0.8px),
-    36% calc(100% - 0.4px),
-    27% calc(100% - 0.7px),
-    18% calc(100% - 1.3px),
-    9% calc(100% - 0.8px),
-    1.2px 100%,
-    1.2px 89%,
-    0.9px 78%,
-    1px 67%,
-    0.6px 56%,
-    1px 44%,
-    1.2px 33%,
-    0.2px 22%,
-    1.5px 11%
-  );
+  transform: scale(1, -1);
 }
 
 .app-shell-page .level-card:hover {
   box-shadow: none;
-  transform: none;
+  transform: rotate(var(--card-tilt));
+}
+
+.level-card-attachment {
+  display: none;
+}
+
+.app-shell-page .level-card-attachment {
+  position: absolute;
+  z-index: 2;
+  top: -24px;
+  left: var(--attachment-left);
+  display: block;
+  width: var(--attachment-width);
+  height: var(--attachment-height);
+  background: center / 100% 100% no-repeat;
+  transform: translateX(-50%) rotate(var(--attachment-angle));
+  pointer-events: none;
+  user-select: none;
+}
+
+.app-shell-page .level-card-attachment-pin1 {
+  background-image: url('/assets/campaign/pin1.png');
+  filter: drop-shadow(1px 3px 2px rgb(69 45 18 / 30%));
+}
+
+.app-shell-page .level-card-attachment-pin2 {
+  background-image: url('/assets/campaign/pin2.png');
+  filter: drop-shadow(1px 3px 2px rgb(69 45 18 / 30%));
+}
+
+.app-shell-page .level-card-attachment-tape {
+  top: calc(var(--attachment-height) * -0.55);
+  background-image: url('/assets/campaign/tape.png');
 }
 
 .app-shell-page .level-card-thumb {
   overflow: hidden;
   border: 0;
-  box-shadow: inset 0 0 0 1px #e2d0a9;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px rgb(226 208 169 / 45%);
 }
 
 .app-shell-page .level-card-number {
@@ -4527,6 +4592,7 @@ select:focus-visible {
 }
 
 .app-shell-page .level-card-description {
+  -webkit-line-clamp: 3;
   color: #4a4037;
   font-size: 13.5px;
   font-weight: 500;
@@ -4571,6 +4637,232 @@ select:focus-visible {
   .level-card-actions:has(.level-card-tool:nth-child(4)) .level-card-tool {
     width: auto;
     flex: 1;
+  }
+}
+
+/* Mes niveaux : deux grandes feuilles, papier de l'atelier et plan bleu reçu. */
+.page-head:has(+ .my-levels) .page-head-title {
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.page-head:has(+ .my-levels) .page-head-title::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 128px;
+  height: 12px;
+  border-top: 4px solid #ffb720;
+  border-radius: 50%;
+  transform: rotate(-5deg);
+  content: '';
+}
+
+.app-shell-page .my-levels {
+  gap: 26px;
+}
+
+.app-shell-page .page-content.my-levels {
+  width: min(100% - 48px, 1388px);
+}
+
+.my-levels .my-levels-collection {
+  position: relative;
+  gap: 16px;
+  padding: 20px 24px 24px;
+  border: 1px solid #ecdbb8;
+  border-radius: 16px;
+  background: #f6daaf url('/assets/my-levels/background1.png') center / 640px;
+  box-shadow:
+    inset 0 0 0 3px rgb(255 252 244 / 40%),
+    0 5px 10px rgb(107 72 25 / 18%);
+}
+
+.my-levels .my-levels-received {
+  border-color: #97bde0;
+  background: #cce2f8 url('/assets/my-levels/background2.png') center / 640px;
+  box-shadow:
+    inset 0 0 0 3px rgb(237 246 255 / 40%),
+    0 5px 10px rgb(42 71 102 / 15%);
+}
+
+.my-levels-collection::after {
+  position: absolute;
+  top: -9px;
+  left: -18px;
+  width: 110px;
+  height: 42px;
+  background: url('/assets/my-levels/tape.png') center / 100% 100% no-repeat;
+  transform: rotate(-38deg);
+  content: '';
+  pointer-events: none;
+}
+
+.my-levels-received::after {
+  opacity: 0.8;
+}
+
+.my-levels-received::before {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  height: min(100%, 300px);
+  background: url('/assets/my-levels/schema.png') right bottom / contain no-repeat;
+  opacity: 0.25;
+  content: '';
+  pointer-events: none;
+}
+
+.app-shell-page .my-levels .level-section-head {
+  position: relative;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.my-levels .level-section-icon {
+  flex: 0 0 auto;
+  color: #8a6030;
+  fill: #edd6a5;
+  stroke-width: 1.6;
+}
+
+.my-levels-received .level-section-icon {
+  color: #173c65;
+  fill: #9bc9f8;
+}
+
+.app-shell-page .my-levels .level-section-head h2 {
+  font-size: 25px;
+  line-height: 1.1;
+}
+
+.app-shell-page .my-levels .level-section-count {
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.my-levels .level-section-count::before {
+  content: '(';
+}
+
+.my-levels .level-section-count::after {
+  content: ')';
+}
+
+.my-levels .level-section-description {
+  margin-top: 3px;
+  color: #7a6a58;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.my-levels-received .level-section-description {
+  color: #526a83;
+}
+
+.app-shell-page .my-levels .level-cards {
+  grid-template-columns: repeat(auto-fill, minmax(max(236px, (100% - 3 * 22px) / 4 - 1px), 1fr));
+  padding-top: 10px;
+}
+
+.app-shell-page .my-levels .my-levels-empty {
+  border-color: rgb(138 96 48 / 35%);
+  background: rgb(255 252 244 / 50%);
+}
+
+.app-shell-page .my-levels-received .my-levels-empty {
+  border-color: rgb(57 109 160 / 35%);
+  color: #526a83;
+  background: rgb(245 250 255 / 40%);
+}
+
+.import-toast {
+  position: fixed;
+  z-index: var(--z-toast);
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  display: grid;
+  width: min(440px, calc(100% - 32px));
+  grid-template-columns: 24px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px 12px 16px;
+  border: 2px solid #6a9c57;
+  border-radius: 12px;
+  color: #263c24;
+  background: #fffaf0;
+  box-shadow: 0 6px 24px rgb(58 39 18 / 25%);
+}
+
+.import-toast-alert {
+  border-color: #c9654f;
+  color: #803c2d;
+}
+
+.import-toast p {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.import-toast-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.import-toast-close:hover {
+  background: rgb(94 65 26 / 10%);
+}
+
+@media (min-width: 1500px) {
+  .app-shell-page:has(.my-levels) .page-prop-plans {
+    background-image: url('/assets/my-levels/torn-blueprint.png');
+  }
+}
+
+@media (max-width: 600px) {
+  .app-shell-page .page-content.my-levels {
+    width: calc(100% - 24px);
+  }
+
+  .my-levels .my-levels-collection {
+    padding: 16px 12px;
+  }
+
+  .app-shell-page .my-levels .level-section-head h2 {
+    font-size: 21px;
+  }
+
+  .my-levels .level-section-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .app-shell-page .my-levels .level-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .my-levels .level-section-description {
+    font-size: 12px;
+  }
+
+  .import-toast {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
   }
 }
 

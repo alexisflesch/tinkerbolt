@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Copy, FilePlus2, FileUp, Pencil, Play, Share2, Trash2 } from 'lucide-react';
+import {
+  Copy,
+  FilePlus2,
+  FileUp,
+  Gift,
+  Pencil,
+  Play,
+  Settings,
+  Share2,
+  Trash2,
+} from 'lucide-react';
 
 import { createConstructionAttempt, type ConstructionAttempt } from '../application/construction';
 import { campaignDraftId } from '../application/drafts/campaign-draft';
@@ -21,10 +31,11 @@ import { Dialog } from '../ui/Dialog';
 import { useDraftRepository } from './draft-repository-context';
 import { awaitDraftWrites } from './draft-writes';
 import { fingerprintOf } from './fingerprint-of';
+import { ImportToast } from './ImportToast';
 import { LevelCard } from './LevelCard';
 import { LevelExportDialog } from './LevelExportDialog';
 import { LevelSection } from './LevelSection';
-import { modifiedOn } from './modified-on';
+import { modifiedOn, receivedOn } from './modified-on';
 import { notKeptNotice } from './not-kept-notice';
 import { randomIdPart } from './random-id-part';
 import { readLevelFile } from './read-level-file';
@@ -75,6 +86,10 @@ export function MyLevelsPage() {
   const [sharing, setSharing] = useState<Sharing | null>(null);
   const [creationNotice, setCreationNotice] = useState<Notice>(null);
   const [importNotice, setImportNotice] = useState<Notice>(null);
+  const [importToast, setImportToast] = useState<Notice>(null);
+  const dismissImportToast = useCallback(() => {
+    setImportToast(null);
+  }, []);
   /** M10: an imported level that could not be kept, still playable once. */
   const [unkeptImport, setUnkeptImport] = useState<LevelDocument | null>(null);
   const [playingUnkept, setPlayingUnkept] = useState<LevelDocument | null>(null);
@@ -193,29 +208,32 @@ export function MyLevelsPage() {
     if (file === undefined) return;
 
     setUnkeptImport(null);
+    setImportToast(null);
     setImportNotice({ tone: 'status', message: 'Lecture du fichier…' });
     const read = await readLevelFile(file);
     if (read.status === 'error') {
-      setImportNotice({ tone: 'alert', message: read.message });
+      setImportNotice(null);
+      setImportToast({ tone: 'alert', message: read.message });
       return;
     }
     const fingerprint = await fingerprintOf(read.document);
     const result = await receiveLevel(received, read.document, 'file', fingerprint, systemClock);
+    setImportNotice(null);
     switch (result.status) {
       case 'received':
-        setImportNotice({
+        setImportToast({
           tone: 'status',
           message: `« ${result.level.document.metadata.title} » est dans tes niveaux reçus.`,
         });
         break;
       case 'refused':
-        setImportNotice({
+        setImportToast({
           tone: 'alert',
           message: 'Ce fichier est un atelier, pas un niveau à jouer.',
         });
         break;
       case 'not-kept':
-        setImportNotice({
+        setImportToast({
           tone: 'alert',
           message:
             result.code === 'fingerprint-unavailable'
@@ -300,11 +318,13 @@ export function MyLevelsPage() {
 
   const receivedCard = (level: ReceivedLevel) => {
     const { title } = level.document.metadata;
+    const date = receivedOn(level.receivedAt, today);
     return (
       <LevelCard
         key={level.id}
         document={level.document}
         showAttribution
+        {...(date === undefined ? {} : { meta: date })}
         {...(level.solved
           ? {
               tier: 'resolved' as const,
@@ -408,6 +428,9 @@ export function MyLevelsPage() {
       <div className="page-content page-content-levels my-levels">
         <LevelSection
           title="Mes créations"
+          className="my-levels-collection my-levels-creations"
+          icon={Settings}
+          description="Vos niveaux créés dans l’atelier"
           count={String(
             !campaignLoading && creations?.status === 'ok' ? creations.creations.length : '…',
           )}
@@ -443,6 +466,9 @@ export function MyLevelsPage() {
 
         <LevelSection
           title="Niveaux reçus"
+          className="my-levels-collection my-levels-received"
+          icon={Gift}
+          description="Niveaux partagés avec vous"
           count={String(receivedLevels?.status === 'ok' ? receivedLevels.levels.length : '…')}
         >
           {importNotice !== null && (
@@ -487,6 +513,8 @@ export function MyLevelsPage() {
           )}
         </LevelSection>
       </div>
+
+      {importToast !== null && <ImportToast notice={importToast} onDismiss={dismissImportToast} />}
 
       {pendingDeletion !== null && (
         <Dialog

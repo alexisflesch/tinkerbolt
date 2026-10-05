@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 300" preserveAspectRatio="none">
+  <defs><linearGradient id="wood" x2="0" y2="1"><stop stop-color="#bb7b36"/><stop offset=".45" stop-color="#a86a2d"/><stop offset="1" stop-color="#8a501f"/></linearGradient></defs>
+  <g transform="translate(60 0) rotate(90)">
+  <rect width="300" height="60" rx="6" fill="url(#wood)"/>
+  <g fill="none" stroke="#633c20" stroke-opacity=".23" stroke-width=".7">
+    <path d="M0 7C50 13 58 4 98 8S164 14 204 7S263 6 300 10M0 15C44 10 55 21 91 17S148 12 187 16S258 20 300 14M0 25C54 18 88 29 116 25S164 24 195 26S250 19 300 22M0 35C42 30 58 42 105 36S162 30 192 35S260 39 300 33M0 45C42 41 58 46 92 46S140 38 194 44S259 48 300 44M0 54C61 52 85 58 129 53S203 57 244 53S280 55 300 52"/>
+    <path d="M15 30C35 23 50 22 62 28S51 34 30 34S10 38 0 38M22 29C32 25 47 26 46 29S31 32 22 29M179 12C202 18 232 17 249 11S282 8 300 11M0 49C57 52 82 44 115 45S173 50 205 48"/>
+  </g>
+  <path d="M6 2H294M6 58H294" fill="none" stroke="#efd1a0" stroke-opacity=".32"/>
+  </g>
+</svg>

@@ -2,6 +2,9 @@ import { mkdir, readFile } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
 import { navigateTo } from './app-navigation';
+import { creationFromLevel } from '../src/application/drafts/creation-from-level';
+import { levelDocumentSchema } from '../src/domain/level-document';
+import { creationFixture, seedIndexedDB } from './indexed-db-fixture';
 
 const formats = [
   { width: 390, height: 844 },
@@ -46,7 +49,7 @@ test('importe un fichier depuis « Mes niveaux » et le retrouve dans la liste (
     buffer: Buffer.from(document),
   });
 
-  await expect(received.getByRole('status')).toHaveText(
+  await expect(page.locator('.import-toast').getByRole('status')).toHaveText(
     '« Machine en chaîne » est dans tes niveaux reçus.',
   );
   await expect(page).toHaveURL(/\/my-levels$/u);
@@ -89,3 +92,97 @@ test('importe un fichier depuis « Mes niveaux » et le retrouve dans la liste (
   await dialog.getByRole('button', { name: 'Supprimer', exact: true }).tap();
   await expect(received.getByText(/aucun niveau reçu/u)).toBeVisible();
 });
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 1280, height: 720 },
+  { width: 1672, height: 941 },
+]) {
+  test(`collections papier et bleu, notifications d’import (${String(viewport.width)} × ${String(viewport.height)})`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'v1', 'Recette visuelle desktop de Mes niveaux.');
+    await page.setViewportSize(viewport);
+    await page.goto('/my-levels');
+    await expect(page.locator('#startup-splash')).toBeHidden();
+    await expect(page.getByText(/aucune création/u)).toBeVisible();
+    await page.screenshot({ path: `tmp/my-levels/my-levels-${String(viewport.width)}-empty.png` });
+    const rows = await Promise.all(
+      [1, 2, 3, 4].map(async (number, index) => {
+        const level = levelDocumentSchema.parse(
+          JSON.parse(await readFile(`src/content/levels/tuto-${String(number)}.json`, 'utf8')),
+        );
+        const content = creationFromLevel(level, {
+          createId: () => `creation-capture-${String(index)}`,
+          ...(level.solution === undefined ? {} : { playerSolution: level.solution }),
+        });
+        return creationFixture({
+          ...content,
+          document: {
+            ...content.document,
+            metadata: { title: `Nouveau niveau ${String(index + 1)}` },
+          },
+        });
+      }),
+    );
+    await seedIndexedDB(page, rows);
+    await page.reload();
+    await expect(page.locator('#startup-splash')).toBeHidden();
+    const creations = page.getByRole('region', { name: 'Mes créations', exact: true });
+    const received = page.getByRole('region', { name: 'Niveaux reçus', exact: true });
+    await expect(creations.getByText('Vos niveaux créés dans l’atelier')).toBeVisible();
+    await expect(received.getByText('Niveaux partagés avec vous')).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles('src/content/levels/tuto-4.json');
+    const toast = page.locator('.import-toast');
+    await expect(toast.getByRole('status')).toContainText('est dans tes niveaux reçus');
+    await page.screenshot({
+      path: `tmp/my-levels/my-levels-${String(viewport.width)}-success-toast.png`,
+    });
+    await toast.getByRole('button', { name: 'Fermer la notification' }).click();
+    await expect(toast).toHaveCount(0);
+    await expect(page.locator('.level-preview-image')).toHaveCount(5);
+    for (const card of await page.locator('.level-card').all()) {
+      await expect(card.locator('.level-card-attachment')).toBeVisible();
+      expect(await card.evaluate((element) => getComputedStyle(element).transform)).not.toBe(
+        'none',
+      );
+      expect(
+        await card.evaluate((element) => getComputedStyle(element, '::before').maskImage),
+      ).toContain('paper-edge.svg');
+      const primary = card.locator('.level-card-primary');
+      const primaryBounds = await primary.boundingBox();
+      if (primaryBounds === null) throw new Error('Action principale non mesurable.');
+      for (const tool of await card.locator('.level-card-tool').all()) {
+        const bounds = await tool.boundingBox();
+        if (bounds === null) throw new Error('Action secondaire non mesurable.');
+        expect(bounds.y).toBeGreaterThanOrEqual(primaryBounds.y + primaryBounds.height);
+        expect(bounds.x).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+      }
+    }
+    await page.screenshot({
+      path: `tmp/my-levels/my-levels-${String(viewport.width)}-filled.png`,
+      fullPage: true,
+    });
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'invalide.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from('{oops'),
+    });
+    await expect(toast.getByRole('alert')).toContainText('JSON valide');
+    await expect(received.getByRole('alert')).toHaveCount(0);
+    await page.screenshot({
+      path: `tmp/my-levels/my-levels-${String(viewport.width)}-error-toast.png`,
+    });
+    await toast.getByRole('button', { name: 'Fermer la notification' }).click();
+    await creations
+      .getByRole('region', { name: 'Nouveau niveau 1', exact: true })
+      .getByRole('button', { name: 'Dupliquer' })
+      .click();
+    await expect(
+      creations.getByRole('region', { name: 'Nouveau niveau 1 (copie)', exact: true }),
+    ).toBeVisible();
+    await received.getByRole('button', { name: 'Modifier', exact: true }).click();
+    await expect(page).toHaveURL(/\/editor\?draft=/u);
+  });
+}

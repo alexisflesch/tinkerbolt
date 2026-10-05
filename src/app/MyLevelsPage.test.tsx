@@ -241,6 +241,30 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     });
   });
 
+  it('présente les deux collections avec leur sous-titre et date les niveaux reçus', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 5, 12));
+    try {
+      await saveReceived(
+        receivedLevel(
+          puzzle('date-reception', { title: 'Le colis' }),
+          'b'.repeat(16),
+          '2026-10-03T12:00:00Z',
+        ),
+      );
+      await openMyLevels();
+      expect(
+        within(section('Mes créations')).getByText('Vos niveaux créés dans l’atelier'),
+      ).toBeVisible();
+      expect(
+        within(section('Niveaux reçus')).getByText('Niveaux partagés avec vous'),
+      ).toBeVisible();
+      expect(within(card('Le colis')).getByText('Reçu le 3 octobre')).toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('redirige `/import` vers `/my-levels`', async () => {
     window.history.replaceState(null, '', '/import');
     await renderStorageReady(<App />);
@@ -539,6 +563,15 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
         'status',
       );
     });
+    expect(
+      within(section('Niveaux reçus')).queryByText('« Mon puzzle » est dans tes niveaux reçus.'),
+    ).toBeNull();
+    const toast = screen.getByText('« Mon puzzle » est dans tes niveaux reçus.');
+    expect(toast.closest('.import-toast')).not.toBeNull();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Fermer la notification' })),
+    );
+    expect(screen.queryByText('« Mon puzzle » est dans tes niveaux reçus.')).toBeNull();
     await waitFor(() => {
       expect(window.location.pathname).toBe('/my-levels');
     });
@@ -593,6 +626,8 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await waitFor(async () => {
       expect(await screen.findByRole('alert')).toHaveTextContent('JSON valide');
     });
+    expect(screen.getByRole('alert').closest('.import-toast')).not.toBeNull();
+    expect(within(section('Niveaux reçus')).queryByRole('alert')).toBeNull();
     await waitFor(async () => {
       expect(await storedReceivedIds()).toEqual([]);
     });

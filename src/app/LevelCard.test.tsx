@@ -84,6 +84,31 @@ describe('LevelCard — carte de niveau commune (V6)', () => {
     expect(card(tutorial(0).metadata.title).querySelector('.level-card-number')).toBeNull();
   });
 
+  it('garde l’inclinaison et la fixation du niveau lors des mises à jour et du remontage', () => {
+    const level = tutorial(0);
+    const { rerender, unmount } = render(<LevelCard document={level} actions={[]} />);
+    const style = card(level.metadata.title).getAttribute('style');
+    const attachment = card(level.metadata.title).querySelector('.level-card-attachment');
+    expect(style).toContain('--card-tilt:');
+    expect(attachment).toHaveAttribute('aria-hidden', 'true');
+    const attachmentClass = attachment?.className;
+
+    rerender(
+      <LevelCard
+        document={withMetadata(level, { title: 'Renommé' })}
+        tier="resolved"
+        actions={[]}
+      />,
+    );
+    expect(card('Renommé').getAttribute('style')).toBe(style);
+    expect(card('Renommé').querySelector('.level-card-attachment')?.className).toBe(
+      attachmentClass,
+    );
+    unmount();
+    render(<LevelCard document={level} actions={[]} />);
+    expect(card(level.metadata.title).getAttribute('style')).toBe(style);
+  });
+
   it('expose le numéro et le palier en attributs de données', () => {
     render(<LevelCard document={tutorial(0)} number={4} tier="elegant" actions={[]} />);
 
@@ -201,7 +226,7 @@ describe('LevelCard — carte de niveau commune (V6)', () => {
     expect(screen.getByText(/Une chute simple\./u)).toHaveClass('level-card-description');
   });
 
-  it('propose une action principale verte, avec icône, libellé visible et nom accessible précis', () => {
+  it('propose une action principale avec icône, libellé visible et nom accessible précis', () => {
     const onSelect = vi.fn();
     render(
       <LevelCard

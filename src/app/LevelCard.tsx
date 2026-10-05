@@ -3,6 +3,7 @@ import { CircleCheck, LockKeyhole, Star, Trophy, type LucideIcon } from 'lucide-
 import type { LevelDocument } from '../domain/level-document';
 import { Button } from '../ui/Button';
 import { attributionParts } from './level-attribution';
+import { levelCardDecoration } from './level-card-decoration';
 import type { LevelPreviewCache } from './level-preview-cache';
 import { LevelPreview } from './LevelPreview';
 
@@ -51,7 +52,7 @@ type LevelCardProps = Readonly<{
   meta?: string;
   /** A status heard by screen readers only (« Pas encore résolu »): the card shows no badge for it. */
   assistiveStatus?: string;
-  /** The one green action, with its icon and visible label. */
+  /** The main action, with its icon and visible label. */
   primary?: LevelCardAction;
   /** Icon-only actions, each named and with a tooltip. */
   actions: readonly LevelCardAction[];
@@ -78,7 +79,7 @@ const objectsLabel = (count: number): string => `${String(count)} objet${count >
  * The one card for a level (V6): the campaign, « Mes créations » and « Niveaux
  * reçus » all show a level this way (V4 mock-ups). A preview with its number and
  * tier laid over it, a title, an optional attribution line, a description kept to
- * two lines, one main action and secondary actions as icons.
+ * three lines on desktop, one main action and secondary actions as icons.
  */
 export function LevelCard({
   document,
@@ -95,6 +96,7 @@ export function LevelCard({
   previewCache,
 }: LevelCardProps) {
   const { title, description } = document.metadata;
+  const decoration = levelCardDecoration(document.id);
   const attribution = showAttribution ? attributionParts(document.metadata) : [];
   const TierIcon = tier === null ? null : tierIcons[tier];
   const isDisabled = (action: LevelCardAction): boolean =>
@@ -104,10 +106,15 @@ export function LevelCard({
   return (
     <section
       className={`level-card${locked ? ' level-card-locked' : ''}`}
+      style={decoration.style}
       aria-label={label ?? title}
       {...(number === undefined ? {} : { 'data-level-number': String(number).padStart(2, '0') })}
       {...(tier === null ? {} : { 'data-level-tier': tier })}
     >
+      <span
+        className={`level-card-attachment level-card-attachment-${decoration.kind}`}
+        aria-hidden="true"
+      />
       <div className="level-card-thumb">
         <LevelPreview
           document={document}

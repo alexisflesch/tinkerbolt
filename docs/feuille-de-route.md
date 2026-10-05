@@ -46,6 +46,36 @@ pas les anciens lots produit. `art/` est conservé intégralement.
 
 ## Ordre restant
 
+Demande directe de l’auteur du 5 octobre 2026, avant la reprise de C7d :
+rapprocher les cartes communes de niveaux de `art/campaign/campaign-v2.png`.
+Papier irrégulier et ombré, très faible inclinaison dans les deux sens,
+épingle ou scotch des assets fournis ; position, orientation et dimensions du
+scotch variées, stables par identifiant de niveau. Fournir les deux captures
+desktop ; validation visuelle de l’auteur attendue.
+
+Complément demandé dans la même session : reprise visuelle de `/my-levels`
+selon `art/my-levels/ref.png` et les assets voisins (panneaux papier et bleu,
+icônes, sous-titres, actions sur deux lignes). L’auteur confirme « reprise
+visuelle seulement » : C7d reste séparé. À sa demande complémentaire, réussite
+et échec d’un import JSON se signalent par un toast temporaire et refermable ;
+« Jouer quand même » reste disponible si le niveau n’a pas pu être gardé.
+Précision de l’auteur : garder exactement le style commun des cartes de la
+campagne (papier, inclinaison, fixations), et utiliser les deux backgrounds
+fournis pour les blocs, sans variante de carte propre à Mes niveaux.
+
+Suite demandée : reprendre uniquement le catalogue du plateau selon
+`art/refs/playground-v2.png` ; ne pas changer le reste de l’atelier. L’auteur
+demande le visuel, les catégories repliables et la recherche. Les catégories
+restent ouvertes initialement ; rechercher affiche aussi les objets des groupes
+repliés. La recette visuelle globale est différée à la fin à sa demande.
+Dernière précision de l’auteur : le fond du catalogue doit être jaune papier,
+comme la référence, et le design doit être validé avant de lancer la gate complète.
+Derniers ajustements demandés : une courte animation d’ouverture/fermeture des
+catégories et, en portrait sur smartphone, des tiroirs horizontaux avec une petite
+poignée illustrée verticale, de même hauteur que les cartes, suivie des cartes,
+selon la capture fournie. Animation CSS,
+sans nouvelle dépendance ; la préférence de réduction des animations est respectée.
+
 | Ordre | Lot | Dépendance et sortie |
 | --- | --- | --- |
 | 1 | C7d — Recherche et filtres de Mes niveaux | Identité C7c implémentée ; recherche et filtres testés. |
@@ -213,6 +243,26 @@ déplacer. Aucun de ces exemples n’est déjà un contrat technique.
 la Forge, éventuel relais et hébergement. F1 le fixe avant F2.
 
 ## Journal des lots de maintenance
+
+### VIS1 — Cartes, Mes niveaux et catalogue — validation visuelle en cours — 5 octobre 2026
+
+Cartes communes inclinées avec fixations stables par identifiant ; panneaux de
+Mes niveaux utilisant les backgrounds de l’auteur ; imports réussis ou échoués
+annoncés par toast. Catalogue jaune papier avec recherche et catégories repliables,
+animation CSS de 180 ms ; poignées verticales de même hauteur que les cartes en
+portrait sur smartphone. Les originaux d’`art/` et `tmp/check-levels.ts` sont préservés.
+
+Dernière vérification ciblée : 17 tests du catalogue, typecheck et lint verts ;
+quatre E2E du catalogue verts avec le Chromium 151 déjà installé. Chromium 140
+refuse la saisie même dans un champ HTML isolé hors application ; la configuration
+temporaire de preview est dans `/tmp/tinkerbolt-catalogue-preview.config.ts`, sans
+changement d’outillage du dépôt. Captures inspectées : `tmp/catalogue/` aux formats
+1440 × 900, 1280 × 720, 390 × 844 et 320 × 568. Les captures des autres pages restent
+dans `tmp/campaign-cards/` et `tmp/my-levels/`.
+
+La gate complète est différée à la demande explicite de l’auteur jusqu’à son
+accord sur le design. Aucun commit ni push de ce lot ; prochain point : accord
+visuel, puis gate finale et mise à jour de l’état livré.
 
 ### OUT1 — Changelog et versionnement — livré — `9f4ec8f`
 
