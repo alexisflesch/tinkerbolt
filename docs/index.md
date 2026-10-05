@@ -13,9 +13,9 @@ l'ordre, est dans `feuille-de-route.md`** : c’est la **seule séquence active*
 après la clôture V0–V9, compléments desktop C0–C10, téléphone M0–M4,
 Forge/Grist F0–F3. Son journal v1 est conservé comme historique. Le
 `plan-implementation.03.10.26.md` conserve la préparation de cette séquence,
-sans faire autorité sur son ordre ou ses contrats ; `todo.03.10.26.md` est la
-demande de l’auteur, conservée intacte. Ce sont des sources de contexte ciblées,
-pas d’autres feuilles de route actives.
+sans faire autorité sur son ordre ou ses contrats ; `todo.03.10.26.md` garde la
+demande initiale de l’auteur et `todo.05.10.md` ses demandes du 5 octobre. Ces
+todos expriment des demandes à intégrer, pas d’autres feuilles de route actives.
 `audit-assets-c8.md` rapproche les assets et raccords pour C8. Les contrats
 confirmés par l’auteur sont dans les ADR 0018/0019 et l’amendement de l’ADR 0009 ;
 la feuille de route active reste seule propriétaire de l’ordre des tâches.
@@ -40,6 +40,7 @@ gagne et l'autre document doit être corrigé, pas arbitré au cas par cas.
 | `docs/feuille-de-route.md`                                     | —       | seule séquence active C/M/F, ordre et journal ; historique v1 clôturé                                                  |
 | `docs/plan-implementation.03.10.26.md`                         | —       | préparation du 3 octobre, décisions confirmées et avis ; tâches reprises dans la feuille de route                      |
 | `docs/todo.03.10.26.md`                                        | —       | demande de l’auteur du 3 octobre, conservée intacte                                                                    |
+| `docs/todo.05.10.md`                                            | —       | demandes de reprise de l’auteur du 5 octobre ; ne définit pas un ordre d’exécution                                    |
 | `docs/feuille-de-route-mes-niveaux.md`                         | 3034    | historique de la phase « Mes niveaux » (journal G1 à N2)                                                               |
 | `docs/feuille-de-route-luna.md`                                | 2633    | historique de la reprise précédente (journal L1 à U29)                                                                 |
 | `docs/plan-remise-en-jeu.md`                                   | 1208    | historique A–F ; spécifications détaillées de C1, C2, D3                                                               |
@@ -105,7 +106,7 @@ Colonne « lire » = lecture obligatoire et suffisante. Ne pas élargir sans rai
 | Interface tactile, tiroir, gestes (v2)         | `mobile-editor-interactions.md`, `cahier-des-charges.md` § Interaction mobile                                                                                                        | `src/ui/`, `src/app/`                                            |
 | Routage, navigation, schéma d'URL              | ADR 0008                                                                                                                                                                             | `src/app/`                                                       |
 | Conception d'un nouveau niveau                 | `levels/conception-niveaux.md` (se suffit à lui-même)                                                                                                                                | `src/content/levels/`                                            |
-| Contenu d'un niveau                            | Tâche explicite dans `feuille-de-route.md`, `levels/nouveaux-niveaux.md`, ADR 0007 § Scène d'un niveau (aucune extension de campagne prévue en C/M/F)                                | `src/content/levels/`                                            |
+| Contenu d'un niveau                            | Tâche explicite dans `feuille-de-route.md`, `levels/nouveaux-niveaux.md`, ADR 0007 § Scène d'un niveau (deux nouveaux niveaux demandés dans `todo.05.10.md`)                           | `src/content/levels/`                                            |
 | Parcours end-to-end (v1 : desktop)             | `qualite.md` § Tests end-to-end ; `mobile-editor-interactions.md` § Scénarios d'acceptation (parcours, v2 pour les gestes)                                                           | `e2e/`                                                           |
 | Contrat de reprise et stockage asynchrone C2   | ADR 0011/0015 amendées C0, ADR 0005, ADR 0017 (acceptée), `architecture.md` § Stockage et partage                                                                                    | ADR 0017 et renvois ciblés                                       |
 | Stockage, import/export, codec URL             | ADR 0011, ADR 0015, ADR 0017, ADR 0018 (v3 et migrations), `architecture.md` § Stockage et partage                                                                                   | `src/infrastructure/`, `src/application/`                        |

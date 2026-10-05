@@ -2,7 +2,10 @@
 
 Dernière mise à jour : 5 octobre 2026. V1 desktop clôturée (V0 à V9), core
 validé par l’auteur. Nouvelle reprise C/M/F active : **C0, C1, C2, C2a, C3.1,
-C3.2, C4, C4a, C8, C9a à C9d, C7 et C6 implémentés**. C5 est implémenté ; sa
+C3.2, C4, C4a, C8, C9a à C9d, C7 et C6 implémentés**. L’auteur demande une
+reprise visuelle de C4 (poignées) et de C6 (barre du splash) avant la clôture
+de C10, et demande aussi de conserver le cadrage à la sauvegarde, d’intégrer
+deux niveaux et d’harmoniser la taille de quatre objets. C5 est implémenté ; sa
 recette visuelle reste différée. `pnpm check:fast` passe avec 1 353 tests
 Vitest et le build passe. Les 2 E2E C4a et les 4 nouveaux E2E C10 passent aux
 deux formats desktop ; 16 E2E ciblés C3/C4a/C10, fils et PWA passent sans
@@ -38,11 +41,15 @@ reset, supprimer une construction incompatible avec une source modifiée sans
 secours. C3.2 est terminé ; ses parcours sont consignés dans la feuille de route.
 Les [maquettes C4/C4a](maquettes/complements-desktop/c4-c4a.html) et leurs captures
 aux deux formats dans `tmp/c4/captures/` ont été examinées par l’auteur. Les
-positions demandées sont corrigées : rotation au coin haut gauche, taille à
-droite centrée ; la poursuite est autorisée. **C4 est maintenant implémenté** :
+positions demandées étaient : rotation au coin haut gauche, taille à droite
+centrée ; la poursuite est autorisée. **Le code de C4 a été implémenté** :
 la poignée de taille a le même diamètre visible que celle de rotation ; le
 glissement affiche un aperçu et s’aimante aux trois variantes. Aucun sélecteur
 ne s’ouvre au clic. En jeu, l’inventaire limite les tailles accessibles.
+Le 5 octobre, l’auteur signale que la réalisation ne respecte pas son attente :
+la poignée de rotation reste au milieu et celle de taille ne lui paraît pas cohérente
+avec celle de rotation. C4 est à reprendre dans C10 ; les tests existants ne
+valent pas validation visuelle.
 La maquette est mise à jour avec cette correction. C4a sépare désormais
 sélection et ouverture : panneau fermé par défaut, clic simple pour ouvrir, et
 aucun panneau après pose, déplacement ou glissement d’une poignée. Une liste
@@ -85,8 +92,11 @@ en cas d’échec. Les tests PWA isolés couvrent le lien direct, l’échec sim
 le cache hors ligne et les icônes ; le chemin de base `/tinkerbolt/` répond
 avec les assets et types attendus. L’auteur a validé la disposition du splash ;
 captures et aperçu des icônes sont dans `maquettes/complements-desktop/captures/c6/`.
+Le 5 octobre, l’auteur demande de reprendre l’aspect de la barre de chargement
+du splash avant la clôture de C10 ; le reste de la disposition demeure accepté.
 Le plan du 3 octobre conserve le contexte préparatoire ; V0–V9 ne sont pas
-rouvertes. Le todo auteur reste intact ; le contenu des niveaux existants ne
+rouvertes. Le todo du 3 octobre reste intact ; les demandes du 5 octobre sont
+consignées dans `todo.05.10.md`. Le contenu des niveaux existants ne
 change que par `schemaVersion: 3`. C9a ajoute les sprites et vignettes des deux
 variantes de caisse.
 

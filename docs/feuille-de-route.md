@@ -3,8 +3,9 @@
 Cette feuille est **la seule séquence active** : compléments desktop C0 à C10,
 puis téléphone M0 à M4, puis Forge et Grist F0 à F3. Elle reprend les tâches
 retenues du [plan préparatoire du 3 octobre](plan-implementation.03.10.26.md).
-Le [todo de l’auteur](todo.03.10.26.md) reste intact ; il exprime la demande,
-pas un second ordre d’exécution. L’état réellement livré reste dans `etat.md`.
+Les [demandes de l’auteur du 3 octobre](todo.03.10.26.md) restent intactes ;
+les [demandes du 5 octobre](todo.05.10.md) les complètent. Elles ne créent pas
+un second ordre d’exécution. L’état réellement livré reste dans `etat.md`.
 
 ## Point de reprise — 4 octobre 2026
 
@@ -24,11 +25,12 @@ recette visuelle reste différée. C3.1 et C3.2 sont livrés ; la dernière gate
 globale passe avec 1 236 tests Vitest et 92 E2E v1. Le jeu reprend maintenant
 les constructions de campagne et reçues avant toute simulation.
 C4/C4a ont été examinées par l’auteur : rotation au coin haut gauche et taille
-au milieu du bord droit, puis poursuite autorisée. L’auteur a précisé pour C4
-que la poignée de taille a le même diamètre visible que celle de rotation et
-redimensionne par glissement, avec aperçu direct et aimantation aux trois
-tailles ; aucun sélecteur ne s’ouvre au clic et aucune longueur libre n’est
-créée.
+au milieu du bord droit. La réalisation de C4 avait été déclarée livrée, mais
+le 5 octobre l’auteur indique que les poignées ne conviennent pas : la rotation
+est au milieu et la poignée de taille n’est pas cohérente avec celle de rotation.
+C4 doit être reprise avant la clôture de C10. Les exigences fonctionnelles
+confirmées restent le redimensionnement par glissement, l’aperçu direct,
+l’aimantation aux trois tailles, sans sélecteur au clic ni longueur libre.
 C8 est livré après validation auteur : format v3, comportements, variante de
 caisse, délai du minuteur et ordre **caisses → électroaimant → piston → minuteur**
 sont consignés dans les ADR 0018/0019 et 0009. **C9a caisses est livré**, gate
@@ -65,15 +67,19 @@ formats desktop sont dans `docs/maquettes/complements-desktop/captures/`.
 L’auteur prévoit une passe esthétique ultérieure avec Opus. Gate complète :
 1 340 Vitest et 94 E2E v1.
 
-**C6, icônes et splash, est livré** après validation par l’auteur de la
-disposition du splash : image adaptée au format, barre et crédit centrés en bas.
-**C4, redimensionnement des poutres, est livré** : poignée de 28 px visible
-(cible de 44 px), centrée au bord droit et tournée avec la poutre ; glissement
+**C6, icônes et splash, est implémenté** après validation par l’auteur de la
+disposition générale du splash : image adaptée au format, barre et crédit
+centrés en bas. Le 5 octobre, l’auteur demande de reprendre l’aspect de la barre
+de chargement ; la retouche visuelle de C6 reste donc à faire avant de clôturer
+C10.
+**Le code de C4, redimensionnement des poutres, est livré** : poignée de 28 px
+visible (cible de 44 px), centrée au bord droit et tournée avec la poutre ; glissement
 avec aperçu direct, choix aimanté aux tailles 2/4/6 unités, une commande
 annulable au relâchement. En jeu, l’aperçu et la commande respectent le stock,
-sans taille offerte. 1 349 tests Vitest, build et 97 E2E v1 passent ; le détail
-de la gate C4 est consigné dans `etat.md`. **C4a est implémenté et validé de
-façon ciblée** : propriétés fermées par défaut, clic simple distinct d’une pose
+sans taille offerte. La position et la cohérence visuelle des poignées sont à
+reprendre selon le retour du 5 octobre. 1 349 tests Vitest, build et 97 E2E v1
+passent ; le détail de la gate C4 est consigné dans `etat.md`. **C4a est
+implémenté et validé de façon ciblée** : propriétés fermées par défaut, clic simple distinct d’une pose
 ou d’un geste de poignée, liste d’objets accessible, `pnpm check:fast` vert
 (1 353 Vitest), build vert et 2 E2E C4a verts aux deux formats desktop. La gate
 globale et la recette de l’ensemble sont regroupées dans C10 ; aucune nouvelle
@@ -194,8 +200,8 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
 | Livré                 | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
 | Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
-| Livré                 | C6   | Favicon, icônes PWA et splash                                           | C2a ; maquette validée.                                         |
-| Livré                 | C4   | Poignée de redimensionnement des poutres par glissement                  | Trois tailles fixes ; aperçu direct et une commande annulable.  |
+| Reprise avant C10     | C6   | Favicon, icônes PWA et splash ; aspect de la barre à retravailler         | C2a ; retouche de la barre demandée le 5 octobre.               |
+| Reprise avant C10     | C4   | Poignées des poutres : position et cohérence visuelle à corriger          | Trois tailles fixes ; aperçu direct et une commande annulable.  |
 | Implémenté, gate C10  | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
 | Livré, visuel reporté | C5   | Résultat et modale de victoire synchronisés                             | C0.                                                             |
 | 1                     | C10  | Recette des compléments desktop                                         | C1 à C9 livrés, C4a implémenté, ou reports décidés.             |
@@ -311,16 +317,19 @@ de l’ADR 0017 ; ce découpage ne crée aucune nouvelle décision produit.
 
 ### C4 — Choisir la taille d’une poutre depuis le plateau
 
-- **Livré.** La poignée au milieu du bord droit a le même diamètre visible que
-  celle de rotation. La faire glisser redimensionne la poutre avec aperçu direct
-  et aimantation aux trois tailles fixes (2, 4 ou 6 unités) ; un clic seul ne
-  déclenche ni menu ni changement.
+- **Reprise demandée par l’auteur le 5 octobre.** Placer la poignée de rotation
+  au coin supérieur gauche, pas au milieu, et rendre la poignée de taille
+  cohérente avec celle de rotation. L’état actuel ne satisfait pas cette
+  demande, même si l’implémentation et ses tests existent.
+- Garder le redimensionnement par glissement, l’aperçu direct et l’aimantation
+  aux trois tailles fixes (2, 4 ou 6 unités) ; un clic seul ne déclenche ni
+  menu ni changement.
 - En jeu, seules les tailles présentes dans l’inventaire sont atteignables ;
   le changement échange les pièces. Le geste validé produit une seule commande
   annulable et un aller-retour sans changement n’ajoute pas d’entrée d’historique.
-- L’implémentation est couverte par les tests de commande, d’intégration auteur
-  et de mode joueur. Les E2E v1 confirment l’absence de régression. La recette
-  visuelle finale reste regroupée dans C10 selon l’instruction de l’auteur.
+- Conserver les tests de commande, d’intégration auteur et de mode joueur ;
+  vérifier à nouveau les poignées aux deux formats desktop. La correction et sa
+  validation visuelle sont regroupées dans C10.
 
 ### C4a — Ouvrir les propriétés desktop à la demande
 
@@ -365,6 +374,9 @@ de l’ADR 0017 ; ce découpage ne crée aucune nouvelle décision produit.
   lancement éventuellement fourni par le système.
 - **Sortie :** assets locaux intégrés au build/cache, durée et chargement testés,
   icônes et splash validés à l’œil aux formats concernés.
+- **Reprise demandée le 5 octobre :** retravailler l’aspect de la barre de
+  chargement du splash. La disposition du reste du splash reste celle déjà
+  validée.
 
 ### C7 — Intégrer Bolt
 
@@ -434,6 +446,14 @@ Pour chacune :
 - `pnpm check` et la recette visuelle auteur restent en attente : la gate
   complète contient des scénarios qui écrivent des captures et l’instruction
   active demande de n’en produire aucune. C10 n’est donc pas clôturé.
+- Avant de clôturer C10, traiter les demandes auteur du 5 octobre consignées
+  dans `todo.05.10.md` : cadrage de scène conservé à la sauvegarde pour rétablir
+  le zoom à l’ouverture, intégration de deux nouveaux niveaux, cohérence de
+  taille entre ventilateur, électroaimant, piston et tremplin, reprise des
+  poignées C4 et de la barre du splash C6. Pour le cadrage, confirmer le
+  propriétaire de la donnée persistée et prévoir une migration et des tests si
+  le format de niveau évolue. Vérifier les changements visibles aux formats
+  desktop concernés.
 - Rejouer fil direct et liaison contrôleur → minuteur → dispositif (une unité
   de fil, deux segments, transitions retardées), reprise locale, modification
   de poutre, victoire et nouveaux objets dans un niveau partagé.
