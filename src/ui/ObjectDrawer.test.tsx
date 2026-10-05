@@ -32,11 +32,6 @@ const renderDrawer = (
       session={createEditorSession(mode, createConstructionAttempt(document))}
       selectedObject={undefined}
       selectedEntryKey={undefined}
-      isDrawerOpen
-      isSideLayout={false}
-      isPlacementActive={false}
-      onToggleDrawer={() => undefined}
-      onCloseDrawer={() => undefined}
       onSelectKind={() => undefined}
       isWiringActive={false}
       onSelectWire={onSelectWire}

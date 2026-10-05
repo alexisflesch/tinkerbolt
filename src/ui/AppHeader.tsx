@@ -22,7 +22,23 @@ interface AppHeaderProps {
    * kept out of the action bar). Choosing one closes the menu.
    */
   readonly menuActions?: readonly MenuAction[];
+  /**
+   * Shows the main navigation in place of the title, this section being the
+   * current one: the wide board screens, whose title moves to their toolbar.
+   * The home page, which has no title, always shows it.
+   */
+  readonly navigation?: MainSection | undefined;
 }
+
+/** The four places of the main navigation; `home` is the page without a title. */
+export type MainSection = 'home' | 'campaign' | 'workshop' | 'my-levels';
+
+const mainSections = [
+  { id: 'home', to: '/', label: 'Accueil', Icon: House },
+  { id: 'campaign', to: '/levels', label: 'Campagne', Icon: Map },
+  { id: 'workshop', to: '/editor', label: 'Atelier', Icon: Wrench },
+  { id: 'my-levels', to: '/my-levels', label: 'Mes niveaux', Icon: LayoutGrid },
+] as const satisfies readonly { readonly id: MainSection; readonly [key: string]: unknown }[];
 
 export interface MenuAction {
   readonly label: string;
@@ -45,7 +61,9 @@ export function AppHeader({
   action,
   menuActions = [],
   beforeNavigate,
+  navigation,
 }: AppHeaderProps) {
+  const section = navigation ?? (title === undefined ? 'home' : undefined);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const context =
@@ -70,24 +88,23 @@ export function AppHeader({
         <span className="brand-logo" aria-hidden="true" />
         <h1 className="brand-name visually-hidden">TinkerBolt</h1>
       </Link>
-      {title === undefined ? (
+      {section !== undefined ? (
         <nav className="main-nav" aria-label="Navigation principale">
-          <Link to="/" aria-current="page">
-            <House size={18} aria-hidden="true" />
-            Accueil
-          </Link>
-          <Link to="/levels">
-            <Map size={18} aria-hidden="true" />
-            Campagne
-          </Link>
-          <Link to="/editor">
-            <Wrench size={18} aria-hidden="true" />
-            Atelier
-          </Link>
-          <Link to="/my-levels">
-            <LayoutGrid size={18} aria-hidden="true" />
-            Mes niveaux
-          </Link>
+          {mainSections.map(({ id, to, label, Icon }) => (
+            <Link
+              key={id}
+              to={to}
+              aria-current={id === section ? 'page' : undefined}
+              onClick={(event) => {
+                if (beforeNavigate === undefined) return;
+                event.preventDefault();
+                void beforeNavigate().then(() => navigate(to));
+              }}
+            >
+              <Icon size={18} aria-hidden="true" />
+              {label}
+            </Link>
+          ))}
         </nav>
       ) : (
         <p className="level-label">

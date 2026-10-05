@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { AppHeader, type MenuAction } from './AppHeader';
+import { AppHeader, type MainSection, type MenuAction } from './AppHeader';
 
 interface AppFrameProps {
   /** None on the home page, whose header has no title (V7). */
@@ -15,6 +15,11 @@ interface AppFrameProps {
   readonly headerAction?: ReactNode;
   /** Screen-specific commands listed first in the header menu. */
   readonly menuActions?: readonly MenuAction[];
+  /**
+   * The wide board screen in the workshop identity: the header shows the main
+   * navigation with this section current, and the shell takes the parchment look.
+   */
+  readonly desk?: MainSection | undefined;
   readonly children: ReactNode;
   readonly beforeNavigate?: (() => Promise<void>) | undefined;
 }
@@ -33,15 +38,17 @@ export function AppFrame({
   menuActions,
   children,
   beforeNavigate,
+  desk,
 }: AppFrameProps) {
   return (
-    <div className={`app-shell app-shell-${variant}`}>
+    <div className={`app-shell app-shell-${variant}${desk === undefined ? '' : ' app-shell-desk'}`}>
       <AppHeader
         title={title}
         subtitle={subtitle}
         attribution={attribution}
         action={headerAction}
         beforeNavigate={beforeNavigate}
+        navigation={desk}
         {...(menuActions === undefined ? {} : { menuActions })}
       />
       <main className="app-main">{children}</main>

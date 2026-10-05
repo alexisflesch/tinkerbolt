@@ -201,6 +201,7 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
 | Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
 | Implémenté, à valider | C7a  | Identité visuelle de l’accueil (atelier, Bolt détouré, niveau résolu)    | C7 ; maquette `maquettes/identite/` validée le 5 octobre.       |
+| Implémenté, à valider | C7b  | Identité visuelle des écrans de plateau en grand format (Atelier, jeu)   | C7a ; maquette `maquettes/identite/atelier.html` validée.       |
 | Reprise avant C10     | C6   | Favicon, icônes PWA et splash ; aspect de la barre à retravailler         | C2a ; retouche de la barre demandée le 5 octobre.               |
 | Reprise avant C10     | C4   | Poignées des poutres : position et cohérence visuelle à corriger          | Trois tailles fixes ; aperçu direct et une commande annulable.  |
 | Implémenté, gate C10  | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
@@ -1096,6 +1097,51 @@ conversation.
   niveau dédié à l’accueil : les flèches seront alors à retracer. Le reste de
   l’application (campagne, Mes niveaux, plateau, splash) garde l’ancienne
   identité. `public/assets/bolt/bolt-explaining.webp` n’est plus affiché.
+
+### C7b — Écrans de plateau en grand format — implémenté, tests à reprendre — 5 octobre 2026
+
+- **Origine.** Suite de C7a, demandée par l’auteur : donner le plus de place
+  possible au plateau et garder une identité cohérente entre les écrans.
+  Remplace C4a (propriétés à la demande dans un rail) en disposition large et
+  répond au todo § 4. Maquette `docs/maquettes/identite/atelier.html`, validée
+  après deux reprises (ni cadre autour du plateau, ni ombre portée sur les
+  boutons ; cartes de catalogue en papier déchiré).
+- **Périmètre.** L’atelier et le jeu, qui partagent `BoardShell` ; d’abord la
+  disposition large, puis toutes les tailles (voir plus bas).
+- **Livré.** En-tête : navigation principale à la place du titre, section
+  courante surlignée. Une seule barre : historique et remise à zéro en icônes,
+  cadrage en icônes (il quitte le bas du plateau), nom du niveau (masqué sous
+  1100 px), actions du niveau, « Lancer » à la taille des autres. Plus de rail
+  droit : ni « Ouvrir les propriétés », ni « Objets sur le plateau » ; le
+  résultat, l’astuce et les messages se posent sur le bas du plateau.
+  `ObjectBar` : carte flottante près de l’objet, ouverte uniquement par un clic
+  simple sur un objet déjà posé, jamais après une pose ou un geste ; « Fixe /
+  À placer », réglage propre à la famille, retournement, suppression. Plus de
+  déplacement par pas ni de rotation par boutons. Fils cliquables
+  (`wire-hit-test.ts`, tolérance 10 px, un second clic passe au fil superposé) :
+  surlignage et `WireBar` (« Fixe / À placer », débrancher). Catalogue en
+  tuiles sur deux colonnes, description en infobulle dans l’atelier, quantité
+  conservée pour le joueur. Accueil : boutons à plat.
+- **Tests.** Seul `wire-hit-test.test.ts` est ajouté. Sur décision de l’auteur,
+  la reprise des tests unitaires et E2E touchés par C7a et C7b est confiée à
+  Luna ; `pnpm check` n’est pas vert tant qu’elle n’est pas faite.
+- **Points ouverts.** Touche Suppr sur la sélection non câblée. Longueur de
+  poutre : uniquement par la poignée en disposition large. Sélection d’un objet
+  au clavier, que portait la liste « Objets sur le plateau », sans équivalent
+  en disposition large. Résultat, dialogues et messages de câblage gardent
+  l’ancien habillage. Campagne, Mes niveaux et Paramètres restent à aligner.
+- **Petites tailles (même jour, à la demande de l’auteur, sans maquette
+  dédiée).** La nouvelle coque devient la seule, à toutes les tailles : plus de
+  tiroir de catalogue, de feuille de propriétés ni de rail. Sous 1100 px, le
+  catalogue est un rail d’une colonne et les actions sont des icônes. Téléphone
+  en paysage (hauteur ≤ 520 px) : la barre passe en colonne de deux rangs
+  d’icônes à droite du plateau, « Lancer » en tête, sans nom de niveau.
+  Téléphone en portrait (largeur < 700 px) : catalogue en bande défilante sous
+  le plateau, actions du niveau dans l’en-tête. `use-side-layout.ts` n’expose
+  plus que `useIsNarrowPortrait`. `ContextPanel` et `InspectorDrawer` ne sont
+  plus montés par l’application ; ils restent dans le dépôt pour leurs tests,
+  à supprimer avec la reprise des tests. Recoupe M0 à M3, dont les gestes et
+  contrats restent à réconcilier avec `mobile-editor-interactions.md`.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

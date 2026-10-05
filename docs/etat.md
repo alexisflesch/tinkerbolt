@@ -574,6 +574,16 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   (`e2e/board-paper.ts`). Captures dans `test-results/board-paper/` ; validation
   de l’auteur attendue (V2b).
 
+- **Écrans de plateau, toutes tailles** (C7b, maquette
+  `maquettes/identite/atelier.html`) : navigation principale dans l’en-tête,
+  barre unique (historique, cadrage, nom, actions, « Lancer »), aucun rail
+  droit, carte de commandes flottante ouverte par un clic simple (`ObjectBar`,
+  `WireBar`), fils sélectionnables, catalogue en tuiles. Sous 1100 px : catalogue
+  en rail ; téléphone en paysage : barre en colonne à droite ; téléphone en
+  portrait : catalogue en bande sous le plateau. Tests unitaires et E2E
+  correspondants **à reprendre** ; `ContextPanel` et `InspectorDrawer` ne sont
+  plus montés.
+
 - **Accueil `/`** (V7, identité visuelle C7a du 5 octobre, maquette
   `maquettes/identite/`) : scène d’atelier en parchemin ; « Amène la balle
   jusqu’au panier. » en Baloo 2 sur une feuille épinglée, un paragraphe,

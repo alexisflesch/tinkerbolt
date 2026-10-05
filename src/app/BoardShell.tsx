@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CircleQuestionMark, Eye, Gamepad2, Upload } from 'lucide-react';
 
+import { projectWires } from '../presentation/control-wires';
+import { hitTestWires, wireRoutes } from '../presentation/wire-hit-test';
+import { ObjectBar, WireBar } from '../ui/ObjectBar';
+
 import { revealAuthorSolution } from '../application/construction/authoring-commands';
 import { createConstructionAttempt } from '../application/construction/construction-attempt';
 import {
@@ -20,12 +24,11 @@ import { puzzleFromWorkshop } from '../application/puzzle/puzzle-workshop';
 import type { LevelDocument } from '../domain/level-document';
 import type { AttemptOutcome } from '../domain/attempt-failure-evaluator';
 import { AppFrame } from '../ui/AppFrame';
+import type { MainSection } from '../ui/AppHeader';
 import { frameLevel } from '../presentation/level-framing';
 import { BoardView } from '../ui/BoardView';
-import { ContextPanel } from '../ui/ContextPanel';
 import { CampaignVictoryDialog, type CampaignVictory } from '../ui/CampaignVictoryDialog';
 import { LevelResult } from '../ui/LevelResult';
-import { InspectorDrawer } from '../ui/InspectorDrawer';
 import { Button } from '../ui/Button';
 import { ObjectDrawer } from '../ui/ObjectDrawer';
 import { Dialog } from '../ui/Dialog';
@@ -41,7 +44,7 @@ import { LevelExportDialog } from './LevelExportDialog';
 import { puzzleRefusalMessage } from './level-export';
 import { useWiringTool, wiringAnchor, wiringGuide } from './use-wiring-tool';
 import { useEditorSession } from './use-editor-session';
-import { useIsSideLayout } from './use-side-layout';
+import { useIsNarrowPortrait } from './use-side-layout';
 import { useVictoryDialog } from './use-victory-dialog';
 import { useSimulationRunner } from './use-simulation-runner';
 
@@ -94,6 +97,41 @@ interface BoardShellProps {
 
 const revealLabel = 'Révéler la solution de l’auteur';
 
+/** What the wide layout's floating bar is open on: set by a plain click, never by a gesture. */
+type BarTarget =
+  | { readonly kind: 'object'; readonly id: string }
+  | { readonly kind: 'wire'; readonly id: string };
+
+/** How near a click must be to a wire to select it, in CSS pixels. */
+const WIRE_CLICK_TOLERANCE_IN_PIXELS = 10;
+/**
+ * World units left clear between an object's centre, or a wire, and the floating
+ * bar: enough for the rotation handle to stay reachable above the object.
+ */
+const BAR_CLEARANCE = { object: 1.4, wire: 0.3 } as const;
+
+/** The middle of a wire's longest leg: where its bar points. */
+const wireAnchor = (routes: ReturnType<typeof wireRoutes>): { x: number; y: number } | null => {
+  let best: { readonly x: number; readonly y: number; readonly length: number } | null = null;
+  for (const route of routes) {
+    route.slice(1).forEach((end, index) => {
+      const start = route[index];
+      if (start === undefined) return;
+      const length = Math.hypot(end.x - start.x, end.y - start.y);
+      if (best === null || length > best.length) {
+        best = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2, length };
+      }
+    });
+  }
+  return best;
+};
+
+const sectionBySubtitle: Readonly<Record<string, MainSection>> = {
+  Atelier: 'workshop',
+  Campagne: 'campaign',
+  'Mes niveaux': 'my-levels',
+};
+
 /** ADR 0015 § Révéler: how many of the author's wires could not be laid again. */
 const ignoredWiresNotice = (count: number): string =>
   count === 1
@@ -132,7 +170,9 @@ export function BoardShell({
   beforeLeave,
 }: BoardShellProps) {
   const navigate = useNavigate();
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+  // A narrow portrait screen keeps the level's own actions in the header: its bar has no room.
+  const isNarrowPortrait = useIsNarrowPortrait();
+  const [barTarget, setBarTarget] = useState<BarTarget | null>(null);
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
   const [revealNotice, setRevealNotice] = useState<string | null>(null);
   const {
@@ -185,7 +225,21 @@ export function BoardShell({
     isWiringRef: wiring.isWiringRef,
     onWiringTap: wiring.handleWiringTap,
     onRequestOpenProperties: () => {
-      setIsInspectorOpen(true);
+      const selectedId = sessionRef.current.selectedPlacementId;
+      setBarTarget(selectedId === null ? null : { kind: 'object', id: selectedId });
+    },
+    onEmptyBoardClick: (point) => {
+      const hits = hitTestWires(
+        point,
+        projectWires(currentEditorAttempt(sessionRef.current).document),
+        WIRE_CLICK_TOLERANCE_IN_PIXELS / boardCamera.cameraRef.current.pixelsPerWorldUnit,
+      );
+      setBarTarget((current) => {
+        // Wires may share a stretch: clicking again there goes on to the next one.
+        const currentIndex = current?.kind === 'wire' ? hits.indexOf(current.id) : -1;
+        const next = hits[(currentIndex + 1) % Math.max(hits.length, 1)];
+        return next === undefined ? null : { kind: 'wire', id: next };
+      });
     },
   });
   const simulation = useSimulationRunner({
@@ -196,7 +250,6 @@ export function BoardShell({
     ...(onSimulationLaunched === undefined ? {} : { onSimulationLaunched }),
     ...(onSimulationCompleted === undefined ? {} : { onSimulationCompleted }),
   });
-  const isSideLayout = useIsSideLayout();
 
   // U8: « Lancer » first, then the drawer once the machine has run.
   const [hasLaunched, setHasLaunched] = useState(false);
@@ -245,7 +298,6 @@ export function BoardShell({
     };
   }, [isPlacementActive]);
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isObjectiveOpen, setIsObjectiveOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const resetDialogCancelRef = useRef<HTMLButtonElement>(null);
@@ -319,11 +371,50 @@ export function BoardShell({
   // Only committed history states are reported: gesture previews and the
   // simulation snapshot never reach the draft.
 
-  // Selection and panel visibility are independent (C4a). Empty-board taps,
-  // reset and simulation transitions clear the selection and close the panel.
+  // Selecting an object, by a press or a drag, puts a selected wire down.
   useEffect(() => {
-    if (!hasSelection) setIsInspectorOpen(false);
-  }, [hasSelection]);
+    if (session.selectedPlacementId !== null) {
+      setBarTarget((current) => (current?.kind === 'wire' ? null : current));
+    }
+  }, [session.selectedPlacementId]);
+
+  const isBoardFree =
+    session.phase === 'construction' &&
+    session.manipulation === null &&
+    pointers.placementTool === null &&
+    wiring.wiringStep === null;
+  const shownBar =
+    !isBoardFree || barTarget === null
+      ? null
+      : barTarget.kind === 'wire' || barTarget.id === session.selectedPlacementId
+        ? barTarget
+        : null;
+  const shownDocument = currentEditorAttempt(session).document;
+  const barObject =
+    shownBar?.kind === 'object'
+      ? shownDocument.objects.find(({ id }) => id === shownBar.id)
+      : undefined;
+  const barWire =
+    shownBar?.kind === 'wire'
+      ? projectWires(shownDocument).find(({ id }) => id === shownBar.id)
+      : undefined;
+  const barWireAnchor = barWire === undefined ? null : wireAnchor(wireRoutes(barWire));
+  const floatingBar =
+    barObject !== undefined
+      ? {
+          anchor: barObject.transform.position,
+          clearance: BAR_CLEARANCE.object,
+          content: <ObjectBar session={session} onExecuteCommand={executeCommand} />,
+        }
+      : barWire !== undefined && barWireAnchor !== null
+        ? {
+            anchor: barWireAnchor,
+            clearance: BAR_CLEARANCE.wire,
+            content: (
+              <WireBar session={session} wireId={barWire.id} onExecuteCommand={executeCommand} />
+            ),
+          }
+        : null;
 
   const [isRestarting, setIsRestarting] = useState(false);
   const resetToInitialAttempt = (): void => {
@@ -340,8 +431,7 @@ export function BoardShell({
       );
       pointers.clearPlacementTool();
       simulation.clearAttemptOutcome();
-      setIsDrawerOpen(false);
-      setIsInspectorOpen(false);
+      setBarTarget(null);
       setIsResetDialogOpen(false);
       setFeedback(null);
       boardCamera.fitCameraToCurrentScene();
@@ -410,6 +500,101 @@ export function BoardShell({
     })();
   };
 
+  const levelActions = (
+    <>
+      {exit !== undefined && (
+        <button
+          className="icon-button objective-button"
+          type="button"
+          aria-label={exit.label}
+          onClick={returnToLevels}
+        >
+          <span className="objective-button-glyph" aria-hidden="true">
+            <ArrowLeft size={18} />
+          </span>
+          <span className="objective-button-label" aria-hidden="true">
+            {exit.shortLabel ?? 'Atelier'}
+          </span>
+        </button>
+      )}
+      {onPlayAsPlayer !== undefined && (
+        // U22: the author solves the puzzle as the player will. Named apart from « Lancer »,
+        // which only runs the machine.
+        <button
+          className="icon-button objective-button"
+          type="button"
+          aria-label="Essayer en joueur"
+          onClick={playAsPlayer}
+        >
+          <span className="objective-button-glyph" aria-hidden="true">
+            <Gamepad2 size={18} />
+          </span>
+          <span className="objective-button-label" aria-hidden="true">
+            Essayer en joueur
+          </span>
+        </button>
+      )}
+      {mode === 'creation' && (
+        // U16: exporting is an author command, absent from player screens.
+        <button
+          className="icon-button objective-button export-button"
+          type="button"
+          aria-label="Exporter le niveau"
+          aria-haspopup="dialog"
+          onClick={() => {
+            setIsExportOpen(true);
+          }}
+        >
+          <span className="objective-button-glyph" aria-hidden="true">
+            <Upload size={18} />
+          </span>
+          <span className="objective-button-label" aria-hidden="true">
+            Exporter
+          </span>
+        </button>
+      )}
+      {/* The objective is reachable on demand rather than permanently on
+      screen (`mobile-editor-interactions.md` § Organisation de l'écran:
+      « un accès à l'objectif »), so the board keeps all remaining space. */}
+      <button
+        className="icon-button objective-button"
+        type="button"
+        aria-label="Voir l’objectif"
+        aria-haspopup="dialog"
+        onClick={() => {
+          setIsObjectiveOpen(true);
+        }}
+      >
+        <span className="objective-button-glyph" aria-hidden="true">
+          <CircleQuestionMark size={18} />
+        </span>
+        <span className="objective-button-label" aria-hidden="true">
+          Objectif
+        </span>
+      </button>
+    </>
+  );
+
+  const levelResult = (
+    <LevelResult
+      outcome={simulation.attemptOutcome}
+      isCreation={mode === 'creation'}
+      onReplay={resetToInitialAttempt}
+      onReset={simulation.restoreConstruction}
+      onReturnToLevels={returnToLevels}
+      {...(exit === undefined ? {} : { returnLabel: exit.label })}
+      {...(shownCampaignVictory === null
+        ? {}
+        : {
+            campaign: {
+              tier: shownCampaignVictory.tier,
+              areActionsAvailable: victoryDialog.areActionsAvailable,
+              onOpenResult: victoryDialog.open,
+            },
+          })}
+    />
+  );
+
   return (
     <AppFrame
       title={title}
@@ -430,80 +615,8 @@ export function BoardShell({
               },
             ],
           })}
-      headerAction={
-        <>
-          {exit !== undefined && (
-            <button
-              className="icon-button objective-button"
-              type="button"
-              aria-label={exit.label}
-              onClick={returnToLevels}
-            >
-              <span className="objective-button-glyph" aria-hidden="true">
-                <ArrowLeft size={18} />
-              </span>
-              <span className="objective-button-label" aria-hidden="true">
-                {exit.shortLabel ?? 'Atelier'}
-              </span>
-            </button>
-          )}
-          {onPlayAsPlayer !== undefined && (
-            // U22: the author solves the puzzle as the player will. Named apart from « Lancer »,
-            // which only runs the machine.
-            <button
-              className="icon-button objective-button"
-              type="button"
-              aria-label="Essayer en joueur"
-              onClick={playAsPlayer}
-            >
-              <span className="objective-button-glyph" aria-hidden="true">
-                <Gamepad2 size={18} />
-              </span>
-              <span className="objective-button-label" aria-hidden="true">
-                Essayer en joueur
-              </span>
-            </button>
-          )}
-          {mode === 'creation' && (
-            // U16: exporting is an author command, absent from player screens.
-            <button
-              className="icon-button objective-button export-button"
-              type="button"
-              aria-label="Exporter le niveau"
-              aria-haspopup="dialog"
-              onClick={() => {
-                setIsExportOpen(true);
-              }}
-            >
-              <span className="objective-button-glyph" aria-hidden="true">
-                <Upload size={18} />
-              </span>
-              <span className="objective-button-label" aria-hidden="true">
-                Exporter
-              </span>
-            </button>
-          )}
-          {/* The objective is reachable on demand rather than permanently on
-          screen (`mobile-editor-interactions.md` § Organisation de l'écran:
-          « un accès à l'objectif »), so the board keeps all remaining space. */}
-          <button
-            className="icon-button objective-button"
-            type="button"
-            aria-label="Voir l’objectif"
-            aria-haspopup="dialog"
-            onClick={() => {
-              setIsObjectiveOpen(true);
-            }}
-          >
-            <span className="objective-button-glyph" aria-hidden="true">
-              <CircleQuestionMark size={18} />
-            </span>
-            <span className="objective-button-label" aria-hidden="true">
-              Objectif
-            </span>
-          </button>
-        </>
-      }
+      desk={sectionBySubtitle[subtitle] ?? 'workshop'}
+      {...(isNarrowPortrait ? { headerAction: levelActions } : {})}
     >
       {hasDrawer && (
         <ObjectDrawer
@@ -514,15 +627,6 @@ export function BoardShell({
               ? undefined
               : placementSourceKey(pointers.placementTool.source)
           }
-          isDrawerOpen={isDrawerOpen}
-          isSideLayout={isSideLayout}
-          isPlacementActive={pointers.placementTool !== null}
-          onToggleDrawer={() => {
-            setIsDrawerOpen((current) => !current);
-          }}
-          onCloseDrawer={() => {
-            setIsDrawerOpen(false);
-          }}
           onSelectKind={(kind, source) => {
             wiring.cancelWiring();
             // Touching the active card again puts the tool down.
@@ -536,16 +640,13 @@ export function BoardShell({
             } else {
               pointers.activatePlacement(kind, source);
             }
-            setIsDrawerOpen(false);
           }}
           isWiringActive={wiring.wiringStep !== null}
           onSelectWire={(inventoryEntryId) => {
-            // U15: the wire card is a tool like a placement card. It drops
-            // the selection so the compact inspector leaves the board clear.
+            // U15: the wire card is a tool like a placement card. It drops the selection.
             if (pointers.placementTool !== null) pointers.cancelPlacement();
             updateSession(selectEditorPlacement(sessionRef.current, null));
             wiring.startWiring(inventoryEntryId);
-            setIsDrawerOpen(false);
           }}
         />
       )}
@@ -606,6 +707,13 @@ export function BoardShell({
           onResetDocument={() => {
             setIsResetDialogOpen(true);
           }}
+          desk={{
+            title,
+            actions: isNarrowPortrait ? null : levelActions,
+            onZoomIn: boardCamera.zoomIn,
+            onZoomOut: boardCamera.zoomOut,
+            onFitToScene: boardCamera.fitCameraToCurrentScene,
+          }}
         />
         <BoardView
           session={session}
@@ -615,7 +723,17 @@ export function BoardShell({
           simulationStateRef={simulation.simulationStateRef}
           cameraRef={boardCamera.cameraRef}
           boardCanvasRef={boardCamera.boardCanvasRef}
-          boardPointerHandlers={pointers.boardPointerHandlers}
+          boardPointerHandlers={{
+            ...pointers.boardPointerHandlers,
+            // A press starts a gesture: the object's bar closes, and only a plain click reopens it.
+            onPointerDown: (event) => {
+              setBarTarget((current) => (current?.kind === 'object' ? null : current));
+              pointers.boardPointerHandlers.onPointerDown(event);
+            },
+          }}
+          showCameraControls={false}
+          highlightedWireId={shownBar?.kind === 'wire' ? shownBar.id : null}
+          floatingBar={floatingBar}
           beamSizeChoices={beamSizeChoices}
           wiringAnchor={pendingWireAnchor}
           onBeamSizeChange={changeSelectedBeamSize}
@@ -637,55 +755,8 @@ export function BoardShell({
           {hintStep !== null && firstLevelHint !== undefined && (
             <FirstLevelHint step={hintStep} onDismiss={firstLevelHint.onDone} />
           )}
-          <InspectorDrawer
-            isWideLayout={isSideLayout}
-            isPropertiesOpen={isInspectorOpen}
-            placements={
-              session.phase === 'construction' ? currentEditorAttempt(session).document.objects : []
-            }
-            selectedPlacementId={session.selectedPlacementId}
-            isSceneSelectionDisabled={pointers.placementTool !== null || wiring.wiringStep !== null}
-            onOpenProperties={() => {
-              setIsInspectorOpen(true);
-            }}
-            onCloseProperties={() => {
-              setIsInspectorOpen(false);
-            }}
-            onSelectPlacement={(placementId) => {
-              updateSession(selectEditorPlacement(sessionRef.current, placementId));
-              setIsInspectorOpen(true);
-            }}
-            properties={
-              hasSelection ? (
-                <ContextPanel
-                  session={session}
-                  onExecuteCommand={executeCommand}
-                  onClose={() => {
-                    setIsInspectorOpen(false);
-                  }}
-                />
-              ) : null
-            }
-            result={
-              <LevelResult
-                outcome={simulation.attemptOutcome}
-                isCreation={mode === 'creation'}
-                onReplay={resetToInitialAttempt}
-                onReset={simulation.restoreConstruction}
-                onReturnToLevels={returnToLevels}
-                {...(exit === undefined ? {} : { returnLabel: exit.label })}
-                {...(shownCampaignVictory === null
-                  ? {}
-                  : {
-                      campaign: {
-                        tier: shownCampaignVictory.tier,
-                        areActionsAvailable: victoryDialog.areActionsAvailable,
-                        onOpenResult: victoryDialog.open,
-                      },
-                    })}
-              />
-            }
-          />
+          {/* No right rail: the commands float by the object, the result lies over the board's foot. */}
+          {levelResult}
         </div>
       </section>
       {isObjectiveOpen && (

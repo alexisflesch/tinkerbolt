@@ -867,10 +867,6 @@ select:focus-visible {
   padding: 0 clamp(18px, calc(var(--home-w) * 0.024), 30px) 0
     clamp(14px, calc(var(--home-w) * 0.019), 24px);
   background: linear-gradient(#ffd266, #ffb720);
-  box-shadow:
-    inset 0 2px 0 rgb(255 255 255 / 55%),
-    0 4px 0 #d9900a,
-    0 9px 14px rgb(120 70 0 / 28%);
   font-size: clamp(18px, calc(var(--home-w) * 0.0195), 24px);
   font-weight: 800;
 }
@@ -881,9 +877,7 @@ select:focus-visible {
 
 .home-create {
   background: rgb(255 255 255 / 70%);
-  box-shadow:
-    inset 0 0 0 2px var(--home-edge),
-    0 3px 0 var(--home-edge);
+  box-shadow: inset 0 0 0 2px var(--home-edge);
 }
 
 .home-frame {
@@ -3275,4 +3269,797 @@ select:focus-visible {
   color: #fff;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
+}
+
+/* 8. Écrans de plateau en grand format — identité visuelle ------------------------- */
+
+/*
+ * Maquette `docs/maquettes/identite/atelier.html` : le parchemin de l'accueil,
+ * un catalogue de cartes déchirées, une seule barre (historique, cadrage, nom,
+ * actions du niveau) et aucun rail droit, pour que le plateau prenne toute la
+ * place. `.app-shell-desk` est posé par tous les écrans de plateau ; la mise en
+ * page se replie ensuite par paliers (voir la fin de la section) : catalogue en
+ * rail sous 1100 px, barre en colonne à droite sur un téléphone en paysage,
+ * catalogue en bande sous le plateau sur un téléphone en portrait.
+ */
+.app-shell-desk {
+  --desk-ink: #17233d;
+  --desk-edge: #cdbb98;
+  --desk-paper: #fdf6e6;
+
+  color: #4a4037;
+  background:
+    linear-gradient(rgb(226 196 140 / 34%), rgb(226 196 140 / 34%)),
+    #f0e2c6 url('/assets/home/papier.webp') 0 0 / 320px;
+}
+
+.app-shell-desk .app-main {
+  flex-direction: row;
+  gap: 12px;
+  padding: 12px max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
+}
+
+/* Boutons à plat : une bordure, pas d'ombre portée. */
+.app-shell-desk .workspace .btn,
+.app-shell-desk .workspace .objective-button {
+  height: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--desk-ink);
+  background: var(--desk-paper);
+  box-shadow: inset 0 0 0 2px var(--desk-edge);
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.app-shell-desk .workspace .btn-go {
+  color: #fff;
+  background: var(--go);
+  box-shadow: none;
+}
+
+.app-shell-desk .workspace .btn-pause {
+  color: #fff;
+  background: var(--pause);
+  box-shadow: none;
+}
+
+.app-shell-desk .workspace .btn-reset {
+  color: #fff;
+  background: var(--reset);
+  box-shadow: none;
+}
+
+/* La barre unique. */
+.app-shell-desk .workspace {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 0;
+}
+
+.app-shell-desk .workspace-toolbar {
+  grid-area: 1 / 1 / 2 / 2;
+}
+
+.workspace-toolbar-desk {
+  gap: 10px;
+}
+
+.toolbar-icons {
+  gap: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--desk-paper);
+  box-shadow: inset 0 0 0 2px var(--desk-edge);
+}
+
+.app-shell-desk .workspace .toolbar-icons .btn {
+  min-width: 44px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.app-shell-desk .workspace .toolbar-icons .btn + .btn {
+  box-shadow: -2px 0 0 #e2d3b4;
+}
+
+.toolbar-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--desk-ink);
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-toolbar-desk .toolbar-status {
+  flex: 1;
+}
+
+.app-shell-desk .workspace .objective-button {
+  padding: 0 14px;
+  gap: 8px;
+}
+
+.app-shell-desk .workspace .objective-button-glyph {
+  width: auto;
+  height: auto;
+  color: inherit;
+  background: none;
+}
+
+.app-shell-desk .workspace .objective-button-label {
+  display: inline;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.app-shell-desk .workspace .toolbar-primary {
+  padding: 0 16px;
+}
+
+/* Les messages de la barre : une étiquette de papier centrée sous elle, sans ombre. */
+.app-shell-desk .toolbar-feedback,
+.app-shell-desk .toolbar-notice {
+  right: auto;
+  left: 50%;
+  max-width: min(640px, 100% - 32px);
+  margin-top: 16px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--desk-ink);
+  background: var(--desk-paper);
+  box-shadow: inset 0 0 0 2px var(--desk-edge);
+  font-weight: 700;
+  transform: translateX(-50%);
+}
+
+.app-shell-desk .toolbar-feedback {
+  box-shadow: inset 0 0 0 2px #e3b3ab;
+}
+
+/* Le plateau : aucun cadre, un simple liseré. */
+.app-shell-desk .board-scene-row {
+  min-height: 0;
+  grid-area: 2 / 1 / 3 / 2;
+}
+
+.app-shell-desk .scene-frame {
+  border: 2px solid var(--desk-edge);
+  border-radius: 14px;
+  background-color: #f6ead3;
+  box-shadow: none;
+}
+
+/* Résultat, astuce et messages : par-dessus le bas du plateau, sans lui prendre de place. */
+.app-shell-desk .status-slot {
+  position: absolute;
+  z-index: var(--z-toast);
+  bottom: 16px;
+  left: 50%;
+  width: min(560px, 100% - 32px);
+  height: auto;
+  min-height: 0;
+  max-height: 60%;
+  flex: none;
+  grid-area: auto;
+  transform: translateX(-50%);
+}
+
+/* Le catalogue : des cartes de papier déchiré, sur deux colonnes, posées sur le mur. */
+.app-shell-desk .object-drawer {
+  position: relative;
+  z-index: auto;
+  inset: auto;
+  width: 252px;
+  height: auto;
+  max-height: 100%;
+  flex: 0 0 252px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--desk-ink);
+  background: none;
+  box-shadow: none;
+  transform: none;
+  transition: none;
+}
+
+.app-shell-desk .drawer-content {
+  scrollbar-gutter: auto;
+}
+
+.app-shell-desk .drawer-heading {
+  min-height: 0;
+  align-items: baseline;
+  margin: 0;
+  padding: 6px 6px 8px;
+  color: var(--desk-ink);
+  background: none;
+}
+
+.app-shell-desk .drawer-heading .eyebrow {
+  display: none;
+}
+
+.app-shell-desk .drawer-heading h2 {
+  font-family: var(--font-title);
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.app-shell-desk .object-count {
+  color: #7a6a58;
+  background: none;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.app-shell-desk .object-list,
+.app-shell-desk .object-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.app-shell-desk .object-list {
+  padding: 0 2px 4px;
+}
+
+.app-shell-desk .object-group,
+.app-shell-desk .object-group-title {
+  grid-column: 1 / -1;
+}
+
+.app-shell-desk .object-group-title {
+  margin: 6px 4px -2px;
+  color: #8a6a3c;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-shell-desk .object-card {
+  min-height: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 0;
+  color: var(--desk-ink);
+  background:
+    linear-gradient(rgb(255 252 244 / 78%), rgb(255 252 244 / 78%)),
+    url('/assets/home/papier.webp') 0 0 / 320px;
+  clip-path: polygon(
+    0% 0.8px,
+    11% 1.7px,
+    22% 1.2px,
+    33% 1.9px,
+    44% 2px,
+    56% 0.2px,
+    67% 0px,
+    78% 2.7px,
+    89% 0.8px,
+    calc(100% - 0.7px) 0%,
+    calc(100% - 3.2px) 20%,
+    calc(100% - 1.5px) 40%,
+    calc(100% - 2.7px) 60%,
+    calc(100% - 1.5px) 80%,
+    100% calc(100% - 2px),
+    89% calc(100% - 0.5px),
+    78% calc(100% - 2px),
+    67% calc(100% - 2.8px),
+    56% calc(100% - 1.7px),
+    44% calc(100% - 2.4px),
+    33% calc(100% - 2.1px),
+    22% calc(100% - 0.2px),
+    11% calc(100% - 2.4px),
+    1.9px 100%,
+    1px 80%,
+    0.1px 60%,
+    2.8px 40%,
+    1.5px 20%
+  );
+  text-align: center;
+}
+
+.app-shell-desk .object-card:nth-of-type(3n + 2) {
+  background-position:
+    0 0,
+    120px 80px;
+  clip-path: polygon(
+    0% 1.4px,
+    11% 1.8px,
+    22% 3px,
+    33% 1.5px,
+    44% 1.6px,
+    56% 1.9px,
+    67% 0.6px,
+    78% 1.6px,
+    89% 2px,
+    calc(100% - 2.5px) 0%,
+    calc(100% - 0.3px) 20%,
+    calc(100% - 1px) 40%,
+    calc(100% - 0.3px) 60%,
+    calc(100% - 2.6px) 80%,
+    100% calc(100% - 2.2px),
+    89% calc(100% - 0.1px),
+    78% calc(100% - 3.1px),
+    67% calc(100% - 3.1px),
+    56% calc(100% - 2.1px),
+    44% calc(100% - 2px),
+    33% calc(100% - 0.5px),
+    22% calc(100% - 0px),
+    11% calc(100% - 1.7px),
+    0.2px 100%,
+    0.6px 80%,
+    0.8px 60%,
+    0.1px 40%,
+    1.5px 20%
+  );
+}
+
+.app-shell-desk .object-card:nth-of-type(3n) {
+  background-position:
+    0 0,
+    60px 200px;
+  clip-path: polygon(
+    0% 3px,
+    11% 3px,
+    22% 2.9px,
+    33% 0.3px,
+    44% 1.9px,
+    56% 1.4px,
+    67% 1.7px,
+    78% 0.4px,
+    89% 0.6px,
+    calc(100% - 1.4px) 0%,
+    calc(100% - 0.7px) 20%,
+    calc(100% - 1.5px) 40%,
+    calc(100% - 0.1px) 60%,
+    calc(100% - 0.3px) 80%,
+    100% calc(100% - 2.3px),
+    89% calc(100% - 1.3px),
+    78% calc(100% - 1.6px),
+    67% calc(100% - 2.3px),
+    56% calc(100% - 1.1px),
+    44% calc(100% - 0.2px),
+    33% calc(100% - 2.5px),
+    22% calc(100% - 1.9px),
+    11% calc(100% - 2.1px),
+    2px 100%,
+    3.1px 80%,
+    1.2px 60%,
+    2.4px 40%,
+    1.2px 20%
+  );
+}
+
+.app-shell-desk .object-card-selected {
+  background: linear-gradient(#ffd97a, #ffc02e);
+}
+
+.app-shell-desk .object-thumb {
+  width: 58px;
+  height: 30px;
+  flex: 0 0 30px;
+}
+
+.app-shell-desk .object-thumb svg {
+  width: 100%;
+  height: 100%;
+}
+
+.app-shell-desk .object-card-copy strong {
+  color: var(--desk-ink);
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.app-shell-desk .object-card-copy span {
+  display: block;
+  font-size: 11px;
+}
+
+/* Dans l'atelier, la description passe en infobulle ; le joueur garde sa quantité. */
+.app-shell-desk .object-list-author .object-card-copy span,
+.app-shell-desk .object-card-action {
+  display: none;
+}
+
+/* La carte de commandes flottante, près de l'objet ou du fil sélectionné. */
+.floating-bar {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, -100%);
+}
+
+.floating-bar-below {
+  transform: translate(-50%, 0);
+}
+
+.object-bar {
+  position: relative;
+  display: flex;
+  min-width: 190px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 14px;
+  color: #17233d;
+  background:
+    linear-gradient(rgb(255 252 244 / 88%), rgb(255 252 244 / 88%)),
+    #fdf6e6 url('/assets/home/papier.webp') 0 0 / 320px;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+  white-space: nowrap;
+}
+
+.object-bar-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 4px;
+}
+
+.object-bar-name {
+  margin-right: auto;
+  padding-right: 6px;
+  font-family: var(--font-title);
+  font-size: 15.5px;
+  font-weight: 800;
+}
+
+.object-bar button {
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.object-bar button:focus-visible {
+  outline: 3px solid var(--pause);
+  outline-offset: 1px;
+}
+
+.object-bar-command {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+}
+
+.object-bar .object-bar-remove {
+  color: #c0392b;
+  box-shadow: inset 0 0 0 2px #e3b3ab;
+}
+
+.object-bar-choices,
+.object-bar-stepper {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 10px;
+  background: #eadbbb;
+}
+
+.object-bar-choices button,
+.object-bar-stepper button {
+  height: 32px;
+  flex: 1;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: #6d5c45;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.object-bar-choices button[aria-pressed='true'] {
+  color: #17233d;
+  background: linear-gradient(#ffd266, #ffb720);
+}
+
+.object-bar-stepper button {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  padding: 0;
+  color: #17233d;
+  background: #fdf6e6;
+}
+
+.object-bar-stepper button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.object-bar-stepper output {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.object-bar-note {
+  padding: 0 4px 2px;
+  color: #6d5c45;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wire-selection {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  opacity: 0.75;
+  pointer-events: none;
+  stroke: #ffc53d;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 9;
+}
+
+/* Sous 1100 px de large : actions en icônes, nom du niveau masqué, catalogue en rail. */
+@media (max-width: 1099px) {
+  .toolbar-title {
+    visibility: hidden;
+  }
+
+  .app-shell-desk .workspace .objective-button {
+    min-width: 44px;
+    padding: 0;
+  }
+
+  .app-shell-desk .workspace .objective-button-label {
+    display: none;
+  }
+
+  .app-shell-desk .app-main {
+    gap: 10px;
+    padding-top: 10px;
+  }
+
+  .app-shell-desk .object-drawer {
+    width: 92px;
+    flex-basis: 92px;
+  }
+
+  .app-shell-desk .drawer-heading {
+    justify-content: center;
+    padding: 2px 0 6px;
+  }
+
+  .app-shell-desk .drawer-heading > div,
+  .app-shell-desk .drawer-hint {
+    display: none;
+  }
+
+  .app-shell-desk .object-list,
+  .app-shell-desk .object-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Les catégories ne sont plus nommées : un filet les sépare. */
+  .app-shell-desk .object-group-title {
+    height: 2px;
+    margin: 2px 6px;
+    overflow: hidden;
+    background: #e2d0a9;
+    font-size: 0;
+  }
+
+  .app-shell-desk .object-group:first-child .object-group-title {
+    display: none;
+  }
+
+  .app-shell-desk .object-card-copy strong {
+    font-size: 11px;
+  }
+}
+
+/*
+ * Téléphone en paysage : la barre passe en colonne à droite du plateau, sur deux
+ * rangs d'icônes, pour lui rendre toute la hauteur ; « Lancer » en tête.
+ */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app-shell-desk .app-main {
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .app-shell-desk .object-drawer {
+    width: 84px;
+    flex-basis: 84px;
+  }
+
+  .app-shell-desk .workspace {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .app-shell-desk .workspace-toolbar {
+    position: static;
+    display: grid;
+    height: auto;
+    grid-area: 1 / 2 / 2 / 3;
+    grid-template-columns: 44px 44px;
+    grid-auto-rows: 44px;
+    align-content: start;
+    gap: 6px;
+    overflow-y: auto;
+  }
+
+  .app-shell-desk .board-scene-row {
+    grid-area: 1 / 1 / 2 / 2;
+  }
+
+  .app-shell-desk .toolbar-icons,
+  .app-shell-desk .workspace-toolbar-desk .toolbar-status {
+    display: contents;
+  }
+
+  .app-shell-desk .workspace .toolbar-icons .btn,
+  .app-shell-desk .workspace .toolbar-icons .btn + .btn {
+    border-radius: 12px;
+    background: var(--desk-paper);
+    box-shadow: inset 0 0 0 2px var(--desk-edge);
+  }
+
+  .app-shell-desk .workspace-toolbar .btn {
+    min-width: 0;
+    padding: 0;
+  }
+
+  .app-shell-desk .toolbar-title,
+  .app-shell-desk .toolbar-status-text,
+  .app-shell-desk .toolbar-status strong {
+    display: none;
+  }
+
+  .app-shell-desk .workspace-toolbar .toolbar-button-label,
+  .app-shell-desk .workspace-toolbar .placement-cancel-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .app-shell-desk .workspace .toolbar-primary,
+  .app-shell-desk .workspace .placement-cancel {
+    order: -1;
+    grid-column: 1 / -1;
+  }
+
+  .app-shell-desk .workspace .toolbar-primary {
+    gap: 4px;
+    font-size: 15px;
+  }
+
+  .app-shell-desk .workspace .toolbar-primary .toolbar-button-label {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
+  }
+
+  /* Messages et guide de câblage : en haut du plateau, sans passer sous la colonne. */
+  .app-shell-desk .toolbar-feedback,
+  .app-shell-desk .toolbar-notice,
+  .app-shell-desk .wiring-guide {
+    top: 8px;
+    margin-top: 0;
+  }
+
+  .app-shell-desk .wiring-guide {
+    right: 112px;
+    left: 8px;
+  }
+
+  .app-shell-desk .status-slot {
+    left: calc(50% - 52px);
+    max-height: 80%;
+  }
+}
+
+/*
+ * Téléphone en portrait (seuil synchrone avec `use-side-layout.ts`) : le
+ * catalogue devient une bande défilante sous le plateau ; les actions du niveau
+ * montent dans l'en-tête.
+ */
+@media (orientation: portrait) and (max-width: 699px) {
+  .app-shell-desk .app-main {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .app-shell-desk .workspace {
+    flex: 1;
+    gap: 8px;
+  }
+
+  .app-shell-desk .workspace-toolbar-desk {
+    gap: 6px;
+  }
+
+  .app-shell-desk .workspace .toolbar-primary {
+    margin-left: auto;
+  }
+
+  .app-shell-desk .object-drawer {
+    width: auto;
+    max-height: none;
+    order: 2;
+    flex: 0 0 auto;
+  }
+
+  .app-shell-desk .drawer-heading,
+  .app-shell-desk .object-group-title {
+    display: none;
+  }
+
+  .app-shell-desk .drawer-content {
+    overflow: auto hidden;
+  }
+
+  .app-shell-desk .object-list {
+    display: flex;
+    gap: 6px;
+    padding: 0 0 4px;
+  }
+
+  .app-shell-desk .object-group {
+    display: contents;
+  }
+
+  .app-shell-desk .object-card {
+    flex: 0 0 78px;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 419px) {
+  .app-shell-desk .workspace-toolbar .toolbar-primary .toolbar-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .app-shell-desk .workspace .toolbar-primary {
+    padding: 0;
+  }
+}
+
+/* Très petit téléphone : le zoom se fait au pincement, seul « Ajuster » reste. */
+@media (orientation: portrait) and (max-width: 359px) {
+  .app-shell-desk .toolbar-icons[aria-label='Cadrage du plateau'] .btn:not(:last-child) {
+    display: none;
+  }
 }

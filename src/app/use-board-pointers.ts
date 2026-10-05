@@ -171,6 +171,8 @@ interface UseBoardPointersOptions {
   readonly isWiringRef: RefObject<boolean>;
   readonly onWiringTap: (placementId: string) => void;
   readonly onRequestOpenProperties: () => void;
+  /** A plain click on no object, in world units: the wide layout selects a wire with it. */
+  readonly onEmptyBoardClick?: (point: { readonly x: number; readonly y: number }) => void;
 }
 
 interface BoardPointersController {
@@ -207,6 +209,7 @@ export function useBoardPointers({
   isWiringRef,
   onWiringTap,
   onRequestOpenProperties,
+  onEmptyBoardClick,
 }: UseBoardPointersOptions): BoardPointersController {
   const [placementTool, setPlacementTool] = useState<PlacementTool | null>(null);
   const nextPlacementNumber = useRef(1);
@@ -682,12 +685,14 @@ export function useBoardPointers({
       const projection = projectLevel(currentEditorAttempt(session).document);
       const objects =
         session.mode === 'creation' ? withAuthorRotation(projection.objects) : projection.objects;
-      const target = hitTestBoard(
-        { x: event.clientX - boardRect.left, y: event.clientY - boardRect.top },
-        objects,
-        viewport,
-      );
+      const clicked = { x: event.clientX - boardRect.left, y: event.clientY - boardRect.top };
+      const target = hitTestBoard(clicked, objects, viewport);
       if (target !== null) onRequestOpenProperties();
+      else
+        onEmptyBoardClick?.({
+          x: viewport.origin.x + clicked.x / viewport.pixelsPerWorldUnit,
+          y: viewport.origin.y + clicked.y / viewport.pixelsPerWorldUnit,
+        });
     },
     onPointerDown: (event) => {
       suppressNextBoardClick.current = false;

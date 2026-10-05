@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 
 import {
   currentEditorAttempt,
@@ -102,11 +102,6 @@ interface ObjectDrawerProps {
   readonly selectedObject: ObjectKind | undefined;
   /** Key of the card the active placement tool came from. */
   readonly selectedEntryKey: string | undefined;
-  readonly isDrawerOpen: boolean;
-  readonly isSideLayout: boolean;
-  readonly isPlacementActive: boolean;
-  readonly onToggleDrawer: () => void;
-  readonly onCloseDrawer: () => void;
   readonly onSelectKind: (kind: ObjectKind, source: PlacementSource) => void;
   /** Whether the "Fil" tool is active (U15, U21). */
   readonly isWiringActive: boolean;
@@ -194,24 +189,19 @@ function WireThumbnail() {
 }
 
 /**
- * The catalogue of placeable objects: a collapsible drawer on phones, an open
- * side panel in landscape/tablet. The player sees the level's inventory; the
- * author sees every family, and places it outside any inventory.
+ * The catalogue of placeable objects, always open beside the board (identité
+ * visuelle): a column of cards, or a strip under the board on a phone held
+ * upright. The player sees the level's inventory; the author sees every
+ * family, and places it outside any inventory.
  */
 export function ObjectDrawer({
   session,
   selectedObject,
   selectedEntryKey,
-  isDrawerOpen,
-  isSideLayout,
-  isPlacementActive,
-  onToggleDrawer,
-  onCloseDrawer,
   onSelectKind,
   isWiringActive,
   onSelectWire,
 }: ObjectDrawerProps) {
-  const drawerIsExpanded = isDrawerOpen || isSideLayout;
   const inventory =
     session.mode === 'resolution' ? currentEditorAttempt(session).document.inventory : null;
   const drawerCards =
@@ -236,6 +226,7 @@ export function ObjectDrawer({
         disabled={session.phase !== 'construction' || card.isDepleted}
         aria-label={card.accessibleName}
         aria-pressed={isSelected}
+        title={card.detail}
         onClick={() => {
           onSelectKind(card.kind, card.source);
         }}
@@ -260,56 +251,20 @@ export function ObjectDrawer({
 
   return (
     <>
-      {isDrawerOpen && !isSideLayout && !isPlacementActive && (
-        <button
-          className="drawer-scrim"
-          type="button"
-          aria-label="Fermer"
-          onClick={onCloseDrawer}
-        />
-      )}
-
-      <section
-        className={`object-drawer${drawerIsExpanded ? '' : ' object-drawer-collapsed'}`}
-        aria-label="Objets disponibles"
-      >
-        <div className="drawer-handle" aria-hidden="true" />
+      <section className="object-drawer" aria-label="Objets disponibles">
         <div className="drawer-heading">
           <div>
             <span className="eyebrow">Catalogue</span>
             <h2>Objets disponibles</h2>
           </div>
           <span className="object-count">{objectCountLabel}</span>
-          <button
-            className="drawer-toggle"
-            type="button"
-            aria-controls="object-list"
-            aria-expanded={drawerIsExpanded}
-            aria-label={drawerIsExpanded ? 'Replier le catalogue' : 'Ouvrir le catalogue'}
-            onClick={onToggleDrawer}
-          >
-            <span aria-hidden="true">
-              {drawerIsExpanded ? (
-                <ChevronDown size={22} aria-hidden="true" />
-              ) : (
-                <ChevronUp size={22} aria-hidden="true" />
-              )}
-            </span>
-          </button>
-          {drawerIsExpanded && !isSideLayout && (
-            <button
-              className="drawer-close"
-              type="button"
-              aria-label="Fermer le catalogue"
-              onClick={onCloseDrawer}
-            >
-              <X size={22} aria-hidden="true" />
-            </button>
-          )}
         </div>
 
         <div className="drawer-content">
-          <div className="object-list" id="object-list" hidden={!drawerIsExpanded}>
+          <div
+            className={inventory === null ? 'object-list object-list-author' : 'object-list'}
+            id="object-list"
+          >
             {inventory === null
               ? catalogueCategories.map((category) => (
                   <div className="object-group" key={category} role="group" aria-label={category}>
@@ -343,7 +298,7 @@ export function ObjectDrawer({
             ))}
           </div>
 
-          <p className="drawer-hint" aria-live="polite" hidden={!drawerIsExpanded}>
+          <p className="drawer-hint" aria-live="polite">
             Choisis un objet pour le placer.
           </p>
         </div>

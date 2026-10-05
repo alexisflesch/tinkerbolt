@@ -1,0 +1,491 @@
+/* Maquette « identité visuelle » — atelier. Complète identite.css (jetons, en-tête). */
+body.atelier {
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  overflow: hidden;
+}
+.atelier .top .wrap {
+  width: calc(100% - 28px);
+}
+.bench {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 252px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 14px 14px;
+  overflow: visible;
+}
+
+/* Catalogue : tuiles sur deux colonnes, description en infobulle. */
+.catalogue {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+.catalogue h2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding: 6px 6px 0;
+  font-family: var(--font-title);
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.catalogue h2 small {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #7a6a58;
+}
+.catalogue-scroll {
+  min-height: 0;
+  flex: 1;
+  padding: 0 2px 4px;
+  overflow-y: auto;
+}
+.catalogue h3 {
+  margin: 8px 4px 4px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a6a3c;
+}
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 6px;
+  border: 0;
+  background:
+    linear-gradient(rgb(255 252 244 / 78%), rgb(255 252 244 / 78%)),
+    url('img/papier.webp') 0 0 / 320px;
+  clip-path: polygon(
+    0% 0.8px,
+    11% 1.7px,
+    22% 1.2px,
+    33% 1.9px,
+    44% 2px,
+    56% 0.2px,
+    67% 0px,
+    78% 2.7px,
+    89% 0.8px,
+    calc(100% - 0.7px) 0%,
+    calc(100% - 3.2px) 20%,
+    calc(100% - 1.5px) 40%,
+    calc(100% - 2.7px) 60%,
+    calc(100% - 1.5px) 80%,
+    100% calc(100% - 2px),
+    89% calc(100% - 0.5px),
+    78% calc(100% - 2px),
+    67% calc(100% - 2.8px),
+    56% calc(100% - 1.7px),
+    44% calc(100% - 2.4px),
+    33% calc(100% - 2.1px),
+    22% calc(100% - 0.2px),
+    11% calc(100% - 2.4px),
+    1.9px 100%,
+    1px 80%,
+    0.1px 60%,
+    2.8px 40%,
+    1.5px 20%
+  );
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.tile:nth-child(3n + 2) {
+  background-position:
+    0 0,
+    120px 80px;
+  clip-path: polygon(
+    0% 1.4px,
+    11% 1.8px,
+    22% 3px,
+    33% 1.5px,
+    44% 1.6px,
+    56% 1.9px,
+    67% 0.6px,
+    78% 1.6px,
+    89% 2px,
+    calc(100% - 2.5px) 0%,
+    calc(100% - 0.3px) 20%,
+    calc(100% - 1px) 40%,
+    calc(100% - 0.3px) 60%,
+    calc(100% - 2.6px) 80%,
+    100% calc(100% - 2.2px),
+    89% calc(100% - 0.1px),
+    78% calc(100% - 3.1px),
+    67% calc(100% - 3.1px),
+    56% calc(100% - 2.1px),
+    44% calc(100% - 2px),
+    33% calc(100% - 0.5px),
+    22% calc(100% - 0px),
+    11% calc(100% - 1.7px),
+    0.2px 100%,
+    0.6px 80%,
+    0.8px 60%,
+    0.1px 40%,
+    1.5px 20%
+  );
+}
+.tile:nth-child(3n) {
+  background-position:
+    0 0,
+    60px 200px;
+  clip-path: polygon(
+    0% 3px,
+    11% 3px,
+    22% 2.9px,
+    33% 0.3px,
+    44% 1.9px,
+    56% 1.4px,
+    67% 1.7px,
+    78% 0.4px,
+    89% 0.6px,
+    calc(100% - 1.4px) 0%,
+    calc(100% - 0.7px) 20%,
+    calc(100% - 1.5px) 40%,
+    calc(100% - 0.1px) 60%,
+    calc(100% - 0.3px) 80%,
+    100% calc(100% - 2.3px),
+    89% calc(100% - 1.3px),
+    78% calc(100% - 1.6px),
+    67% calc(100% - 2.3px),
+    56% calc(100% - 1.1px),
+    44% calc(100% - 0.2px),
+    33% calc(100% - 2.5px),
+    22% calc(100% - 1.9px),
+    11% calc(100% - 2.1px),
+    2px 100%,
+    3.1px 80%,
+    1.2px 60%,
+    2.4px 40%,
+    1.2px 20%
+  );
+}
+.tile-art {
+  display: grid;
+  height: 32px;
+  place-items: center;
+}
+.tile-art img {
+  max-width: 58px;
+  max-height: 30px;
+  filter: drop-shadow(0 2px 2px rgb(50 28 6 / 30%));
+}
+.tile-art .wire-icon {
+  width: 28px;
+  height: 28px;
+  color: #2f67c7;
+}
+.tile-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+/* Barre unique : historique, zoom, titre, puis les actions du niveau. */
+.work {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tool-group {
+  display: flex;
+  border-radius: 12px;
+  background: #fdf6e6;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+}
+.tool-group-plain {
+  gap: 8px;
+  background: none;
+  box-shadow: none;
+}
+.tool {
+  display: inline-flex;
+  min-width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.tool + .tool {
+  box-shadow: -2px 0 0 #e2d3b4;
+}
+.tool:disabled {
+  color: #b8aa90;
+}
+.tool-text {
+  padding: 0 14px;
+  border-radius: 12px;
+  background: #fdf6e6;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+}
+.tool-text + .tool-text {
+  box-shadow: inset 0 0 0 2px #cdbb98;
+}
+.tool-text span,
+.launch span {
+  padding-top: 2px;
+}
+.level-name {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 19px;
+  color: var(--ink);
+}
+.level-name strong {
+  overflow: hidden;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.level-name .icon {
+  width: 16px;
+  height: 16px;
+  color: #8a6a3c;
+}
+.launch {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(#4db24d, #379537);
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+.launch .icon {
+  fill: currentcolor;
+}
+
+/* Plateau : tout l'espace restant ; la grille se prolonge autour de la scène. */
+.canvas {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 14px;
+  background-color: #f6ead3;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+  container-type: size;
+}
+.scene {
+  position: relative;
+  width: min(100cqw, 100cqh * 16 / 9);
+  aspect-ratio: 16 / 9;
+  container-type: inline-size;
+}
+/* La grille du parchemin déborde de la scène, alignée sur elle (1 case = 1/16 de large). */
+.scene::before {
+  position: absolute;
+  inset: -200%;
+  background:
+    linear-gradient(90deg, #e6dac3 0 1.5px, transparent 1.5px) -0.75px 0 / calc(100cqw / 16)
+      calc(100cqw / 16),
+    linear-gradient(#e6dac3 0 1.5px, transparent 1.5px) 0 -0.75px / calc(100cqw / 16)
+      calc(100cqw / 16);
+  content: '';
+}
+.scene > img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.selection,
+.object-bar {
+  position: absolute;
+  top: calc(var(--y) / 9 * 100%);
+  left: calc(var(--x) / 16 * 100%);
+  transform: translate(-50%, -50%);
+}
+.selection {
+  width: calc(var(--w) / 16 * 100%);
+  height: calc(var(--h) / 9 * 100%);
+  border: 2.5px dashed #2f67c7;
+  border-radius: 8px;
+  background: rgb(47 103 199 / 8%);
+}
+.object-bar {
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 190px;
+  padding: 8px;
+  border-radius: 14px;
+  background:
+    linear-gradient(rgb(255 252 244 / 88%), rgb(255 252 244 / 88%)),
+    url('img/papier.webp') 0 0 / 320px;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+  color: var(--ink);
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+}
+.object-bar::after {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  background: #fdf8ec;
+  box-shadow: 2px 2px 0 #cdbb98;
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+}
+.object-bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-left: 4px;
+}
+.object-bar-name {
+  font-family: var(--font-title);
+  font-size: 15.5px;
+  font-weight: 800;
+}
+.seg {
+  display: flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: #eadbbb;
+}
+.seg button {
+  height: 32px;
+  flex: 1;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: 700 13.5px var(--font-ui);
+  color: #6d5c45;
+  cursor: pointer;
+}
+.seg button[aria-pressed='true'] {
+  background: linear-gradient(#ffd266, #ffb720);
+  color: var(--ink);
+}
+.bar-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  box-shadow: inset 0 0 0 2px #e3b3ab;
+  color: #c0392b;
+  cursor: pointer;
+}
+.bar-icon .icon {
+  width: 17px;
+  height: 17px;
+}
+.wire-selection {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #ffc53d;
+  stroke-width: 0.16;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
+}
+.only-objet,
+.only-fil {
+  display: none;
+}
+[data-etat='objet'] .only-objet,
+[data-etat='fil'] .only-fil {
+  display: revert;
+}
+[data-etat='objet'] .object-bar.only-objet,
+[data-etat='fil'] .object-bar.only-fil {
+  display: flex;
+}
+
+/* Tablette et petits ordinateurs : textes repliés, catalogue en rail d'une colonne. */
+@media (max-width: 1100px) {
+  .level-name {
+    visibility: hidden;
+  }
+  .bench {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+  .catalogue h2 {
+    justify-content: center;
+    padding: 10px 4px 2px;
+    font-size: 0;
+  }
+  .catalogue h2 small {
+    font-size: 11.5px;
+  }
+  .catalogue h3 {
+    margin: 8px 0 4px;
+    font-size: 0;
+    border-top: 2px solid #e2d0a9;
+  }
+  .catalogue-scroll {
+    padding: 0 8px 8px;
+  }
+  .tiles {
+    grid-template-columns: 1fr;
+  }
+  .tile-name {
+    font-size: 11px;
+  }
+  .tool-text span {
+    display: none;
+  }
+  .tool-text {
+    min-width: 46px;
+    padding: 0;
+  }
+  .atelier .nav a {
+    padding: 0 10px;
+  }
+}

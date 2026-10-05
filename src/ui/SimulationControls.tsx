@@ -3,7 +3,8 @@ import {
   type EditorSession,
 } from '../application/editor-session/editor-session';
 import type { ObjectKind } from '../app/object-catalog';
-import { Pause, Play, Redo2, RotateCcw, Undo2, X } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Maximize2, Pause, Play, Redo2, RotateCcw, Undo2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from './Button';
 
 interface SimulationControlsProps {
@@ -25,6 +26,20 @@ interface SimulationControlsProps {
   readonly onResume: () => void;
   readonly onRestoreConstruction: () => void;
   readonly onResetDocument: () => void;
+  /**
+   * The wide layout's single bar: history and framing as icons, then the
+   * level's name and its own actions, so that nothing but this bar and the
+   * catalogue takes room from the board.
+   */
+  readonly desk?:
+    | {
+        readonly title: string;
+        readonly actions: ReactNode;
+        readonly onZoomIn: () => void;
+        readonly onZoomOut: () => void;
+        readonly onFitToScene: () => void;
+      }
+    | undefined;
 }
 
 /** The "tester / pause / reset" bar: construction commands while building, playback controls while simulating. */
@@ -45,6 +60,7 @@ export function SimulationControls({
   onResume,
   onRestoreConstruction,
   onResetDocument,
+  desk,
 }: SimulationControlsProps) {
   // A session with no inventory (level 1: `initial-progression.md` § Niveau 1,
   // "Aucune action d'édition") has nothing a command could ever undo or redo:
@@ -53,69 +69,134 @@ export function SimulationControls({
   // The author always edits, even a creation without inventory (ADR 0015).
   const canEdit = isCreation || currentEditorAttempt(session).document.inventory.length > 0;
 
+  const resetLabel = isCreation ? 'Remettre l’atelier à zéro' : 'Recommencer le niveau';
+  const framing = desk !== undefined && (
+    <div className="toolbar-group toolbar-icons" role="group" aria-label="Cadrage du plateau">
+      <Button
+        className="toolbar-icon"
+        aria-label="Zoom arrière"
+        title="Zoom arrière"
+        onClick={desk.onZoomOut}
+      >
+        <ZoomOut size={20} aria-hidden="true" />
+      </Button>
+      <Button
+        className="toolbar-icon"
+        aria-label="Zoom avant"
+        title="Zoom avant"
+        onClick={desk.onZoomIn}
+      >
+        <ZoomIn size={20} aria-hidden="true" />
+      </Button>
+      <Button
+        className="toolbar-icon"
+        aria-label="Ajuster à la scène"
+        title="Ajuster à la scène"
+        onClick={desk.onFitToScene}
+      >
+        <Maximize2 size={20} aria-hidden="true" />
+      </Button>
+    </div>
+  );
+
+  const undoRedo = canEdit && (
+    <>
+      <Button
+        className={desk === undefined ? 'toolbar-button' : 'toolbar-icon'}
+        disabled={session.history.past.length === 0}
+        {...(desk === undefined ? {} : { 'aria-label': 'Annuler', title: 'Annuler' })}
+        onClick={onUndo}
+      >
+        <Undo2 size={desk === undefined ? 18 : 20} aria-hidden="true" />
+        {desk === undefined && <span className="toolbar-button-label">Annuler</span>}
+      </Button>
+      <Button
+        className={desk === undefined ? 'toolbar-button' : 'toolbar-icon'}
+        disabled={session.history.future.length === 0}
+        {...(desk === undefined ? {} : { 'aria-label': 'Rétablir', title: 'Rétablir' })}
+        onClick={onRedo}
+      >
+        <Redo2 size={desk === undefined ? 18 : 20} aria-hidden="true" />
+        {desk === undefined && <span className="toolbar-button-label">Rétablir</span>}
+      </Button>
+    </>
+  );
+  const placementStatus = activePlacementKind !== null && (
+    <div className="toolbar-status" aria-live="polite">
+      <span className="toolbar-status-text">Placement actif : {activePlacementKind}.</span>
+      <Button className="placement-cancel" onClick={onCancelPlacement}>
+        {/* Short visible form for narrow toolbars; the accessible name stays the full label. */}
+        <span className="placement-cancel-short" aria-hidden="true">
+          <X size={18} aria-hidden="true" />
+          <span className="placement-cancel-kind"> {activePlacementKind}</span>
+        </span>
+        <span className="placement-cancel-label">Annuler le placement</span>
+      </Button>
+    </div>
+  );
+  const launch = (
+    <Button
+      tone="go"
+      className="toolbar-primary"
+      disabled={isLaunching}
+      onClick={onLaunchSimulation}
+    >
+      <Play size={18} aria-hidden="true" />
+      <span className="toolbar-button-label">Lancer</span>
+    </Button>
+  );
+
   return (
     <div
-      className="workspace-toolbar"
+      className={
+        desk === undefined ? 'workspace-toolbar' : 'workspace-toolbar workspace-toolbar-desk'
+      }
       aria-label={
         session.phase === 'construction' ? 'Actions de construction' : 'Actions de simulation'
       }
     >
-      {session.phase === 'construction' && (
+      {session.phase === 'construction' && desk === undefined && (
         <>
-          {canEdit && (
-            <div className="toolbar-group">
-              <Button
-                className="toolbar-button"
-                disabled={session.history.past.length === 0}
-                onClick={onUndo}
-              >
-                <Undo2 size={18} aria-hidden="true" />
-                <span className="toolbar-button-label">Annuler</span>
-              </Button>
-              <Button
-                className="toolbar-button"
-                disabled={session.history.future.length === 0}
-                onClick={onRedo}
-              >
-                <Redo2 size={18} aria-hidden="true" />
-                <span className="toolbar-button-label">Rétablir</span>
-              </Button>
-            </div>
-          )}
-          {activePlacementKind !== null && (
-            <div className="toolbar-status" aria-live="polite">
-              <span className="toolbar-status-text">Placement actif : {activePlacementKind}.</span>
-              <Button className="placement-cancel" onClick={onCancelPlacement}>
-                {/* Short visible form for narrow toolbars; the accessible name stays the full label. */}
-                <span className="placement-cancel-short" aria-hidden="true">
-                  <X size={18} aria-hidden="true" />
-                  <span className="placement-cancel-kind"> {activePlacementKind}</span>
-                </span>
-                <span className="placement-cancel-label">Annuler le placement</span>
-              </Button>
-            </div>
-          )}
+          {canEdit && <div className="toolbar-group">{undoRedo}</div>}
+          {placementStatus}
           <Button
             tone="reset"
             className="toolbar-reset"
-            aria-label={isCreation ? 'Remettre l’atelier à zéro' : 'Recommencer le niveau'}
+            aria-label={resetLabel}
             aria-haspopup="dialog"
             onClick={onResetDocument}
           >
             <RotateCcw size={18} aria-hidden="true" />
             {isCreation ? 'Ràz atelier' : 'Recommencer le niveau'}
           </Button>
-          <Button
-            tone="go"
-            className="toolbar-primary"
-            disabled={isLaunching}
-            onClick={onLaunchSimulation}
-          >
-            <Play size={18} aria-hidden="true" />
-            Lancer
-          </Button>
+          {launch}
         </>
       )}
+      {session.phase === 'construction' && desk !== undefined && (
+        <>
+          <div className="toolbar-group toolbar-icons" role="group" aria-label="Historique">
+            {undoRedo}
+            <Button
+              className="toolbar-icon"
+              aria-label={resetLabel}
+              title={resetLabel}
+              aria-haspopup="dialog"
+              onClick={onResetDocument}
+            >
+              <RotateCcw size={20} aria-hidden="true" />
+            </Button>
+          </div>
+          {framing}
+          {placementStatus === false ? (
+            <p className="toolbar-title">{desk.title}</p>
+          ) : (
+            placementStatus
+          )}
+          {desk.actions}
+          {launch}
+        </>
+      )}
+      {session.phase !== 'construction' && framing}
 
       {session.phase !== 'construction' && (
         <div className="toolbar-status" aria-live="polite">
@@ -129,19 +210,19 @@ export function SimulationControls({
           {session.phase === 'running' && (
             <Button tone="pause" onClick={onPause}>
               <Pause size={18} aria-hidden="true" />
-              Mettre en pause
+              <span className="toolbar-button-label">Mettre en pause</span>
             </Button>
           )}
           {session.phase === 'paused' && (
             <Button tone="go" onClick={onResume}>
               <Play size={18} aria-hidden="true" />
-              Reprendre
+              <span className="toolbar-button-label">Reprendre</span>
             </Button>
           )}
           {session.phase !== 'result' && (
             <Button tone="reset" onClick={onRestoreConstruction}>
               <RotateCcw size={18} aria-hidden="true" />
-              Recommencer
+              <span className="toolbar-button-label">Recommencer</span>
             </Button>
           )}
         </div>

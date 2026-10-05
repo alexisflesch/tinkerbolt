@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-function subscribeToSideLayout(onChange: () => void) {
+function subscribeToViewport(onChange: () => void) {
   if (typeof window === 'undefined') return () => undefined;
 
   window.addEventListener('resize', onChange);
@@ -11,18 +11,17 @@ function subscribeToSideLayout(onChange: () => void) {
   };
 }
 
-function getSideLayoutSnapshot() {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+function getNarrowPortraitSnapshot() {
+  if (typeof window === 'undefined') return false;
 
-  // Kept in sync with the wide-layout media query. Three permanent rails are
-  // only useful with enough width *and* height; all other formats use
-  // viewport overlays.
-  return window.innerWidth >= 1000 && window.innerHeight >= 700;
+  // Kept in sync with the « téléphone en portrait » media query of the board screens.
+  return window.innerWidth < 700 && window.innerHeight > window.innerWidth;
 }
 
 /**
- * True when the viewport supports the permanent three-rail composition.
+ * True on a phone held upright: the board's bar then has room for the history,
+ * the framing and « Lancer » only, and the level's own actions go to the header.
  */
-export function useIsSideLayout(): boolean {
-  return useSyncExternalStore(subscribeToSideLayout, getSideLayoutSnapshot, () => false);
+export function useIsNarrowPortrait(): boolean {
+  return useSyncExternalStore(subscribeToViewport, getNarrowPortraitSnapshot, () => false);
 }

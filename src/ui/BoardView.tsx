@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Maximize2, MoveHorizontal, ZoomIn, ZoomOut } from 'lucide-react';
 
 import type { BeamSize, BeamSizeChoice } from '../application/construction';
@@ -19,7 +19,12 @@ import {
   type BoardSimulationView,
 } from '../presentation/board-renderer';
 import type { Camera } from '../presentation/board-camera';
-import { projectPendingWire, type ProjectedWireSegment } from '../presentation/control-wires';
+import {
+  projectPendingWire,
+  projectWires,
+  type ProjectedWireSegment,
+} from '../presentation/control-wires';
+import { wireRoutes } from '../presentation/wire-hit-test';
 import { createSpriteLoader, type SpriteLoader } from '../presentation/sprite-loader';
 import { type SimulationSnapshot } from '../simulation/simulation-session';
 import type { LevelDocument } from '../domain/level-document';
@@ -135,7 +140,24 @@ interface BoardViewProps {
   readonly onZoomOut: () => void;
   readonly onFitToScene: () => void;
   readonly onWheelZoom: (event: WheelEvent) => void;
+  /** False when the framing commands live in the toolbar (wide layout). */
+  readonly showCameraControls?: boolean;
+  /** The selected wire, drawn highlighted along its route. */
+  readonly highlightedWireId?: string | null;
+  /**
+   * A card of commands floating over the board, anchored at a world point
+   * (the selected object or wire): above it, or below when the top is too near.
+   */
+  readonly floatingBar?: {
+    readonly anchor: { readonly x: number; readonly y: number };
+    /** World units left clear between the anchor and the bar. */
+    readonly clearance: number;
+    readonly content: ReactNode;
+  } | null;
 }
+
+/** Room, in CSS pixels, a floating bar needs above or below its anchor, and beside it. */
+const FLOATING_BAR_CLEARANCE = { height: 140, side: 120, edge: 8 } as const;
 
 /**
  * The board itself: the canvas and its sprite-pipeline rendering (ADR 0006,
@@ -163,6 +185,9 @@ export function BoardView({
   onZoomOut,
   onFitToScene,
   onWheelZoom,
+  showCameraControls = true,
+  highlightedWireId = null,
+  floatingBar = null,
 }: BoardViewProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const beamSizeHandleRef = useRef<HTMLButtonElement>(null);
@@ -269,6 +294,36 @@ export function BoardView({
           ),
           transform: `rotate(${String(selectedBeamProjection.rotation)}rad)`,
         };
+  // Overlays over the canvas: world units to CSS pixels inside the frame.
+  const toFramePixels = (point: { readonly x: number; readonly y: number }) => ({
+    x: frameOffset.x + (point.x - camera.origin.x) * camera.pixelsPerWorldUnit,
+    y: frameOffset.y + (point.y - camera.origin.y) * camera.pixelsPerWorldUnit,
+  });
+  const highlightedWire =
+    highlightedWireId === null || session.phase !== 'construction'
+      ? undefined
+      : projectWires(shownDocument).find(({ id }) => id === highlightedWireId);
+  const floatingBarPosition =
+    floatingBar === null || frameBounds === undefined ? null : toFramePixels(floatingBar.anchor);
+  // Above the anchor when there is room, else below it; on a board too low for
+  // either, as high as the frame allows, so the bar is never cut by its edge.
+  const floatingBarGap =
+    floatingBar === null ? 0 : floatingBar.clearance * camera.pixelsPerWorldUnit;
+  const isFloatingBarBelow =
+    floatingBarPosition !== null &&
+    floatingBarPosition.y - floatingBarGap < FLOATING_BAR_CLEARANCE.height;
+  const floatingBarTop =
+    floatingBarPosition === null || frameBounds === undefined
+      ? 0
+      : isFloatingBarBelow
+        ? Math.max(
+            FLOATING_BAR_CLEARANCE.edge,
+            Math.min(
+              floatingBarPosition.y + floatingBarGap,
+              frameBounds.height - FLOATING_BAR_CLEARANCE.height - FLOATING_BAR_CLEARANCE.edge,
+            ),
+          )
+        : floatingBarPosition.y - floatingBarGap;
   const ballColourIds = (assetKey: 'ball-base' | 'second-ball-base'): string =>
     projectedLayers
       .filter((object) => object.assetKey === assetKey)
@@ -576,6 +631,48 @@ export function BoardView({
                 </button>
               </>
             )}
+          {highlightedWire !== undefined && (
+            <svg className="wire-selection" aria-hidden="true">
+              {wireRoutes(highlightedWire).map((route) => {
+                const points = route
+                  .map(toFramePixels)
+                  .map(({ x, y }) => `${String(x)},${String(y)}`)
+                  .join(' ');
+                return <polyline key={points} points={points} />;
+              })}
+            </svg>
+          )}
+          {floatingBar !== null && floatingBarPosition !== null && frameBounds !== undefined && (
+            // The bar's own presses and clicks are not board gestures.
+            <div
+              className={isFloatingBarBelow ? 'floating-bar floating-bar-below' : 'floating-bar'}
+              role="presentation"
+              style={{
+                left: Math.min(
+                  Math.max(floatingBarPosition.x, FLOATING_BAR_CLEARANCE.side),
+                  Math.max(
+                    FLOATING_BAR_CLEARANCE.side,
+                    frameBounds.width - FLOATING_BAR_CLEARANCE.side,
+                  ),
+                ),
+                top: floatingBarTop,
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+              onPointerMove={(event) => {
+                event.stopPropagation();
+              }}
+              onPointerUp={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              {floatingBar.content}
+            </div>
+          )}
           {ghost?.isGhostValid === true && (
             <p className="placement-preview-status" role="status">
               Aperçu de placement valide
@@ -584,23 +681,30 @@ export function BoardView({
         </div>
       </div>
 
-      <div className="camera-controls" aria-label="Cadrage du plateau">
-        <button
-          className="camera-button"
-          type="button"
-          aria-label="Zoom arrière"
-          onClick={onZoomOut}
-        >
-          <ZoomOut size={20} aria-hidden="true" />
-        </button>
-        <button className="camera-button camera-reset" type="button" onClick={onFitToScene}>
-          <Maximize2 size={20} aria-hidden="true" />
-          Ajuster à la scène
-        </button>
-        <button className="camera-button" type="button" aria-label="Zoom avant" onClick={onZoomIn}>
-          <ZoomIn size={20} aria-hidden="true" />
-        </button>
-      </div>
+      {showCameraControls && (
+        <div className="camera-controls" aria-label="Cadrage du plateau">
+          <button
+            className="camera-button"
+            type="button"
+            aria-label="Zoom arrière"
+            onClick={onZoomOut}
+          >
+            <ZoomOut size={20} aria-hidden="true" />
+          </button>
+          <button className="camera-button camera-reset" type="button" onClick={onFitToScene}>
+            <Maximize2 size={20} aria-hidden="true" />
+            Ajuster à la scène
+          </button>
+          <button
+            className="camera-button"
+            type="button"
+            aria-label="Zoom avant"
+            onClick={onZoomIn}
+          >
+            <ZoomIn size={20} aria-hidden="true" />
+          </button>
+        </div>
+      )}
     </>
   );
 }
