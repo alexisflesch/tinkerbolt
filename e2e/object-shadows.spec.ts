@@ -148,8 +148,6 @@ for (const viewport of formats) {
       });
     await shot('repos');
 
-    const toggle = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-    if (await toggle.isVisible()) await toggle.tap();
     await page.getByRole('button', { name: 'Poutre courte, quantité : 1' }).tap();
     await expect(page.locator('.placement-cancel')).toBeVisible();
     await canvas.evaluate((element) => {
@@ -189,7 +187,7 @@ for (const viewport of formats) {
     await expect(page.getByRole('button', { name: 'Mettre en pause' })).toBeVisible();
     await page.clock.runFor(400);
     await page.getByRole('button', { name: 'Mettre en pause' }).tap();
-    await expect(page.getByText('Simulation en pause')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reprendre' })).toBeVisible();
     const [x, y] = ((await canvas.getAttribute('data-simulation-ball-position')) ?? '')
       .split(',')
       .map(Number);

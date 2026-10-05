@@ -304,7 +304,12 @@ describe('révéler la solution de l’auteur dans l’atelier (M12, ADR 0015 §
       fireEvent.click(screen.getByRole('button', { name: 'Essayer en joueur' })),
     );
     await waitFor(() => {
-      expect(screen.getByText('Atelier', { selector: '.level-mode' })).toBeVisible();
+      expect(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Atelier' },
+        ),
+      ).toHaveAttribute('aria-current', 'page');
     });
 
     await waitFor(async () => {

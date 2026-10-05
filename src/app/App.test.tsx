@@ -309,11 +309,12 @@ const sharedM8Level = levelDocumentSchema.parse({
   scene: { min: { x: 0, y: 0 }, max: { x: 8, y: 5.5 } },
 });
 
-const openSelectedProperties = async (): Promise<void> => {
-  const openButton = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
-  if (openButton !== null) {
-    await storageAction(() => fireEvent.click(openButton));
-  }
+const openSelectedProperties = async (open: () => void): Promise<void> => {
+  if (screen.queryByRole('toolbar', { name: /^Réglages de /u }) !== null) return;
+  await storageAction(open);
+  await waitFor(() => {
+    expect(screen.getByRole('toolbar', { name: /^Réglages de /u })).toBeVisible();
+  });
 };
 
 const tapWorldPoint = (x: number, y: number): void => {
@@ -337,13 +338,12 @@ const tapWorldPoint = (x: number, y: number): void => {
 
 const placeCampaignBeam = async (x: number, y: number): Promise<void> => {
   await storageAction(() =>
-    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
-  );
-  await storageAction(() =>
     fireEvent.click(screen.getByRole('button', { name: /^Poutre courte/ })),
   );
   tapWorldPoint(x, y);
-  await openSelectedProperties();
+  await openSelectedProperties(() => {
+    tapWorldPoint(x, y);
+  });
 };
 
 /** B5: the declared scene of the level the app boots into, for cross-checking `fitCameraToScene`. */
@@ -388,20 +388,18 @@ const placeFromCatalogue = async (
   clientX = 400,
   clientY = 225,
 ): Promise<HTMLElement> => {
-  const toggle = screen.queryByRole('button', { name: 'Ouvrir le catalogue' });
-  if (toggle !== null) await storageAction(() => fireEvent.click(toggle));
   await storageAction(() => fireEvent.click(screen.getByRole('button', { name: catalogueCard })));
 
   const board = screen.getByRole('region', { name: 'Plateau de jeu' });
   tapBoard(board, clientX, clientY);
-  await openSelectedProperties();
+  await openSelectedProperties(() => {
+    tapBoard(board, clientX, clientY);
+  });
   return board;
 };
 
 /** Picks the author's "Fil" card (U15). */
 const selectWireCard = async (): Promise<void> => {
-  const toggle = screen.queryByRole('button', { name: 'Ouvrir le catalogue' });
-  if (toggle !== null) await storageAction(() => fireEvent.click(toggle));
   await storageAction(() =>
     fireEvent.click(screen.getByRole('button', { name: 'Fil de commande' })),
   );
@@ -591,7 +589,7 @@ describe('coque TinkerBolt', () => {
       expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Ouvrir le catalogue' })).toBeVisible();
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Annuler' })).toBeDisabled();
@@ -616,9 +614,7 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App unlockAllLevels />);
 
     const drawer = screen.getByRole('region', { name: 'Objets disponibles' });
-    await storageAction(() =>
-      fireEvent.click(within(drawer).getByRole('button', { name: 'Ouvrir le catalogue' })),
-    );
+    await waitFor(() => expect(drawer).toBeVisible());
 
     await waitFor(() => {
       expect(within(drawer).getByText('3 entrées')).toBeVisible();
@@ -638,9 +634,7 @@ describe('coque TinkerBolt', () => {
 
     await storageAction(() => fireEvent.click(beamCard));
     tapWorldPoint(3.2, 2.5);
-    await storageAction(() =>
-      fireEvent.click(within(drawer).getByRole('button', { name: 'Ouvrir le catalogue' })),
-    );
+    await waitFor(() => expect(drawer).toBeVisible());
 
     await waitFor(() => {
       expect(
@@ -671,8 +665,8 @@ describe('coque TinkerBolt', () => {
     });
     const drawer = screen.getByRole('region', { name: 'Objets disponibles' });
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
 
     await waitFor(() => {
@@ -749,8 +743,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: /Masse/ })));
 
@@ -833,12 +827,12 @@ describe('coque TinkerBolt', () => {
     });
   });
 
-  it('replie le catalogue sans superposer de texte dans la zone de construction', async () => {
+  it('garde le catalogue ouvert et les indications de placement dans la barre', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: /Masse/ })));
 
@@ -851,113 +845,50 @@ describe('coque TinkerBolt', () => {
         within(board).queryByRole('button', { name: 'Annuler le placement' }),
       ).not.toBeInTheDocument();
     });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Ouvrir le catalogue' })).toHaveAttribute(
-        'aria-expanded',
-        'false',
-      );
-    });
+    const catalogue = screen.getByRole('region', { name: 'Objets disponibles' });
+    const toolbar = screen.getByRole('toolbar', { name: 'Actions de construction' });
+    expect(catalogue).toBeVisible();
+    expect(within(toolbar).getByText(/Placement actif : Masse/i)).toBeVisible();
+    expect(within(toolbar).getByRole('button', { name: 'Annuler le placement' })).toBeVisible();
   });
 
-  it('permet de replier puis de rouvrir le catalogue avec un contenu accessible', async () => {
+  it('garde les cartes accessibles pendant le placement et annule l’outil au second toucher', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    const openButton = screen.getByRole('button', { name: 'Ouvrir le catalogue' });
-    await waitFor(() => {
-      expect(openButton).toHaveAttribute('aria-expanded', 'false');
-    });
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Balle' })).not.toBeInTheDocument();
-    });
+    const ballCard = screen.getByRole('button', { name: 'Balle' });
+    await storageAction(() => fireEvent.click(ballCard));
+    expect(ballCard).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Annuler le placement' })).toBeVisible();
 
-    await storageAction(() => fireEvent.click(openButton));
-
-    const collapseButton = screen.getByRole('button', { name: 'Replier le catalogue' });
-    await waitFor(() => {
-      expect(collapseButton).toHaveAttribute('aria-expanded', 'true');
-    });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Balle' })).toBeVisible();
-    });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Fermer le catalogue' })).toBeVisible();
-    });
-
-    await storageAction(() => fireEvent.click(collapseButton));
-
-    const reopenedButton = screen.getByRole('button', { name: 'Ouvrir le catalogue' });
-    await waitFor(() => {
-      expect(reopenedButton).toHaveAttribute('aria-expanded', 'false');
-    });
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Balle' })).not.toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Fermer le catalogue' })).not.toBeInTheDocument();
-    });
-
-    await storageAction(() => fireEvent.click(reopenedButton));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Replier le catalogue' })).toHaveAttribute(
-        'aria-expanded',
-        'true',
-      );
-    });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Balle' })).toBeVisible();
-    });
+    await storageAction(() => fireEvent.click(ballCard));
+    expect(ballCard).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: 'Annuler le placement' })).not.toBeInTheDocument();
   });
 
-  it('ferme le tiroir lorsqu’on touche le scrim', async () => {
+  it('garde le plateau accessible à côté du catalogue sans scrim', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
-    );
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Fermer le catalogue' })),
-    );
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Ouvrir le catalogue' })).toHaveAttribute(
-        'aria-expanded',
-        'false',
-      );
-    });
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Fermer le catalogue' })).not.toBeInTheDocument();
-    });
+    expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
+    expect(document.querySelector('.object-drawer-scrim')).not.toBeInTheDocument();
   });
 
-  it('conserve la même géométrie de workspace pendant l’ouverture', async () => {
+  it('monte le catalogue à côté du plateau dès l’ouverture de l’atelier', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
     const workspace = screen.getByRole('region', { name: 'Espace de construction' });
-    const boundsBefore = workspace.getBoundingClientRect();
-
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
-    );
-
-    await waitFor(() => {
-      expect(workspace.getBoundingClientRect()).toEqual(boundsBefore);
-    });
+    expect(within(workspace).getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
   });
 
-  it('laisse les actions essentielles visibles lorsque le tiroir est replié', async () => {
+  it('laisse les actions essentielles visibles à côté du catalogue', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Ouvrir le catalogue' })).toHaveAttribute(
-        'aria-expanded',
-        'false',
-      );
-    });
+    expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
 
     for (const actionName of [
       'Ouvrir le menu',
@@ -1040,38 +971,35 @@ describe('coque TinkerBolt', () => {
       clientY: 50,
     });
 
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
     advanceSimulationToResult(animationFrames, 40);
 
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
     await waitFor(() => {
-      expect(within(result).getByText('Victoire')).toBeVisible();
+      expect(within(result).getByText('Gagné !')).toBeVisible();
     });
     await waitFor(() => {
-      expect(within(result).getByRole('button', { name: 'Retour à l’édition' })).toBeVisible();
-    });
-    await waitFor(() => {
-      expect(within(result).queryByRole('button', { name: 'Recommencer' })).toBeNull();
-    });
-    await waitFor(() => {
-      expect(within(result).queryByRole('button', { name: 'Retour aux niveaux' })).toBeNull();
+      expect(within(result).getByRole('button', { name: 'Recommencer' })).toBeVisible();
     });
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
     });
 
     await storageAction(() =>
-      fireEvent.click(within(result).getByRole('button', { name: 'Retour à l’édition' })),
+      fireEvent.click(within(result).getByRole('button', { name: 'Recommencer' })),
     );
 
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('toolbar', { name: 'Actions de simulation' }),
+      ).not.toBeInTheDocument();
     });
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Lancer' })).toBeEnabled();
     });
+    expect(screen.getByRole('button', { name: 'Annuler' })).toBeEnabled();
   });
 
   it('avance la physique par RAF contrôlé et permet de la mettre en pause puis de reprendre', async () => {
@@ -1328,16 +1256,18 @@ describe('coque TinkerBolt', () => {
       ).toBeTruthy();
     });
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Poutre moyenne' })),
     );
     tapWorldPoint(5.0, 2.15);
-    await openSelectedProperties();
+    await openSelectedProperties(() => {
+      tapWorldPoint(5.0, 2.15);
+    });
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+      expect(screen.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
     });
 
     await storageAction(() => fireEvent.click(resetButton));
@@ -1356,7 +1286,7 @@ describe('coque TinkerBolt', () => {
       expect(screen.queryByRole('dialog', { name: 'Remise à zéro de l’atelier' })).toBeNull();
     });
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+      expect(screen.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
     });
 
     await storageAction(() =>
@@ -1375,7 +1305,7 @@ describe('coque TinkerBolt', () => {
       expect(screen.queryByRole('dialog', { name: 'Remise à zéro de l’atelier' })).toBeNull();
     });
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).toBeNull();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).toBeNull();
     });
   });
 
@@ -1408,7 +1338,7 @@ describe('coque TinkerBolt', () => {
 
     await placeCampaignBeam(5.0, 2.15);
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+      expect(screen.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
     });
 
     await storageAction(() => fireEvent.click(resetButton));
@@ -1424,7 +1354,7 @@ describe('coque TinkerBolt', () => {
       expect(screen.queryByRole('dialog', { name: 'Recommencer le niveau' })).toBeNull();
     });
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).toBeNull();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).toBeNull();
     });
   });
 
@@ -1506,12 +1436,13 @@ describe('coque TinkerBolt', () => {
     });
 
     // Un niveau reçu n'a que le palier « Résolu » (pas de défi), jamais de suite.
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
 
-    expect(result).toHaveTextContent('Victoire');
-    expect(result).toHaveAttribute('data-level-tier', 'resolved');
+    expect(result).toHaveTextContent('Gagné !');
+    expect(result).not.toHaveAttribute('data-level-tier');
     expect(within(result).queryByRole('button', { name: 'Niveau suivant' })).toBeNull();
-    const dialog = screen.getByRole('dialog');
+    const dialog = screen.getByRole('dialog', { name: 'Bravo !' });
+    expect(dialog).toHaveAttribute('data-level-tier', 'resolved');
 
     expect(within(dialog).queryByRole('button', { name: /Niveau suivant/u })).toBeNull();
   });
@@ -1524,13 +1455,13 @@ describe('coque TinkerBolt', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     advanceSimulationToResult(animationFrames, 600);
 
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
 
-    expect(within(result).getByText('Victoire')).toBeVisible();
+    expect(within(result).getByText('Gagné !')).toBeVisible();
     expect(
       within(result).queryByRole('button', { name: 'Voir le résultat' }),
     ).not.toBeInTheDocument();
-    expect(within(result).queryByRole('button', { name: 'Recommencer' })).not.toBeInTheDocument();
+    expect(within(result).getByRole('button', { name: 'Recommencer' })).toBeVisible();
     expect(screen.queryByRole('dialog', { name: 'Bravo !' })).not.toBeInTheDocument();
     act(() => {
       vi.advanceTimersByTime(599);
@@ -1560,7 +1491,7 @@ describe('coque TinkerBolt', () => {
       vi.advanceTimersByTime(600);
     });
 
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
     const dialog = screen.getByRole('dialog', { name: 'Bravo !' });
     await storageAction(() =>
       fireEvent.click(within(dialog).getByRole('button', { name: 'Voir la scène' })),
@@ -1585,7 +1516,7 @@ describe('coque TinkerBolt', () => {
       vi.advanceTimersByTime(0);
     });
 
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
 
     expect(within(result).getByRole('button', { name: 'Voir le résultat' })).toBeVisible();
     expect(within(result).getByRole('button', { name: 'Recommencer' })).toBeVisible();
@@ -1644,7 +1575,14 @@ describe('coque TinkerBolt', () => {
       expect(screen.queryByRole('button', { name: 'Lancer' })).not.toBeInTheDocument();
     });
 
-    await storageAction(() => fireEvent.click(screen.getByRole('link', { name: 'Campagne' })));
+    await storageAction(() =>
+      fireEvent.click(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Campagne' },
+        ),
+      ),
+    );
     await waitFor(() => {
       expect(window.location.pathname).toBe('/levels');
     });
@@ -1687,8 +1625,8 @@ describe('coque TinkerBolt', () => {
     advanceSimulationToResult(animationFrames, 600);
 
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Résultat du niveau' })).toHaveTextContent(
-        'Victoire',
+      expect(screen.getByRole('toolbar', { name: 'Actions de simulation' })).toHaveTextContent(
+        'Gagné !',
       );
     });
     await waitFor(() => {
@@ -1696,11 +1634,7 @@ describe('coque TinkerBolt', () => {
     });
   });
 
-  it('affiche le bandeau de victoire après le plateau dans le flux normal, jamais en overlay', async () => {
-    // B1 (plan-remise-en-jeu.md § 4) : le bandeau de victoire recouvrait le
-    // bas du plateau (position absolue par-dessus le canvas), ce qui pouvait
-    // cacher la balle et le panier. Il s'affiche désormais après le plateau
-    // dans le DOM, dans le flux normal du document.
+  it('annonce la victoire dans la barre d’action sans monter un ancien bandeau', async () => {
     const animationFrames = createAnimationFrameHarness();
     await openSelfSolvingReceivedLevel();
 
@@ -1708,13 +1642,12 @@ describe('coque TinkerBolt', () => {
     advanceSimulationToResult(animationFrames, 600);
 
     const board = screen.getByRole('region', { name: 'Plateau de jeu' });
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
 
+    expect(within(result).getByText('Gagné !')).toBeVisible();
+    expect(result.compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await waitFor(() => {
-      expect(board.compareDocumentPosition(result) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    });
-    await waitFor(() => {
-      expect(styles).not.toMatch(/\.level-result\s*\{[^}]*position:\s*absolute/s);
+      expect(document.querySelector('.level-result')).not.toBeInTheDocument();
     });
   });
 
@@ -1730,16 +1663,18 @@ describe('coque TinkerBolt', () => {
     advanceSimulationToTimeout(animationFrames);
 
     const board = screen.getByRole('region', { name: 'Plateau de jeu' });
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
 
     await waitFor(() => {
-      expect(within(result).getByText('Échec')).toBeVisible();
+      expect(
+        within(result).getByText('Raté : la balle n’est pas entrée dans le panier à temps.'),
+      ).toBeVisible();
     });
     await waitFor(() => {
-      expect(within(result).queryByText('Victoire')).not.toBeInTheDocument();
+      expect(within(result).queryByText('Gagné !')).not.toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(within(result).getByText(/temps écoulé/i)).toBeVisible();
+      expect(within(result).getByText(/Raté :/u)).toBeVisible();
     });
     await waitFor(() => {
       expect(within(result).getByRole('button', { name: 'Recommencer' })).toBeVisible();
@@ -1748,7 +1683,7 @@ describe('coque TinkerBolt', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(board.compareDocumentPosition(result) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(result.compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 
@@ -1771,13 +1706,15 @@ describe('coque TinkerBolt', () => {
       expect(canvas.getAttribute('data-simulation-ball-position')).not.toBe(ballPositionAtLaunch);
     });
 
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
     await storageAction(() =>
       fireEvent.click(within(result).getByRole('button', { name: 'Recommencer' })),
     );
 
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('toolbar', { name: 'Actions de simulation' }),
+      ).not.toBeInTheDocument();
     });
     await waitFor(() => {
       expect(canvas).not.toHaveAttribute('data-simulation-step');
@@ -1802,7 +1739,12 @@ describe('coque TinkerBolt', () => {
     advanceSimulationToTimeout(animationFrames);
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Retour aux niveaux' })),
+      fireEvent.click(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Campagne' },
+        ),
+      ),
     );
 
     const levelList = screen.getByRole('region', { name: 'Campagne' });
@@ -1848,7 +1790,9 @@ describe('coque TinkerBolt', () => {
       expect(screen.queryByText('Simulation en cours')).not.toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('toolbar', { name: 'Actions de simulation' }),
+      ).not.toBeInTheDocument();
     });
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
@@ -1868,7 +1812,9 @@ describe('coque TinkerBolt', () => {
       expect(screen.getByText('Campagne')).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('toolbar', { name: 'Actions de simulation' }),
+      ).not.toBeInTheDocument();
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Lancer' })).toBeEnabled();
@@ -1890,16 +1836,7 @@ describe('coque TinkerBolt', () => {
     });
   });
 
-  it('présente le catalogue comme un panneau latéral ouvert sur une tablette ou un poste de bureau en paysage', async () => {
-    // Réécrit depuis « … ouvert en paysage », qui stubbait 844 × 390 (un
-    // téléphone en paysage) : D4 (plan-remise-en-jeu.md § 6, écart constaté)
-    // a resserré `use-side-layout.ts` pour exiger aussi une hauteur réelle
-    // (`innerHeight >= 480`), pas seulement la largeur et l'orientation — un
-    // essai en navigateur réel à 844 × 390 a montré la mise en page à trois
-    // colonnes (catalogue + plateau + panneau) trop à l'étroit : la barre
-    // d'actions se repliait sur trois lignes et le plateau devenait minuscule.
-    // Un téléphone en paysage garde donc le tiroir en bas ; ce test vérifie
-    // désormais le format qui a réellement la place pour un panneau latéral.
+  it('présente le catalogue et le plateau ensemble sur une tablette en paysage', async () => {
     vi.stubGlobal('matchMedia', () => ({ matches: false }));
     vi.stubGlobal('innerWidth', 1180);
     vi.stubGlobal('innerHeight', 820);
@@ -1920,10 +1857,7 @@ describe('coque TinkerBolt', () => {
     });
   });
 
-  it('garde le catalogue en tiroir repliable sur un téléphone en paysage, trop court pour un panneau latéral', async () => {
-    // Nouveau test compagnon du précédent (D4, plan-remise-en-jeu.md § 6) :
-    // verrouille explicitement le cas qui a motivé le resserrement du seuil,
-    // pour qu'il ne régresse pas silencieusement si le seuil bouge à nouveau.
+  it('garde le catalogue ouvert au téléphone en paysage', async () => {
     vi.stubGlobal('matchMedia', () => ({ matches: false }));
     vi.stubGlobal('innerWidth', 844);
     vi.stubGlobal('innerHeight', 390);
@@ -1931,14 +1865,9 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toHaveClass(
-        'object-drawer-collapsed',
-      );
-    });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Ouvrir le catalogue' })).toBeVisible();
-    });
+    expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Balle' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /catalogue/i })).not.toBeInTheDocument();
   });
 
   it('active le parcours de placement par toucher d’une carte, séparément du plateau', async () => {
@@ -1947,8 +1876,8 @@ describe('coque TinkerBolt', () => {
 
     const drawer = screen.getByRole('region', { name: 'Objets disponibles' });
     const board = screen.getByRole('region', { name: 'Plateau de jeu' });
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
 
     const ballCard = within(drawer).getByRole('button', { name: 'Balle' });
@@ -1974,8 +1903,8 @@ describe('coque TinkerBolt', () => {
     await openEmbeddedWorkshop();
 
     const drawer = screen.getByRole('region', { name: 'Objets disponibles' });
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() =>
       fireEvent.click(within(drawer).getByRole('button', { name: 'Balle' })),
@@ -1984,8 +1913,8 @@ describe('coque TinkerBolt', () => {
       expect(screen.getByRole('button', { name: 'Annuler le placement' })).toBeVisible();
     });
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() =>
       fireEvent.click(within(drawer).getByRole('button', { name: 'Balle' })),
@@ -1994,8 +1923,8 @@ describe('coque TinkerBolt', () => {
       expect(screen.queryByRole('button', { name: 'Annuler le placement' })).toBeNull();
     });
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() =>
       fireEvent.click(within(drawer).getByRole('button', { name: 'Balle' })),
@@ -2022,8 +1951,8 @@ describe('coque TinkerBolt', () => {
       expect(redoButton).toBeDisabled();
     });
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2069,8 +1998,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2123,8 +2052,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2159,12 +2088,12 @@ describe('coque TinkerBolt', () => {
     });
   });
 
-  it('ferme réellement le tiroir après activation tout en gardant le placement annulable', async () => {
+  it('garde le catalogue visible après activation tout en gardant le placement annulable', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2172,21 +2101,8 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(drawer).toBeVisible();
     });
-    await waitFor(() => {
-      expect(drawer).toHaveClass('object-drawer-collapsed');
-    });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Ouvrir le catalogue' })).toHaveAttribute(
-        'aria-expanded',
-        'false',
-      );
-    });
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Balle' })).not.toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Fermer le catalogue' })).not.toBeInTheDocument();
-    });
+    expect(drawer).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Balle' })).toBeVisible();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Annuler le placement' })).toBeVisible();
     });
@@ -2205,8 +2121,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2247,8 +2163,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2285,8 +2201,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2319,8 +2235,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2352,8 +2268,8 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Balle' })));
 
@@ -2551,7 +2467,7 @@ describe('coque TinkerBolt', () => {
     });
   });
 
-  it('réserve en permanence un unique emplacement partagé pour le résultat, dès le tout premier rendu, pour qu’aucune phase ne redimensionne le plateau', async () => {
+  it('garde le statut du plateau stable pendant la simulation et la victoire', async () => {
     // B5 (plan-remise-en-jeu.md § 4 bis): the ResizeObserver B1 added (see
     // the test above) refits the camera on *any* CSS size change of the
     // canvas — including the reflow the victory/failure banner used to cause
@@ -2588,7 +2504,9 @@ describe('coque TinkerBolt', () => {
     expect(workspace.querySelectorAll('.status-slot')).toHaveLength(1);
     expect(styles).not.toMatch(/\.level-result-slot\s*\{/);
     expect(styles).not.toMatch(/\.context-panel-slot\s*\{/);
-    expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('toolbar', { name: 'Actions de simulation' }),
+    ).not.toBeInTheDocument();
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Lancer' })));
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
@@ -2604,9 +2522,9 @@ describe('coque TinkerBolt', () => {
     // node: no flex sibling was ever added or removed under `.scene-frame`.
 
     expect(workspace.querySelector('.status-slot')).toBe(slotAtMount);
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
 
-    expect(within(result).getByText('Victoire')).toBeVisible();
+    expect(within(result).getByText('Gagné !')).toBeVisible();
     expect(canvas.getAttribute('data-camera-zoom')).toBe(zoomAtMount);
     // The slot's CSS reserves height regardless of content — this is what
     // makes the DOM-identity guarantee above actually prevent a resize in a
@@ -2632,7 +2550,9 @@ describe('coque TinkerBolt', () => {
 
     expect(workspace.querySelector('.status-slot')).toBe(slotAtMount);
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Résultat du niveau' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('toolbar', { name: 'Actions de simulation' }),
+      ).not.toBeInTheDocument();
     });
     expect(canvas.getAttribute('data-camera-zoom')).toBe(zoomAtMount);
   });
@@ -2754,17 +2674,7 @@ describe('coque TinkerBolt', () => {
     });
   });
 
-  it('affiche le panneau contextuel dans le même emplacement partagé que le résultat, sans en ajouter un second', async () => {
-    // Signalé par l'utilisateur en jouant, après B5 : le panneau contextuel
-    // (« Objet sélectionné : … », affiché dès qu'un placement existe, car
-    // c'est le seul objet qu'un placement peut sélectionner aujourd'hui — le
-    // clic de sélection sur le plateau est C3, pas encore livré) avait reçu
-    // sa propre réservation indépendante de celle du résultat — donc deux
-    // blocs d'espace mort simultanés et permanents sous le plateau, alors
-    // qu'aucun niveau ne peut jamais afficher les deux à la fois. Il partage
-    // désormais `.status-slot` avec `LevelResult` (voir le test précédent) :
-    // ce test vérifie que la sélection apparaît bien dans cet unique
-    // emplacement partagé, sans en créer un second.
+  it('affiche les réglages flottants sans changer le cadrage ni le statut du plateau', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
 
@@ -2774,7 +2684,6 @@ describe('coque TinkerBolt', () => {
     });
     const zoomAtMount = canvas.getAttribute('data-camera-zoom');
 
-    // Réservé dès le premier rendu, avant tout placement — et c'est le seul.
     const slotAtMount = workspace.querySelector('.status-slot');
     await waitFor(() => {
       expect(slotAtMount).not.toBeNull();
@@ -2782,12 +2691,8 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(workspace.querySelectorAll('.status-slot')).toHaveLength(1);
     });
-    await waitFor(() => {
-      expect(screen.queryByText(/Objet sélectionné/)).not.toBeInTheDocument();
-    });
-
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Poutre moyenne' })),
@@ -2806,39 +2711,29 @@ describe('coque TinkerBolt', () => {
       clientX: 400,
       clientY: 225,
     });
+    tapBoard(board, 400, 225);
 
-    // La pose sélectionne la poutre sans ouvrir ses propriétés. Le bouton
-    // explicite l'ouvre dans l'unique emplacement réservé.
     await waitFor(() => {
       expect(workspace.querySelector('.status-slot')).toBe(slotAtMount);
     });
     await waitFor(() => {
       expect(workspace.querySelectorAll('.status-slot')).toHaveLength(1);
     });
-    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).toBeNull();
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir les propriétés' })),
-    );
-    const propertiesPanel = screen.getByRole('region', { name: 'Propriétés de Poutre' });
-    await waitFor(() => {
-      expect(within(propertiesPanel).getByText('Propriétés')).toBeVisible();
-    });
-    await waitFor(() => {
-      expect(within(propertiesPanel).getByText('Poutre')).toBeVisible();
-    });
+    const propertiesPanel = screen.getByRole('toolbar', { name: 'Réglages de Poutre' });
+    expect(propertiesPanel).toBeVisible();
+    expect(within(propertiesPanel).getByText('Poutre')).toBeVisible();
     await waitFor(() => {
       expect(canvas.getAttribute('data-camera-zoom')).toBe(zoomAtMount);
     });
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
 
-    // Annuler retire le placement, donc sa sélection : le panneau disparaît,
-    // le nœud réservé reste, le cadrage n'a pas bougé.
+    // Annuler retire the placement, so the floating bar disappears.
     await waitFor(() => {
       expect(workspace.querySelector('.status-slot')).toBe(slotAtMount);
     });
     await waitFor(() => {
-      expect(screen.queryByText(/Objet sélectionné/)).not.toBeInTheDocument();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).not.toBeInTheDocument();
     });
     await waitFor(() => {
       expect(canvas.getAttribute('data-camera-zoom')).toBe(zoomAtMount);
@@ -2853,12 +2748,12 @@ describe('coque TinkerBolt', () => {
     // scene geometry changes again.
     tapWorldPoint(6.8, 4.9);
 
-    const lockedPanel = screen.getByRole('region', { name: 'Propriétés de Panier' });
+    const lockedPanel = screen.getByRole('toolbar', { name: 'Réglages de Panier' });
     await waitFor(() => {
       expect(lockedPanel).toBeVisible();
     });
     await waitFor(() => {
-      expect(lockedPanel).toHaveTextContent(/verrouill|indisponible/i);
+      expect(lockedPanel).toHaveTextContent('Cet objet est fixe.');
     });
     await waitFor(() => {
       expect(
@@ -2882,13 +2777,11 @@ describe('coque TinkerBolt', () => {
     });
 
     await waitFor(() => {
-      expect(
-        screen.queryByRole('region', { name: 'Propriétés de Panier' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
     });
   });
 
-  it('C4a ouvre les propriétés après un clic simple, pas au pointerdown', async () => {
+  it('ouvre la barre de réglages au clic simple, pas au pointerdown', async () => {
     await renderStorageReady(<App />);
     const board = screen.getByRole('region', { name: 'Plateau de jeu' });
     const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
@@ -2911,7 +2804,7 @@ describe('coque TinkerBolt', () => {
       clientX: point.x,
       clientY: point.y,
     });
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
 
     firePointerEvent(board, 'pointerup', {
       pointerId: 1,
@@ -2919,46 +2812,34 @@ describe('coque TinkerBolt', () => {
       clientX: point.x,
       clientY: point.y,
     });
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
 
     fireEvent.click(board, { detail: 1, clientX: point.x, clientY: point.y });
-    const panel = await screen.findByRole('region', { name: 'Propriétés de Panier' });
+    const panel = await screen.findByRole('toolbar', { name: 'Réglages de Panier' });
     expect(panel).toBeVisible();
 
-    await storageAction(() =>
-      fireEvent.click(within(panel).getByRole('button', { name: 'Fermer les propriétés' })),
-    );
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
-
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir les propriétés' })),
-    );
     tapBoard(board, 120, 400);
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
   });
 
-  it('C4a garde le panneau compact fermé jusqu’au clic simple puis permet de le refermer', async () => {
+  it('utilise la même barre flottante au format paysage compact', async () => {
     vi.stubGlobal('innerWidth', 844);
     vi.stubGlobal('innerHeight', 390);
     await renderStorageReady(<App />);
 
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
     tapWorldPoint(6.8, 4.9);
-    const panel = await screen.findByRole('region', { name: 'Propriétés de Panier' });
+    const panel = await screen.findByRole('toolbar', { name: 'Réglages de Panier' });
     expect(panel).toBeVisible();
-    await storageAction(() =>
-      fireEvent.click(within(panel).getByRole('button', { name: 'Fermer les propriétés' })),
-    );
-    expect(screen.queryByRole('region', { name: 'Propriétés de Panier' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+    tapBoard(screen.getByRole('region', { name: 'Plateau de jeu' }), 120, 400);
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Panier' })).not.toBeInTheDocument();
   });
 
-  it('C4a garde les propriétés fermées à la pose, au drag et sur un clic de poignée', async () => {
+  it('garde la barre fermée à la pose et l’ouvre au clic simple sur la poutre', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Poutre moyenne' })),
@@ -2966,81 +2847,31 @@ describe('coque TinkerBolt', () => {
 
     const board = screen.getByRole('region', { name: 'Plateau de jeu' });
     tapBoard(board, 400, 225);
-    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).not.toBeInTheDocument();
 
     const sizeHandle = await screen.findByRole('button', { name: 'Redimensionner la poutre' });
     fireEvent.click(sizeHandle, { detail: 1 });
-    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
-
-    firePointerEvent(board, 'pointerdown', {
-      pointerId: 2,
-      pointerType: 'mouse',
-      clientX: 400,
-      clientY: 225,
-    });
-    firePointerEvent(board, 'pointermove', {
-      pointerId: 2,
-      pointerType: 'mouse',
-      clientX: 500,
-      clientY: 265,
-    });
-    firePointerEvent(board, 'pointercancel', {
-      pointerId: 2,
-      pointerType: 'mouse',
-      clientX: 500,
-      clientY: 265,
-    });
-    fireEvent.click(board, { detail: 1, clientX: 500, clientY: 265 });
-    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
-
-    firePointerEvent(board, 'pointerdown', {
-      pointerId: 3,
-      pointerType: 'mouse',
-      clientX: 400,
-      clientY: 225,
-    });
-    firePointerEvent(board, 'pointermove', {
-      pointerId: 3,
-      pointerType: 'mouse',
-      clientX: 500,
-      clientY: 265,
-    });
-    firePointerEvent(board, 'pointerup', {
-      pointerId: 3,
-      pointerType: 'mouse',
-      clientX: 500,
-      clientY: 265,
-    });
-    fireEvent.click(board, { detail: 1, clientX: 500, clientY: 265 });
-
-    expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ouvrir les propriétés' })).toBeVisible();
+    expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).not.toBeInTheDocument();
+    tapBoard(board, 400, 225);
+    expect(await screen.findByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
   });
 
-  it('C4a permet de sélectionner un objet au clavier depuis la liste du plateau', async () => {
+  it('ne monte plus la liste latérale des objets posés', async () => {
     await renderStorageReady(<App />);
-
-    await storageAction(() => fireEvent.click(screen.getByText('Objets sur le plateau')));
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Sélectionner Panier' })),
-    );
-
-    expect(await screen.findByRole('region', { name: 'Propriétés de Panier' })).toBeVisible();
+    expect(screen.queryByText('Objets sur le plateau')).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
   });
 
   it('place une masse depuis l’inventaire de l’atelier', async () => {
     await renderStorageReady(<App />);
     await placeWorkshopObject('Masse');
 
-    const panel = screen.getByRole('region', { name: 'Propriétés de Masse' });
+    const panel = screen.getByRole('toolbar', { name: 'Réglages de Masse' });
     await waitFor(() => {
       expect(within(panel).getByRole('button', { name: /Supprimer la masse/i })).toBeVisible();
     });
     await waitFor(() => {
-      expect(within(panel).getByRole('button', { name: 'Rotation positive' })).toHaveTextContent(
-        '15°',
-      );
+      expect(within(panel).getByRole('group', { name: 'Pour le joueur' })).toBeVisible();
     });
   });
 
@@ -3051,7 +2882,7 @@ describe('coque TinkerBolt', () => {
     const board = await placeFromCatalogue('Convoyeur', 600, 225);
     await placeFromCatalogue('Levier', 200, 225);
     const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
-    const leverPanel = screen.getByRole('region', { name: 'Propriétés de Levier' });
+    const leverPanel = screen.getByRole('toolbar', { name: 'Réglages de Levier' });
     // Le fil ne se pose plus depuis le panneau : la carte Fil le remplace.
     await waitFor(() => {
       expect(within(leverPanel).queryByRole('button', { name: /Relier/ })).toBeNull();
@@ -3069,7 +2900,7 @@ describe('coque TinkerBolt', () => {
     });
     // La carte ne pose rien et ferme le panneau : le plateau reste dégagé.
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Propriétés de Levier' })).toBeNull();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Levier' })).toBeNull();
     });
 
     // Toucher le vide ne sort pas du geste : il reste libre pour déplacer la vue.
@@ -3084,7 +2915,7 @@ describe('coque TinkerBolt', () => {
       expect(screen.getByText('Choisis le levier ou le bouton qui le commande')).toBeVisible();
     });
     expect(
-      screen.queryByRole('region', { name: 'Propriétés de Convoyeur' }),
+      screen.queryByRole('toolbar', { name: 'Réglages de Convoyeur' }),
     ).not.toBeInTheDocument();
     tapBoard(board, 200, 225);
 
@@ -3109,12 +2940,10 @@ describe('coque TinkerBolt', () => {
       expect(canvas).toHaveAttribute('data-wires', wired);
     });
 
-    tapBoard(board, 200, 225);
-    const wiredPanel = screen.getByRole('region', { name: 'Propriétés de Levier' });
-    await waitFor(() => {
-      expect(within(wiredPanel).getByText(/^Fil du circuit A/)).toBeVisible();
-    });
-    const wireRole = within(wiredPanel).getByRole('group', { name: /Pour le joueur · fil/ });
+    tapBoard(board, 400, 225);
+    const wiredPanel = screen.getByRole('toolbar', { name: 'Réglages du fil' });
+    expect(within(wiredPanel).getByText('Fil · Levier → Convoyeur')).toBeVisible();
+    const wireRole = within(wiredPanel).getByRole('group', { name: 'Pour le joueur' });
     await waitFor(() => {
       expect(within(wireRole).getByRole('button', { name: 'À placer' })).toHaveAttribute(
         'aria-pressed',
@@ -3131,7 +2960,7 @@ describe('coque TinkerBolt', () => {
       );
     });
     await storageAction(() =>
-      fireEvent.click(within(wiredPanel).getByRole('button', { name: 'Délier le circuit A' })),
+      fireEvent.click(within(wiredPanel).getByRole('button', { name: 'Débrancher le fil' })),
     );
     await waitFor(() => {
       expect(canvas).toHaveAttribute('data-wires', '');
@@ -3224,7 +3053,7 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(screen.getByText('Choisis le minuteur ou l’appareil à commander')).toBeVisible();
     });
-    expect(screen.queryByRole('region', { name: /^Propriétés de /u })).toBeNull();
+    expect(screen.queryByRole('toolbar', { name: /^Réglages de /u })).toBeNull();
   });
 
   it('enchaîne les fils d’un bouton, jamais vers un convoyeur, et un seul contrôleur par appareil (U15)', async () => {
@@ -3293,33 +3122,37 @@ describe('coque TinkerBolt', () => {
       expect(wires()).toHaveLength(2);
     });
     tapBoard(board, 600, 225);
-    const fanPanel = screen.getByRole('region', { name: 'Propriétés de Ventilateur' });
+    const fanPanel = screen.getByRole('toolbar', { name: 'Réglages de Ventilateur' });
     await waitFor(() => {
-      expect(within(fanPanel).getByText(/^Fil du circuit A/)).toBeVisible();
+      expect(within(fanPanel).getByRole('group', { name: 'État de départ' })).toBeVisible();
     });
     // Relié, il garde son état de départ : la commande le fait basculer.
     await storageAction(() =>
-      fireEvent.change(within(fanPanel).getByRole('combobox', { name: 'État de départ' }), {
-        target: { value: 'off' },
-      }),
+      fireEvent.click(
+        within(within(fanPanel).getByRole('group', { name: 'État de départ' })).getByRole(
+          'button',
+          { name: 'Arrêté' },
+        ),
+      ),
     );
     await waitFor(() => {
-      expect(within(fanPanel).getByRole('combobox', { name: 'État de départ' })).toHaveValue('off');
+      expect(
+        within(within(fanPanel).getByRole('group', { name: 'État de départ' })).getByRole(
+          'button',
+          { name: 'Arrêté' },
+        ),
+      ).toHaveAttribute('aria-pressed', 'true');
     });
   });
 
   it('tourne chaque objet par pas de 15°, retourne ventilateur et barrière, et règle leur état de départ', async () => {
     await renderStorageReady(<App />);
     await placeWorkshopObject('Ventilateur');
-    const fanPanel = screen.getByRole('region', { name: 'Propriétés de Ventilateur' });
+    const fanPanel = screen.getByRole('toolbar', { name: 'Réglages de Ventilateur' });
     await waitFor(() => {
       expect(within(fanPanel).queryByRole('combobox', { name: 'Sens du souffle' })).toBeNull();
     });
-    await waitFor(() => {
-      expect(within(fanPanel).getByRole('button', { name: 'Rotation positive' })).toHaveTextContent(
-        '15°',
-      );
-    });
+    expect(within(fanPanel).queryByRole('button', { name: /Rotation/ })).toBeNull();
     await storageAction(() =>
       fireEvent.click(within(fanPanel).getByRole('button', { name: 'Retourner' })),
     );
@@ -3327,38 +3160,35 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Rétablir' })).toBeEnabled();
     });
-    await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Ventilateur' })).toBeVisible();
-    });
+    const fanState = within(
+      screen.getByRole('toolbar', { name: 'Réglages de Ventilateur' }),
+    ).getByRole('group', { name: 'État de départ' });
     await storageAction(() =>
-      fireEvent.change(screen.getByRole('combobox', { name: 'État de départ' }), {
-        target: { value: 'off' },
-      }),
+      fireEvent.click(within(fanState).getByRole('button', { name: 'Arrêté' })),
     );
-    await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: 'État de départ' })).toHaveValue('off');
-    });
+    expect(within(fanState).getByRole('button', { name: 'Arrêté' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
 
     await placeFromCatalogue('Barrière', 200, 225);
-    const barrierPanel = screen.getByRole('region', { name: 'Propriétés de Barrière' });
+    const barrierPanel = screen.getByRole('toolbar', { name: 'Réglages de Barrière' });
     await waitFor(() => {
       expect(within(barrierPanel).queryByRole('combobox', { name: 'Côté de la barre' })).toBeNull();
     });
-    await waitFor(() => {
-      expect(
-        within(barrierPanel).getByRole('button', { name: 'Rotation négative' }),
-      ).toHaveTextContent('15°');
-    });
+    expect(within(barrierPanel).queryByRole('button', { name: /Rotation/ })).toBeNull();
     await waitFor(() => {
       expect(within(barrierPanel).getByRole('button', { name: 'Retourner' })).toBeVisible();
     });
+    const barrierState = within(barrierPanel).getByRole('group', { name: 'État de départ' });
     await storageAction(() =>
-      fireEvent.change(screen.getByRole('combobox', { name: 'État de départ' }), {
-        target: { value: 'open' },
-      }),
+      fireEvent.click(within(barrierState).getByRole('button', { name: 'Ouverte' })),
     );
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: 'État de départ' })).toHaveValue('open');
+      expect(within(barrierState).getByRole('button', { name: 'Ouverte' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
     });
 
     for (const [card, name, x, y] of [
@@ -3367,12 +3197,8 @@ describe('coque TinkerBolt', () => {
       ['Convoyeur', 'Convoyeur', 150, 380],
     ] as const) {
       await placeFromCatalogue(card, x, y);
-      const panel = screen.getByRole('region', { name: `Propriétés de ${name}` });
-      await waitFor(() => {
-        expect(within(panel).getByRole('button', { name: 'Rotation positive' })).toHaveTextContent(
-          '15°',
-        );
-      });
+      const panel = screen.getByRole('toolbar', { name: `Réglages de ${name}` });
+      expect(within(panel).queryByRole('button', { name: /Rotation/ })).toBeNull();
       await waitFor(() => {
         expect(within(panel).queryByRole('button', { name: 'Retourner' })).toBeNull();
       });
@@ -3382,7 +3208,7 @@ describe('coque TinkerBolt', () => {
   it('ne propose de tourner ni la balle ni le panier', async () => {
     await renderStorageReady(<App />);
     await placeWorkshopObject('Balle');
-    const panel = screen.getByRole('region', { name: 'Propriétés de Balle' });
+    const panel = screen.getByRole('toolbar', { name: 'Réglages de Balle' });
     await waitFor(() => {
       expect(within(panel).queryByRole('button', { name: /Rotation/ })).toBeNull();
     });
@@ -3391,23 +3217,27 @@ describe('coque TinkerBolt', () => {
   it('règle la position de départ d’un levier et le sens d’un convoyeur', async () => {
     await renderStorageReady(<App />);
     await placeWorkshopObject('Levier');
+    const leverPosition = screen.getByRole('group', { name: 'Position de départ' });
     await storageAction(() =>
-      fireEvent.change(screen.getByRole('combobox', { name: 'Position de départ' }), {
-        target: { value: 'left' },
-      }),
+      fireEvent.click(within(leverPosition).getByRole('button', { name: 'Gauche' })),
     );
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: 'Position de départ' })).toHaveValue('left');
+      expect(within(leverPosition).getByRole('button', { name: 'Gauche' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
     });
 
     await placeFromCatalogue('Convoyeur', 600, 225);
+    const conveyorDirection = screen.getByRole('group', { name: 'Sens du tapis' });
     await storageAction(() =>
-      fireEvent.change(screen.getByRole('combobox', { name: 'Sens du tapis' }), {
-        target: { value: 'right' },
-      }),
+      fireEvent.click(within(conveyorDirection).getByRole('button', { name: 'Droite' })),
     );
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: 'Sens du tapis' })).toHaveValue('right');
+      expect(within(conveyorDirection).getByRole('button', { name: 'Droite' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
     });
   });
 
@@ -3415,7 +3245,7 @@ describe('coque TinkerBolt', () => {
     await renderStorageReady(<App />);
     await placeWorkshopBeam();
 
-    const panel = screen.getByRole('region', { name: 'Propriétés de Poutre' });
+    const panel = screen.getByRole('toolbar', { name: 'Réglages de Poutre' });
     await waitFor(() => {
       expect(panel).toBeVisible();
     });
@@ -3425,19 +3255,10 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(within(panel).getByRole('button', { name: /Supprimer la poutre/i })).toBeVisible();
     });
-    await waitFor(() => {
-      expect(within(panel).getByRole('button', { name: 'Rotation négative' })).toBeVisible();
-    });
-    await waitFor(() => {
-      expect(within(panel).getByRole('button', { name: 'Rotation positive' })).toBeVisible();
-    });
-    for (const direction of ['gauche', 'droite', 'haut', 'bas']) {
-      await waitFor(() => {
-        expect(
-          within(panel).getByRole('button', { name: new RegExp(direction, 'i') }),
-        ).toBeVisible();
-      });
-    }
+    expect(
+      within(panel).queryByRole('button', { name: /Rotation|gauche|droite|haut|bas/i }),
+    ).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Redimensionner la poutre' })).toBeVisible();
   });
 
   it('déplace directement une poutre en une seule entrée d’historique sans déplacer la caméra', async () => {
@@ -3476,21 +3297,20 @@ describe('coque TinkerBolt', () => {
     // One direct drag is one command: the first undo restores the original
     // placement, while the second undo removes the placement itself.
     await storageAction(() => fireEvent.click(undoButton));
+    tapBoard(board, 400, 225);
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+      expect(screen.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
     });
     await storageAction(() => fireEvent.click(undoButton));
     await waitFor(() => {
-      expect(
-        screen.queryByRole('region', { name: 'Propriétés de Poutre' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).not.toBeInTheDocument();
     });
 
     // A camera pan would move this fixed workshop object away from its known
     // screen position. It must remain selectable after the object drag.
     tapBoard(board, 400, 48);
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Balle' })).toBeVisible();
+      expect(screen.getByRole('toolbar', { name: 'Réglages de Balle' })).toBeVisible();
     });
   });
 
@@ -3499,7 +3319,7 @@ describe('coque TinkerBolt', () => {
     const board = await placeWorkshopBeam();
     const undoButton = screen.getByRole('button', { name: 'Annuler' });
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+      expect(screen.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
     });
 
     firePointerEvent(board, 'pointerdown', {
@@ -3526,55 +3346,21 @@ describe('coque TinkerBolt', () => {
     });
     await storageAction(() => fireEvent.click(undoButton));
     await waitFor(() => {
-      expect(
-        screen.queryByRole('region', { name: 'Propriétés de Poutre' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).not.toBeInTheDocument();
     });
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /Placement refusé/i })).not.toBeInTheDocument();
     });
   });
 
-  it('expose la taille d’une poutre et annule le changement Longue en une commande', async () => {
+  it('expose une poignée accessible pour redimensionner une poutre', async () => {
     await renderStorageReady(<App />);
     await placeWorkshopBeam();
-
-    const panel = screen.getByRole('region', { name: 'Propriétés de Poutre' });
-    const sizeControl = within(panel).getByRole('combobox', { name: /longueur|taille/i });
-    const undoButton = screen.getByRole('button', { name: 'Annuler' });
-
-    await waitFor(() => {
-      expect(within(sizeControl).getByRole('option', { name: 'Courte' })).toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(within(sizeControl).getByRole('option', { name: 'Moyenne' })).toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(within(sizeControl).getByRole('option', { name: 'Longue' })).toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(sizeControl).toHaveValue('medium');
-    });
-
-    await storageAction(() => fireEvent.change(sizeControl, { target: { value: 'long' } }));
-    await waitFor(() => {
-      expect(sizeControl).toHaveValue('long');
-    });
-
-    // The size edit is atomic: undo restores the initially placed medium beam,
-    // and a second undo is still required to remove the placement itself.
-    await storageAction(() => fireEvent.click(undoButton));
-    await waitFor(() => {
-      expect(within(panel).getByRole('combobox', { name: /longueur|taille/i })).toHaveValue(
-        'medium',
-      );
-    });
-    await storageAction(() => fireEvent.click(undoButton));
-    await waitFor(() => {
-      expect(
-        screen.queryByRole('region', { name: 'Propriétés de Poutre' }),
-      ).not.toBeInTheDocument();
-    });
+    const handle = screen.getByRole('button', { name: 'Redimensionner la poutre' });
+    expect(handle).toHaveAttribute(
+      'aria-description',
+      'Faire glisser le long de la poutre pour la redimensionner, ou utiliser les flèches du clavier.',
+    );
   });
 
   it('en mode auteur permet de sélectionner et déplacer le sol verrouillé du futur joueur', async () => {
@@ -3598,16 +3384,10 @@ describe('coque TinkerBolt', () => {
     });
     fireEvent.click(board, { detail: 1, clientX: 384, clientY: 384 });
 
-    const panel = screen.getByRole('region', { name: 'Propriétés de Poutre' });
-    await waitFor(() => {
-      expect(panel).not.toHaveTextContent(/verrouill/i);
-    });
-    await waitFor(() => {
-      expect(within(panel).getByRole('button', { name: 'Rotation négative' })).toBeVisible();
-    });
-    await waitFor(() => {
-      expect(within(panel).getByRole('button', { name: 'Rotation positive' })).toBeVisible();
-    });
+    const panel = screen.getByRole('toolbar', { name: 'Réglages de Poutre' });
+    expect(panel).not.toHaveTextContent(/verrouill/i);
+    expect(within(panel).getByRole('group', { name: 'Pour le joueur' })).toBeVisible();
+    expect(within(panel).queryByRole('button', { name: /Rotation/ })).toBeNull();
     await waitFor(() => {
       expect(within(panel).getByRole('button', { name: /Supprimer la poutre/i })).toBeVisible();
     });
@@ -3689,7 +3469,7 @@ describe('coque TinkerBolt', () => {
     });
     await storageAction(() => fireEvent.click(undoButton));
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+      expect(undoButton).toBeDisabled();
     });
   });
 
@@ -3709,10 +3489,10 @@ describe('coque TinkerBolt', () => {
     tapBoard(board, 276, 191);
 
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Masse' })).toBeInTheDocument();
+      expect(screen.getByRole('toolbar', { name: 'Réglages de Masse' })).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'Propriétés de Poutre' })).toBeNull();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).toBeNull();
     });
   });
 
@@ -3758,47 +3538,26 @@ describe('coque TinkerBolt', () => {
     // than first undoing a committed move.
     await storageAction(() => fireEvent.click(undoButton));
     await waitFor(() => {
-      expect(
-        screen.queryByRole('region', { name: 'Propriétés de Poutre' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).not.toBeInTheDocument();
     });
   });
 
-  it('tourne un levier sur un tour complet aux boutons, sans butée', async () => {
+  it('garde les réglages de rotation du levier sur le plateau', async () => {
     await renderStorageReady(<App />);
     await placeWorkshopObject('Levier');
-    const panel = screen.getByRole('region', { name: 'Propriétés de Levier' });
-
-    for (let step = 0; step < 24; step += 1) {
-      await storageAction(() =>
-        fireEvent.click(within(panel).getByRole('button', { name: 'Rotation positive' })),
-      );
-    }
-    await waitFor(() => {
-      expect(within(panel).getByRole('button', { name: 'Rotation positive' })).toBeEnabled();
-    });
-    await waitFor(() => {
-      expect(within(panel).getByRole('button', { name: 'Rotation négative' })).toBeEnabled();
-    });
-    await waitFor(() => {
-      expect(panel).not.toHaveTextContent('Rotation limitée');
-    });
+    const panel = screen.getByRole('toolbar', { name: 'Réglages de Levier' });
+    expect(within(panel).queryByRole('button', { name: /Rotation/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Redimensionner la poutre' })).toBeNull();
   });
 
   it('tourne un levier par sa poignée en une seule entrée d’historique', async () => {
     await renderStorageReady(<App />);
     const board = await placeWorkshopObject('Levier');
     const undoButton = screen.getByRole('button', { name: 'Annuler' });
-    const leverPanel = screen.getByRole('region', { name: 'Propriétés de Levier' });
+    const leverPanel = screen.getByRole('toolbar', { name: 'Réglages de Levier' });
     await waitFor(() => {
       expect(leverPanel).toBeVisible();
     });
-    await waitFor(() => {
-      expect(
-        within(leverPanel).getByRole('button', { name: 'Rotation positive' }),
-      ).toHaveTextContent('15°');
-    });
-
     // Start outside the lever sprite but inside the rendered rotation handle,
     // so this gesture cannot be mistaken for a direct object move.
     firePointerEvent(board, 'pointerdown', {
@@ -3822,13 +3581,11 @@ describe('coque TinkerBolt', () => {
 
     await storageAction(() => fireEvent.click(undoButton));
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Levier' })).toBeVisible();
+      expect(undoButton).toBeEnabled();
     });
     await storageAction(() => fireEvent.click(undoButton));
     await waitFor(() => {
-      expect(
-        screen.queryByRole('region', { name: 'Propriétés de Levier' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Levier' })).not.toBeInTheDocument();
     });
     await waitFor(() => {
       expect(undoButton).toBeDisabled();
@@ -3919,25 +3676,18 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Fil de commande, quantité : 0' })).toBeDisabled();
     });
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Fermer le catalogue' })),
-    );
-
     // Le fil du niveau ne se délie pas.
-    tapWorldPoint(2, 1.2);
-    const buttonPanel = screen.getByRole('region', { name: 'Propriétés de Bouton' });
-    await waitFor(() => {
-      expect(within(buttonPanel).getByText(/^Fil du circuit A/)).toBeVisible();
-    });
-    await waitFor(() => {
-      expect(within(buttonPanel).queryByRole('button', { name: /Délier/ })).toBeNull();
-    });
+    tapWorldPoint(4.15, 1.37);
+    const levelWirePanel = screen.getByRole('toolbar', { name: 'Réglages du fil' });
+    expect(within(levelWirePanel).getByText('Fil · Bouton → Ventilateur')).toBeVisible();
+    expect(within(levelWirePanel).queryByRole('button', { name: 'Débrancher le fil' })).toBeNull();
 
     // Le joueur délie le sien et le retrouve dans l’inventaire.
-    tapWorldPoint(2, 3);
-    const leverPanel = screen.getByRole('region', { name: 'Propriétés de Levier' });
+    tapWorldPoint(3.75, 3);
+    const leverWirePanel = screen.getByRole('toolbar', { name: 'Réglages du fil' });
+    expect(within(leverWirePanel).getByText('Fil · Levier → Convoyeur')).toBeVisible();
     await storageAction(() =>
-      fireEvent.click(within(leverPanel).getByRole('button', { name: 'Délier le circuit B' })),
+      fireEvent.click(within(leverWirePanel).getByRole('button', { name: 'Débrancher le fil' })),
     );
     await waitFor(() => {
       expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
@@ -3952,9 +3702,7 @@ describe('coque TinkerBolt', () => {
     const level = levelDocumentSchema.parse(tuto3);
     window.history.replaceState(null, '', `/shared${await encodeShareFragment(level)}`);
     await renderStorageReady(<App />);
-    await waitFor(async () => {
-      expect(await screen.findByText('Partage · Un peu de vent')).toBeVisible();
-    });
+    expect(await screen.findByText(/Partage · Un peu de vent/u)).toBeVisible();
     const board = screen.getByRole('region', { name: 'Plateau de jeu' });
     const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
     const openCatalogue = async (): Promise<void> => {
@@ -4154,7 +3902,12 @@ describe('coque TinkerBolt', () => {
       expect(received.saves).toHaveLength(0);
     });
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Campagne' })).toHaveAttribute('href', '/levels');
+      expect(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Campagne' },
+        ),
+      ).toHaveAttribute('href', '/levels');
     });
     await waitFor(() => {
       expect(screen.queryByRole('region', { name: 'Plateau de jeu' })).not.toBeInTheDocument();
@@ -4196,9 +3949,7 @@ describe('coque TinkerBolt', () => {
     // One rotation command: undo leaves the placed beam selected, and the
     // following undo removes the placement itself.
     await storageAction(() => fireEvent.click(undoButton));
-    await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
-    });
+    await waitFor(() => expect(undoButton).toBeEnabled());
 
     firePointerEvent(board, 'pointerdown', {
       pointerId: 3,
@@ -4220,10 +3971,9 @@ describe('coque TinkerBolt', () => {
     });
 
     await storageAction(() => fireEvent.click(undoButton));
+    await waitFor(() => expect(undoButton).toBeDisabled());
     await waitFor(() => {
-      expect(
-        screen.queryByRole('region', { name: 'Propriétés de Poutre' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('toolbar', { name: 'Réglages de Poutre' })).not.toBeInTheDocument();
     });
   });
 

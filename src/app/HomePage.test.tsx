@@ -188,9 +188,11 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
       ['Campagne', '/levels'],
       ['Atelier', '/editor'],
       ['Mes niveaux', '/my-levels'],
+      ['Paramètres', '/settings'],
     ]);
     expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([
       'page',
+      null,
       null,
       null,
       null,

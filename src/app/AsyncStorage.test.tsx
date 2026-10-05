@@ -193,7 +193,7 @@ describe('C2a — écrans et stockage asynchrone', () => {
       await pending.promise;
     });
     expect(await screen.findByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
-    expect(within(screen.getByRole('banner')).getByText('Mon essai')).toBeVisible();
+    expect(screen.getByText('Mon essai', { selector: '.toolbar-title' })).toBeVisible();
     expect(load).toHaveBeenCalledWith('creation-1');
     placeBall(8, 3);
     await waitFor(() => {
@@ -219,12 +219,12 @@ describe('C2a — écrans et stockage asynchrone', () => {
       await second.promise;
     });
     expect(await screen.findByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
-    expect(within(screen.getByRole('banner')).getByText('Deuxième reçu')).toBeVisible();
+    expect(screen.getByText(/Deuxième reçu/u, { selector: '.toolbar-title' })).toBeVisible();
     await act(async () => {
       first.resolve({ status: 'ok', level: received(receivedIdA, 'Ancien reçu') });
       await first.promise;
     });
-    expect(within(screen.getByRole('banner')).getByText('Deuxième reçu')).toBeVisible();
+    expect(screen.getByText(/Deuxième reçu/u, { selector: '.toolbar-title' })).toBeVisible();
     expect(screen.queryByText('Ancien reçu')).toBeNull();
   });
 
@@ -241,7 +241,7 @@ describe('C2a — écrans et stockage asynchrone', () => {
     });
     expect(await screen.findByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
     expect(
-      within(screen.getByRole('banner')).getByText(new RegExp(levelTwo.metadata.title, 'u')),
+      screen.getByText(`Niveau 2 · ${levelTwo.metadata.title}`, { selector: '.toolbar-title' }),
     ).toBeVisible();
   });
 

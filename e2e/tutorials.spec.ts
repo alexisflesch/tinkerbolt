@@ -4,8 +4,14 @@ import { mkdir } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { levelDocumentSchema, type LevelDocument } from '../src/domain/level-document';
+import {
+  levelDocumentSchema,
+  type LevelDocument,
+  type PlaceableInventoryEntry,
+} from '../src/domain/level-document';
 import { leverGeometry } from '../src/domain/family-geometry';
+import { placementFootprintCorners } from '../src/domain/placement-footprint';
+import { ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS } from '../src/presentation/rotation-handle-metrics';
 import { tapWorldPoint } from './puzzle-machine';
 
 // tuto-6 and tuto-7 are replayed by the unit tests of their reference solution:
@@ -18,17 +24,90 @@ const tutorials = [1, 2, 3, 4, 5].map((number) =>
 
 const choose = async (page: Page, label: string): Promise<void> => {
   await expect(page.getByRole('img', { name: 'Rendu du plateau' })).toBeVisible();
-  const open = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if (await open.isVisible()) await open.tap();
-  await page.getByRole('button', { name: new RegExp(`^${label}`) }).tap();
-  const drawer = page.getByRole('region', { name: 'Objets disponibles' });
-  await expect(drawer).toHaveClass(/object-drawer-collapsed/u);
-  const peekHeight = await drawer.evaluate((element) =>
-    Number.parseFloat(getComputedStyle(element).getPropertyValue('--drawer-peek-height')),
-  );
-  await expect
-    .poll(() => drawer.evaluate((element) => element.getBoundingClientRect().height))
-    .toBeCloseTo(peekHeight, 0);
+  const card = page.getByRole('button', { name: new RegExp(`^${label}`) });
+  await card.tap();
+  await expect(card).toHaveAttribute('aria-pressed', 'true');
+};
+
+const rotateByHandle = async (
+  page: Page,
+  inventory: PlaceableInventoryEntry,
+  position: { readonly x: number; readonly y: number },
+  startRotation: number,
+  targetRotation: number,
+): Promise<void> => {
+  const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
+  // Placement leaves the toolbar closed; select the placed object with the
+  // ordinary tap that exposes its direct-manipulation rotation handle.
+  await tapWorldPoint(page, position.x, position.y);
+  await expect(page.getByRole('toolbar', { name: /^Réglages de /u })).toBeVisible();
+  const corners = placementFootprintCorners(inventory, {
+    position: { x: 0, y: 0 },
+    rotation: 0,
+  });
+  const topLeft = corners[0];
+  if (topLeft === undefined) throw new Error('Empreinte de placement absente.');
+  const readCamera = async () => {
+    const currentBounds = await canvas.boundingBox();
+    const currentOrigin = await canvas.getAttribute('data-camera-origin');
+    const currentZoom = Number(await canvas.getAttribute('data-camera-zoom'));
+    if (currentBounds === null || currentOrigin === null || !(currentZoom > 0)) {
+      throw new Error('Le repère caméra doit rester disponible pour tourner l’objet.');
+    }
+    const [currentOriginX, currentOriginY] = currentOrigin.split(',').map(Number);
+    if (currentOriginX === undefined || currentOriginY === undefined) {
+      throw new Error('Origine caméra absente.');
+    }
+    return {
+      bounds: currentBounds,
+      originX: currentOriginX,
+      originY: currentOriginY,
+      zoom: currentZoom,
+    };
+  };
+  let camera = await readCamera();
+  const pointAt = (rotation: number) => {
+    const local = {
+      x: topLeft.x * camera.zoom - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS,
+      y: topLeft.y * camera.zoom - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS,
+    };
+    const cosine = Math.cos(rotation);
+    const sine = Math.sin(rotation);
+    const offset = {
+      x: local.x * cosine - local.y * sine,
+      y: local.x * sine + local.y * cosine,
+    };
+    return {
+      x: camera.bounds.x + (position.x - camera.originX) * camera.zoom + offset.x,
+      y: camera.bounds.y + (position.y - camera.originY) * camera.zoom + offset.y,
+    };
+  };
+  let start = pointAt(startRotation);
+  // A solution object can sit close enough to the scene edge that its direct
+  // rotation handle falls just off-screen. Zoom out until its 44 px target is
+  // reachable, as a player can from the framing controls.
+  for (
+    let attempt = 0;
+    attempt < 4 &&
+    (start.x < camera.bounds.x ||
+      start.x > camera.bounds.x + camera.bounds.width ||
+      start.y < camera.bounds.y ||
+      start.y > camera.bounds.y + camera.bounds.height);
+    attempt += 1
+  ) {
+    await page.getByRole('button', { name: 'Zoom arrière' }).tap();
+    camera = await readCamera();
+    start = pointAt(startRotation);
+  }
+  expect(start.x).toBeGreaterThanOrEqual(camera.bounds.x);
+  expect(start.x).toBeLessThanOrEqual(camera.bounds.x + camera.bounds.width);
+  expect(start.y).toBeGreaterThanOrEqual(camera.bounds.y);
+  expect(start.y).toBeLessThanOrEqual(camera.bounds.y + camera.bounds.height);
+  const target = pointAt(targetRotation);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(target.x, target.y, { steps: 12 });
+  await page.mouse.up();
 };
 
 const placeSolution = async (page: Page, level: LevelDocument): Promise<void> => {
@@ -37,6 +116,7 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
   for (const placement of level.solution.placements) {
     const inventory = level.inventory.find(({ id }) => id === placement.inventoryId);
     if (inventory === undefined) throw new Error('Objet de solution absent de l’inventaire.');
+    if (inventory.type === 'wire') throw new Error('Un fil ne peut pas être posé comme objet.');
     let label: string;
     switch (inventory.type) {
       case 'beam':
@@ -72,27 +152,13 @@ const placeSolution = async (page: Page, level: LevelDocument): Promise<void> =>
       case 'lever':
       case 'conveyor':
       case 'barrier':
-      case 'wire':
         throw new Error(`Objet de tutoriel inattendu : ${inventory.type}`);
     }
     await choose(page, label);
     const { position, rotation } = placement.transform;
     await tapWorldPoint(page, position.x, position.y);
-    // Placement leaves the panel closed; open it explicitly to configure the
-    // tutorial's reference object.
-    await page.getByRole('button', { name: 'Ouvrir les propriétés' }).tap();
-    await expect(page.getByRole('region', { name: /^Propriétés de /u })).toBeVisible();
     if (placement.placementId !== undefined) positions.set(placement.placementId, position);
-    const steps = Math.round(rotation / (Math.PI / 12));
-    if (steps !== 0) {
-      for (let step = 0; step < Math.abs(steps); step += 1) {
-        await page
-          .getByRole('button', { name: steps > 0 ? 'Rotation positive' : 'Rotation négative' })
-          .tap();
-      }
-    }
-    const close = page.getByRole('button', { name: 'Fermer les propriétés' });
-    if (await close.isVisible()) await close.tap();
+    if (rotation !== 0) await rotateByHandle(page, inventory, position, 0, rotation);
   }
   for (const wire of level.solution.wires ?? []) {
     await choose(page, 'Fil de commande');

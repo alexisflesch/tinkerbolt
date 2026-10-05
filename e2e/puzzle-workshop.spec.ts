@@ -15,16 +15,16 @@ test('marque un objet à placer puis résout le puzzle comme un joueur, au touch
   await markBeamToPlace(page);
 
   await page.getByRole('button', { name: 'Essayer en joueur' }).tap();
-  await expect(page.locator('.level-mode', { hasText: 'Atelier' })).toBeVisible();
-  await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
+  await expect(page.getByRole('button', { name: 'Retour à l’atelier' })).toBeVisible();
   await page.getByRole('button', { name: /^Poutre courte/u }).tap();
   await tapWorldPoint(page, machineBeam.x, machineBeam.y);
   await page.getByRole('button', { name: 'Lancer', exact: true }).tap();
 
-  const result = page.getByRole('region', { name: 'Résultat du niveau' });
-  await expect(result).toContainText('Victoire', { timeout: 15_000 });
-  await result.getByRole('button', { name: 'Retour à l’atelier' }).tap();
+  const actions = page.getByRole('toolbar', { name: 'Actions de simulation' });
+  await expect(actions).toContainText('Gagné !', { timeout: 15_000 });
+  await expect(page.getByRole('region', { name: 'Résultat du niveau' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Retour à l’atelier' }).tap();
 
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=/u);
   await expect(page.getByRole('button', { name: 'Exporter le niveau' })).toBeVisible();
 });

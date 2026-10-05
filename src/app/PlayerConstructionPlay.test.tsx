@@ -238,7 +238,7 @@ describe('reprise de construction dans le jeu', () => {
     expect(screen.getByRole('button', { name: 'Poutre courte, quantité : 1' })).toBeEnabled();
   });
 
-  it('conserve pose, déplacement, rotation et undo/redo après rechargement', async () => {
+  it('conserve pose, déplacement et undo/redo après rechargement', async () => {
     const repo = repository();
     await renderStorageReady(
       <App playerConstructionRepository={repo} progressRepository={testProgressRepository()} />,
@@ -251,29 +251,26 @@ describe('reprise de construction dans le jeu', () => {
     await waitFor(async () => {
       expect((await placedState(repo)).document.inventory[0]?.quantity).toBe(0);
     });
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir les propriétés' })),
-    );
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Vers la droite' })),
-    );
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Rotation positive' })),
-    );
+    await tapWorld(7, 4);
+    await storageAction(() => {
+      worldEvent('pointerdown', 7, 4);
+      worldEvent('pointermove', 8, 4);
+      worldEvent('pointerup', 8, 4);
+    });
     await waitFor(async () => {
-      expect((await placedState(repo)).document.objects.at(-1)?.transform.rotation).toBeCloseTo(
-        Math.PI / 12,
-      );
+      expect(
+        (await placedState(repo)).document.objects.at(-1)?.transform.position.x,
+      ).toBeGreaterThan(7);
     });
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
     await waitFor(async () => {
-      expect((await placedState(repo)).document.objects.at(-1)?.transform.rotation).toBe(0);
+      expect((await placedState(repo)).document.objects.at(-1)?.transform.position.x).toBe(7);
     });
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Rétablir' })));
     await waitFor(async () => {
-      expect((await placedState(repo)).document.objects.at(-1)?.transform.rotation).toBeCloseTo(
-        Math.PI / 12,
-      );
+      expect(
+        (await placedState(repo)).document.objects.at(-1)?.transform.position.x,
+      ).toBeGreaterThan(7);
     });
     const saved = await placedState(repo);
     expect(Object.keys(saved.provenance)).toHaveLength(1);

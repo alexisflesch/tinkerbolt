@@ -117,18 +117,14 @@ describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
   it('affiche dans l’en-tête « Nouveau niveau · Atelier » pour un atelier neuf (V3, V7)', async () => {
     await renderStorageReady(<App draftRepository={draftStorage()} />);
 
-    const header = screen.getByRole('banner');
     await waitFor(() => {
-      expect(within(header).getByText('Nouveau niveau')).toBeVisible();
+      expect(screen.getByText('Nouveau niveau', { selector: '.toolbar-title' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(within(header).getByText('Atelier')).toBeVisible();
+      expect(screen.getByRole('banner')).not.toHaveTextContent('Atelier de niveau');
     });
     await waitFor(() => {
-      expect(header).not.toHaveTextContent('Atelier de niveau');
-    });
-    await waitFor(() => {
-      expect(header).not.toHaveTextContent('Mode éditeur');
+      expect(screen.getByRole('banner')).not.toHaveTextContent('Mode éditeur');
     });
   });
 
@@ -149,12 +145,11 @@ describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
     window.history.replaceState(null, '', `/editor?draft=${id}`);
     await renderStorageReady(<App draftRepository={draftStorage()} />);
 
-    const header = screen.getByRole('banner');
     await waitFor(() => {
-      expect(within(header).getByText('Atelier de niveau')).toBeVisible();
+      expect(screen.getByText('Atelier de niveau', { selector: '.toolbar-title' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(header).not.toHaveTextContent('Nouveau niveau');
+      expect(screen.getByRole('banner')).not.toHaveTextContent('Nouveau niveau');
     });
     await waitFor(async () => {
       expect((await storedCreation(id)).document.metadata.title).toBe('Atelier de niveau');

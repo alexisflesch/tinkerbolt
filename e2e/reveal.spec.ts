@@ -139,14 +139,12 @@ test('révèle la solution de l’auteur depuis le menu de l’atelier, au touch
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await openRemixWithoutFan(page);
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=/u);
   const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
   await expect(canvas).toHaveAttribute('data-wires', '');
 
   await page.getByRole('button', { name: 'Ouvrir le menu' }).tap();
-  const entry = page
-    .getByRole('navigation', { name: 'Menu principal' })
-    .getByRole('button', { name: 'Révéler la solution de l’auteur' });
+  const entry = page.getByRole('button', { name: 'Révéler la solution de l’auteur' });
   await expect(entry).toBeVisible();
   const entryBox = await entry.boundingBox();
   expect(entryBox?.height).toBeGreaterThanOrEqual(44);

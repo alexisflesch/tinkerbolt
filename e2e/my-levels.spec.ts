@@ -1,6 +1,7 @@
 import { mkdir, readFile } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
+import { navigateTo } from './app-navigation';
 
 const formats = [
   { width: 390, height: 844 },
@@ -30,8 +31,7 @@ test('importe un fichier depuis « Mes niveaux » et le retrouve dans la liste (
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Ouvrir le menu' }).tap();
-  await page.getByRole('button', { name: 'Mes niveaux' }).tap();
+  await navigateTo(page, 'Mes niveaux');
 
   await expect(page).toHaveURL(/\/my-levels$/u);
   const received = page.getByRole('region', { name: 'Niveaux reçus' });
@@ -64,7 +64,7 @@ test('importe un fichier depuis « Mes niveaux » et le retrouve dans la liste (
   // A creation too, for the filled page: the campaign's first level, edited.
   await page.goto('/levels');
   await page.getByRole('button', { name: 'Modifier le niveau 1', exact: true }).tap();
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=tuto-1-brouillon$/u);
   await page.goto('/my-levels');
   await expect(
     page

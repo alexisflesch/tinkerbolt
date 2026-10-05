@@ -707,7 +707,7 @@ export function BoardShell({
             setIsResetDialogOpen(true);
           }}
           desk={{
-            title,
+            title: attribution === undefined ? title : `${title} · ${attribution}`,
             actions: isNarrowPortrait ? null : levelActions,
             onZoomIn: boardCamera.zoomIn,
             onZoomOut: boardCamera.zoomOut,

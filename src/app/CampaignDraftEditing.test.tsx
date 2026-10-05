@@ -77,6 +77,36 @@ const tapBoard = async (clientX: number, clientY: number): Promise<void> => {
   await storageAction();
 };
 
+const dragWorldPoint = async (
+  from: { readonly x: number; readonly y: number },
+  to: { readonly x: number; readonly y: number },
+): Promise<void> => {
+  const board = screen.getByRole('region', { name: 'Plateau de jeu' });
+  const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
+  const [originX, originY] = (canvas.getAttribute('data-camera-origin') ?? '')
+    .split(',')
+    .map(Number);
+  const zoom = Number(canvas.getAttribute('data-camera-zoom'));
+  if (originX === undefined || originY === undefined || !(zoom > 0)) {
+    throw new Error('Cadrage caméra invalide dans le test.');
+  }
+  const sendPointer = (type: 'pointerdown' | 'pointermove' | 'pointerup', point: typeof from) => {
+    const event = new Event(type, { bubbles: true });
+    Object.defineProperties(event, {
+      pointerId: { configurable: true, value: 1 },
+      pointerType: { configurable: true, value: 'touch' },
+      clientX: { configurable: true, value: (point.x - originX) * zoom },
+      clientY: { configurable: true, value: (point.y - originY) * zoom },
+    });
+    fireEvent(board, event);
+  };
+  await storageAction(() => {
+    sendPointer('pointerdown', from);
+    sendPointer('pointermove', to);
+    sendPointer('pointerup', to);
+  });
+};
+
 const dragBeamSizeHandle = async (distanceX: number, distanceY: number): Promise<void> => {
   const handle = await screen.findByRole('button', { name: 'Redimensionner la poutre' });
   const initialTop = handle.style.top;
@@ -171,17 +201,14 @@ describe('éditer un niveau de la campagne (U17)', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Fiche de calibrage' })).not.toBeInTheDocument();
     });
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await waitFor(() => {
       expect(
         screen.queryByRole('button', { name: 'Ouvrir la fiche de calibrage' }),
       ).not.toBeInTheDocument();
     });
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Fermer le catalogue' })),
-    );
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Exporter le niveau' })).toBeVisible();
     });
@@ -243,9 +270,7 @@ describe('éditer un niveau de la campagne (U17)', () => {
     await waitFor(() => {
       expect(drawer).toBeVisible();
     });
-    await storageAction(() =>
-      fireEvent.click(within(drawer).getByRole('button', { name: 'Ouvrir le catalogue' })),
-    );
+    await waitFor(() => expect(drawer).toBeVisible());
     await waitFor(() => {
       expect(within(drawer).getByRole('button', { name: 'Poutre moyenne' })).toBeVisible();
     });
@@ -263,20 +288,19 @@ describe('éditer un niveau de la campagne (U17)', () => {
 
     // The shelf is locked for the player (`move: false`); the author context ignores it.
     await tapWorldPoint(5.0, 3.6);
-    const properties = screen.getByRole('region', { name: /^Propriétés de/ });
-    await storageAction(() =>
-      fireEvent.click(within(properties).getByRole('button', { name: 'Vers la droite' })),
-    );
+    const properties = screen.getByRole('toolbar', { name: /^Réglages de/ });
+    expect(properties).toBeVisible();
+    await dragWorldPoint({ x: 5.0, y: 3.6 }, { x: 6.0, y: 3.6 });
 
-    const stored = await testDraftRepository(testClock).load(
-      'campaign-02-par-dessus-le-mur-brouillon',
-    );
-    const storedWall =
-      stored.status === 'ok'
-        ? stored.creation?.document.objects.find(({ id }) => id === 'wall')
-        : undefined;
-    await waitFor(() => {
-      expect(storedWall?.transform.position.x).toBeGreaterThan(5.0);
+    await waitFor(async () => {
+      const stored = await testDraftRepository(testClock).load(
+        'campaign-02-par-dessus-le-mur-brouillon',
+      );
+      const wall =
+        stored.status === 'ok'
+          ? stored.creation?.document.objects.find(({ id }) => id === 'wall')
+          : undefined;
+      expect(wall?.transform.position.x).toBeGreaterThan(5.0);
     });
     await waitFor(() => {
       expect(levelTwo).toEqual(pristineLevelTwo);
@@ -350,23 +374,24 @@ describe('éditer un niveau de la campagne (U17)', () => {
     await renderStorageReady(<App progressRepository={levelTwoUnlocked()} />);
 
     await tapWorldPoint(5.0, 3.6);
-    const properties = screen.getByRole('region', { name: /^Propriétés de/ });
-    await storageAction(() =>
-      fireEvent.click(within(properties).getByRole('button', { name: 'Vers la droite' })),
-    );
+    const properties = screen.getByRole('toolbar', { name: /^Réglages de/ });
+    expect(properties).toBeVisible();
+    await dragWorldPoint({ x: 5.0, y: 3.6 }, { x: 6.0, y: 3.6 });
 
     const stored = await testDraftRepository(testClock).load(draftId);
     if (stored.status !== 'ok' || stored.creation === null) {
       throw new Error('Création introuvable.');
     }
-    const savedCreation = stored.creation;
-    await waitFor(() => {
-      expect(
-        savedCreation.document.objects.find(({ id }) => id === 'wall')?.transform.position.x,
-      ).toBeGreaterThan(5.0);
-    });
-    await waitFor(() => {
-      expect(savedCreation.source).toEqual(pristineLevelTwo);
+    await waitFor(async () => {
+      const updated = await testDraftRepository(testClock).load(draftId);
+      const wall =
+        updated.status === 'ok' && updated.creation !== null
+          ? updated.creation.document.objects.find(({ id }) => id === 'wall')
+          : undefined;
+      expect(wall?.transform.position.x).toBeGreaterThan(5.0);
+      expect(updated.status === 'ok' ? updated.creation?.source : undefined).toEqual(
+        pristineLevelTwo,
+      );
     });
   });
 
@@ -399,7 +424,12 @@ describe('éditer un niveau de la campagne (U17)', () => {
       expect(screen.getByRole('alert')).toHaveTextContent('Ce brouillon est introuvable');
     });
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Campagne' })).toBeVisible();
+      expect(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Campagne' },
+        ),
+      ).toBeVisible();
     });
     await waitFor(() => {
       expect(screen.queryByRole('region', { name: 'Plateau de jeu' })).toBeNull();

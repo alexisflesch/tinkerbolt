@@ -191,12 +191,13 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
   it('met « Importer » et « Nouveau niveau » dans le bandeau du haut, pas dans les sections (V6)', async () => {
     await openMyLevels();
 
-    const banner = screen.getByRole('banner');
+    const actions = document.querySelector<HTMLElement>('.page-head-actions');
+    if (actions === null) throw new Error('Actions de page introuvables.');
     await waitFor(() => {
-      expect(within(banner).getByRole('button', { name: 'Importer' })).toBeVisible();
+      expect(within(actions).getByRole('button', { name: 'Importer' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(within(banner).getByRole('button', { name: 'Nouveau niveau' })).toBeVisible();
+      expect(within(actions).getByRole('button', { name: 'Nouveau niveau' })).toBeVisible();
     });
     await waitFor(() => {
       expect(within(section('Mes créations')).queryByRole('button')).toBeNull();
@@ -682,7 +683,9 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
       expect(window.location.search).toBe('?draft=creation-1');
     });
     await waitFor(() => {
-      expect(screen.getByText('Atelier', { selector: '.level-mode' })).toBeVisible();
+      expect(
+        screen.getByText('Test joueur · Ma machine', { selector: '.toolbar-title' }),
+      ).toBeVisible();
     });
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Retour à l’atelier' })),
@@ -770,7 +773,12 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
       expect(window.location.pathname).toBe(`/my-levels/recu-${'3'.repeat(16)}/play`);
     });
     await waitFor(() => {
-      expect(screen.getByText('Mes niveaux', { selector: '.level-mode' })).toBeVisible();
+      expect(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Mes niveaux' },
+        ),
+      ).toHaveAttribute('aria-current', 'page');
     });
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
@@ -785,10 +793,9 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
       expect(screen.getByRole('alert')).toHaveTextContent('introuvable');
     });
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Mes niveaux' })).toHaveAttribute(
-        'href',
-        '/my-levels',
-      );
+      expect(
+        within(screen.getByRole('main')).getByRole('link', { name: 'Mes niveaux' }),
+      ).toHaveAttribute('href', '/my-levels');
     });
   });
 

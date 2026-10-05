@@ -160,7 +160,7 @@ const launchToOutcome = async (flush: (timestamp: number) => void): Promise<HTML
     flush(0);
     for (let frame = 1; frame <= 240; frame += 1) flush(frame * 1000);
   });
-  return screen.getByRole('region', { name: 'Résultat du niveau' });
+  return screen.getByRole('toolbar', { name: 'Actions de simulation' });
 };
 
 const boardCanvasRect: DOMRect = {
@@ -299,9 +299,7 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
 
     await placeBeam();
     const result = await launchToOutcome(flush);
-    await waitFor(() => {
-      expect(within(result).getByText('Victoire')).toBeVisible();
-    });
+    expect(within(result).getByText('Gagné !')).toBeVisible();
     const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
     await storageAction(() =>
       fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' })),
@@ -491,7 +489,12 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
       expect(screen.getByText('Ce niveau est encore verrouillé.')).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Campagne' })).toHaveAttribute('href', '/levels');
+      expect(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Campagne' },
+        ),
+      ).toHaveAttribute('href', '/levels');
     });
     await waitFor(() => {
       expect(screen.queryByRole('region', { name: 'Plateau de jeu' })).toBeNull();

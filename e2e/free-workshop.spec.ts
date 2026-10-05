@@ -12,19 +12,19 @@ test('M13 — l’atelier libre s’enregistre à la première modification, san
   );
 
   await page.goto('/editor');
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor$/u);
   expect(await draftKeys(page)).toEqual([]);
   const entries = await page.evaluate(() => window.history.length);
 
-  const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if ((await openCatalogue.count()) > 0) await openCatalogue.click();
   await page.getByRole('button', { name: 'Poutre moyenne' }).tap();
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
   const bounds = await board.boundingBox();
   if (bounds === null) throw new Error('Le plateau doit être mesurable.');
-  await page.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).tap();
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+  const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+  await page.touchscreen.tap(center.x, center.y);
+  await page.touchscreen.tap(center.x, center.y);
+  const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
+  await expect(objectBar).toBeVisible();
 
   await expect(page).toHaveURL(/\/editor\?draft=creation-[0-9a-f]{32}$/u);
   expect(await draftKeys(page)).toHaveLength(1);
@@ -35,7 +35,7 @@ test('M13 — l’atelier libre s’enregistre à la première modification, san
 
   const url = page.url();
   await page.reload();
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(url);
   await expect(page).toHaveURL(url);
   expect(await draftKeys(page)).toHaveLength(1);
 });

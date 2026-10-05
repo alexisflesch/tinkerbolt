@@ -77,8 +77,6 @@ for (const viewport of desktopFormats) {
     await expect(splash).toBeHidden({ timeout: 10_000 });
     await page.clock.resume();
 
-    const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-    if (await openCatalogue.isVisible()) await openCatalogue.click();
     await page.getByRole('button', { name: /^Poutre courte/u }).click();
     const placement = tutorial.solution?.placements[0];
     if (placement === undefined) throw new Error('Solution du tutoriel 1 absente.');

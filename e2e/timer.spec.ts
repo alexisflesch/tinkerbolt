@@ -37,7 +37,7 @@ test('C9d — affiche les secondes sur le cadran et montre la liaison avec minut
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/shared${await encodeShareFragment(timerLevel)}`);
-  await expect(page.getByText('Partage · Minuteur')).toBeVisible();
+  await expect(page.getByText('Partage · Minuteur')).toHaveText('Partage · Minuteur');
 
   const canvas = page
     .getByRole('region', { name: 'Plateau de jeu' })

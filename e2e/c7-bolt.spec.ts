@@ -39,8 +39,6 @@ test('C7 : affiche Bolt sur l’accueil et à la victoire de campagne', async ({
 
   await page.getByRole('link', { name: 'Jouer', exact: true }).click();
   await page.getByRole('button', { name: 'Jouer le niveau 1', exact: true }).click();
-  const openCatalog = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if (await openCatalog.isVisible()) await openCatalog.click();
   await page.getByRole('button', { name: /^Poutre courte/u }).click();
 
   const placement = tutorial.solution?.placements[0];

@@ -5,8 +5,9 @@ import { encodeShareFragment } from '../src/infrastructure/level-share/level-sha
 import { decodeLevelFile } from '../src/infrastructure/level-file/level-file-codec';
 import { decodePlayerConstructionRow } from '../src/infrastructure/player-construction/player-construction-codec';
 import { browserRows, storedDraft } from './indexed-db-fixture';
+import { navigateTo } from './app-navigation';
 
-const clickWorld = async (page: Page, x: number, y: number) => {
+const screenPoint = async (page: Page, x: number, y: number) => {
   const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
   const box = await canvas.boundingBox();
   const origin = await canvas.getAttribute('data-camera-origin');
@@ -14,16 +15,29 @@ const clickWorld = async (page: Page, x: number, y: number) => {
   const [ox, oy] = (origin ?? '').split(',').map(Number);
   if (box === null || ox === undefined || oy === undefined || !(zoom > 0))
     throw new Error('Caméra indisponible');
-  await page.mouse.click(box.x + (x - ox) * zoom, box.y + (y - oy) * zoom);
+  return { x: box.x + (x - ox) * zoom, y: box.y + (y - oy) * zoom, zoom };
+};
+const clickWorld = async (page: Page, x: number, y: number) => {
+  const point = await screenPoint(page, x, y);
+  await page.mouse.click(point.x, point.y);
+};
+const dragWorld = async (
+  page: Page,
+  start: { readonly x: number; readonly y: number },
+  target: { readonly x: number; readonly y: number },
+) => {
+  const from = await screenPoint(page, start.x, start.y);
+  const to = await screenPoint(page, target.x, target.y);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await page.mouse.up();
 };
 const catalogue = async (page: Page, name: RegExp) => {
-  const open = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if (await open.isVisible()) await open.click();
   await page.getByRole('button', { name }).click();
 };
 const menu = async (page: Page, name: string) => {
-  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-  await page.getByRole('button', { name, exact: true }).click();
+  await navigateTo(page, name);
 };
 const construction = async (
   page: Page,
@@ -82,9 +96,7 @@ test('C3 : navigation et reload reprennent la construction, simulation et victoi
   await expect(page.getByRole('region', { name: 'Niveau 1', exact: true })).toContainText('Résolu');
 });
 
-test('C3 : Atelier conserve déplacement, rotation, propriété et métadonnées engagés', async ({
-  page,
-}) => {
+test('C7b : Atelier conserve déplacement, rôle joueur et métadonnées engagés', async ({ page }) => {
   const decoded = decodeLevelFile(await readFile('src/content/levels/tuto-1.json', 'utf8'));
   if (decoded.status !== 'ok') throw new Error('Tutoriel invalide');
   const point = decoded.document.solution?.placements[0]?.transform.position;
@@ -93,16 +105,24 @@ test('C3 : Atelier conserve déplacement, rotation, propriété et métadonnées
   await page.getByRole('button', { name: 'Modifier le niveau 1', exact: true }).click();
   await catalogue(page, /^Poutre moyenne/u);
   await clickWorld(page, point.x, point.y);
-  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).click();
-  await page.getByRole('button', { name: 'Vers la droite' }).click();
-  await page.getByRole('button', { name: 'Rotation positive' }).click();
-  await page.getByRole('combobox', { name: 'Longueur de la poutre' }).selectOption('short');
+  const sizeHandle = page.getByRole('button', { name: 'Redimensionner la poutre' });
+  await expect(sizeHandle).toBeVisible();
+  await sizeHandle.press('ArrowLeft');
+  await clickWorld(page, point.x, point.y);
+  const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
+  await expect(objectBar).toBeVisible();
+  const toPlace = objectBar.getByRole('button', { name: 'À placer' });
+  await toPlace.click();
+  await expect(toPlace).toHaveAttribute('aria-pressed', 'true');
+  const movedPoint = { x: point.x + 0.3, y: point.y };
+  await dragWorld(page, point, movedPoint);
   await expect
     .poll(
       async () =>
-        (await storedDraft(page, 'tuto-1-brouillon'))?.document.objects.at(-1)?.transform.rotation,
+        (await storedDraft(page, 'tuto-1-brouillon'))?.document.objects.at(-1)?.transform.position
+          .x,
     )
-    .toBeCloseTo(Math.PI / 12);
+    .toBeCloseTo(movedPoint.x);
   const edited = await storedDraft(page, 'tuto-1-brouillon');
   await menu(page, 'Mes niveaux');
   await page.goto('/editor?draft=tuto-1-brouillon');
@@ -111,11 +131,16 @@ test('C3 : Atelier conserve déplacement, rotation, propriété et métadonnées
   const beam = edited?.document.objects.at(-1);
   if (beam === undefined) throw new Error('Poutre absente');
   await clickWorld(page, beam.transform.position.x, beam.transform.position.y);
-  await expect(page.getByRole('combobox', { name: 'Longueur de la poutre' })).toHaveValue('short');
-  // Revenir à la solution physique pour rendre les métadonnées exportables.
-  await page.getByRole('button', { name: 'Rotation négative' }).click();
-  await page.getByRole('button', { name: 'Vers la gauche' }).click();
-  await page.getByRole('button', { name: 'À placer', exact: true }).click();
+  await expect(page.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Redimensionner la poutre' })).toBeVisible();
+  await dragWorld(page, movedPoint, point);
+  await expect
+    .poll(
+      async () =>
+        (await storedDraft(page, 'tuto-1-brouillon'))?.document.objects.at(-1)?.transform.position
+          .x,
+    )
+    .toBeCloseTo(point.x);
   await page.getByRole('button', { name: 'Exporter le niveau' }).click();
   const dialog = page.getByRole('dialog', { name: 'Exporter le niveau' });
   await expect(dialog.getByText(/Puzzle vérifié/u)).toBeVisible({ timeout: 20_000 });
@@ -128,7 +153,7 @@ test('C3 : Atelier conserve déplacement, rotation, propriété et métadonnées
   const saved = await storedDraft(page, 'tuto-1-brouillon');
   await dialog.getByRole('button', { name: 'Fermer l’export' }).click();
   await page.reload();
-  await expect(page.getByRole('banner')).toContainText('Pont conservé');
+  await expect(page.locator('.toolbar-title')).toHaveText('Pont conservé');
   expect((await storedDraft(page, 'tuto-1-brouillon'))?.document).toEqual(saved?.document);
 });
 

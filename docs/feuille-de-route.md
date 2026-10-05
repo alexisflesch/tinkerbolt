@@ -447,9 +447,10 @@ Pour chacune :
   d’avancer l’horloge simulée : le lancement peut attendre la sauvegarde
   asynchrone. L’échec précédemment observé à 1280 × 720 disparaît avec cette
   synchronisation, sans délai arbitraire.
-- `pnpm check` et la recette visuelle auteur restent en attente : la gate
-  complète contient des scénarios qui écrivent des captures et l’instruction
-  active demande de n’en produire aucune. C10 n’est donc pas clôturé.
+- `pnpm check` passe après la reprise des tests C7b/C7c : 1 383 tests Vitest
+  et 103 E2E v1 ; détail dans `etat.md` et les entrées C7b/C7c ci-dessous.
+  Seule la recette visuelle de l’auteur reste en attente selon l’instruction
+  active. C10 n’est donc pas clôturé.
 - Avant de clôturer C10, traiter les demandes auteur du 5 octobre consignées
   dans `todo.05.10.md` : cadrage de scène conservé à la sauvegarde pour rétablir
   le zoom à l’ouverture, intégration de deux nouveaux niveaux, cohérence de
@@ -1100,7 +1101,7 @@ conversation.
   l’application (campagne, Mes niveaux, plateau, splash) garde l’ancienne
   identité. `public/assets/bolt/bolt-explaining.webp` n’est plus affiché.
 
-### C7b — Écrans de plateau en grand format — implémenté, tests à reprendre — 5 octobre 2026
+### C7b — Écrans de plateau en grand format — implémenté, tests repris — 5 octobre 2026
 
 - **Origine.** Suite de C7a, demandée par l’auteur : donner le plus de place
   possible au plateau et garder une identité cohérente entre les écrans.
@@ -1124,9 +1125,17 @@ conversation.
   surlignage et `WireBar` (« Fixe / À placer », débrancher). Catalogue en
   tuiles sur deux colonnes, description en infobulle dans l’atelier, quantité
   conservée pour le joueur. Accueil : boutons à plat.
-- **Tests.** Seul `wire-hit-test.test.ts` est ajouté. Sur décision de l’auteur,
-  la reprise des tests unitaires et E2E touchés par C7a et C7b est confiée à
-  Luna ; `pnpm check` n’est pas vert tant qu’elle n’est pas faite.
+- **Tests repris.** Les tests d’application et E2E couvrent la coque commune,
+  le catalogue toujours visible, les réglages ouverts au clic sur un objet,
+  les actions de simulation dans la barre et les formats compacts. Les anciens
+  contrats du tiroir repliable, du rail de propriétés et de l’ouverture des
+  réglages après une pose ont été remplacés par les comportements de C7b.
+  L’annulation d’une pose vérifie maintenant le pixel sous l’objet plutôt que
+  l’identité de toute la capture, qui incluait aussi cadrage et sélection.
+  La gate complète passe : 1 383 Vitest et 103 E2E v1. À 320 px, elle a aussi
+  révélé un débordement réel des actions de l’en-tête ; l’espacement et la
+  largeur du logo sont ajustés. La validation visuelle de ce changement reste
+  à l’auteur, sans captures ouvertes dans cette reprise.
 - **Points ouverts.** Touche Suppr sur la sélection non câblée. Longueur de
   poutre : uniquement par la poignée en disposition large. Sélection d’un objet
   au clavier, que portait la liste « Objets sur le plateau », sans équivalent
@@ -1145,7 +1154,7 @@ conversation.
   à supprimer avec la reprise des tests. Recoupe M0 à M3, dont les gestes et
   contrats restent à réconcilier avec `mobile-editor-interactions.md`.
 
-### C7c — Pages de contenu — implémenté, tests à reprendre — 5 octobre 2026
+### C7c — Pages de contenu — implémenté, tests repris — 5 octobre 2026
 
 - **Maquettes.** `docs/maquettes/identite/campagne.html` et `mes-niveaux.html`
   (une feuille de style commune), validées après reprise : bord déchiré à peine
@@ -1161,9 +1170,11 @@ conversation.
   `LevelSection` ne changent pas de structure. Paramètres et les autres pages
   titrées héritent du même habillage. Tuiles du catalogue de l’atelier : bord
   adouci de la même façon.
-- **Points ouverts.** Tests à reprendre avec ceux de C7a et C7b. Les panneaux
-  de Paramètres et les messages de Mes niveaux sont restylés sans vérification
-  visuelle. Dialogues inchangés.
+- **Tests repris.** Les tests de navigation, des pages de contenu, des dialogues
+  et des parcours E2E ont été réalignés sur les nouveaux titres, actions et
+  cartes, sans supprimer les contrats de navigation ou de persistance.
+- **Points ouverts.** La validation visuelle des panneaux de Paramètres et des
+  messages de Mes niveaux reste à l’auteur. Dialogues inchangés.
 
 ### C7c, retouches — en-tête, simulation, dialogues — 5 octobre 2026
 

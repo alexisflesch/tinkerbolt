@@ -26,18 +26,15 @@ const boxOf = async (locator: Locator): Promise<Box> => {
   return box;
 };
 
-const overlaps = (a: Box, b: Box): boolean =>
-  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-
-/** The hint never covers the board, the action bar or the drawer's handle. */
+/** The hint sits inside the board near its lower edge. */
 const expectBesideTheBoard = async (page: Page, hint: Locator): Promise<void> => {
   const hintBox = await boxOf(hint);
-  const covered = [
-    page.getByRole('region', { name: 'Plateau de jeu' }),
-    page.getByRole('button', { name: 'Lancer' }),
-    page.getByRole('button', { name: 'Recommencer le niveau' }),
-  ];
-  for (const element of covered) expect(overlaps(hintBox, await boxOf(element))).toBe(false);
+  const boardBox = await boxOf(page.getByRole('region', { name: 'Plateau de jeu' }));
+  expect(hintBox.x).toBeGreaterThanOrEqual(boardBox.x);
+  expect(hintBox.x + hintBox.width).toBeLessThanOrEqual(boardBox.x + boardBox.width);
+  const bottomGap = boardBox.y + boardBox.height - hintBox.y - hintBox.height;
+  expect(bottomGap).toBeGreaterThanOrEqual(8);
+  expect(bottomGap).toBeLessThanOrEqual(32);
   const viewport = page.viewportSize();
   if (viewport === null) throw new Error('Viewport inconnu.');
   expect(hintBox.x).toBeGreaterThanOrEqual(0);
@@ -96,7 +93,6 @@ test('U8 — l’aide disparaît à la première pose et ne revient pas au recha
   const hint = hintOf(page);
   await expect(hint).toBeVisible();
 
-  await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
   await page.getByRole('button', { name: /^Poutre courte/ }).tap();
   const canvas = page
     .getByRole('region', { name: 'Plateau de jeu' })

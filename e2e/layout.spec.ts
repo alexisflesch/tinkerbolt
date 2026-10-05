@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { navigateTo } from './app-navigation';
 
 const essentialActionNames = [
-  'Ouvrir le menu',
   'Voir l’objectif',
   'Annuler',
   'Rétablir',
@@ -11,10 +11,14 @@ const essentialActionNames = [
   'Zoom avant',
 ] as const;
 
+const actionsAtViewport = (width: number): readonly string[] =>
+  width <= 359
+    ? essentialActionNames.filter((name) => !['Zoom arrière', 'Zoom avant'].includes(name))
+    : essentialActionNames;
+
 const openWorkshop = async (page: Page): Promise<void> => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-  await page.getByRole('button', { name: 'Atelier', exact: true }).click();
+  await navigateTo(page, 'Atelier');
 };
 
 const bounds = async (locator: Locator) => {
@@ -47,60 +51,57 @@ const expectNoHorizontalOverflow = async (page: Page): Promise<void> => {
     .toBe(true);
 };
 
-const expectStableSceneWhileTogglingCatalogue = async (
+const expectStableSceneWhileChoosingObject = async (
   page: Page,
   viewport: { readonly width: number; readonly height: number },
 ): Promise<void> => {
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
   const before = await bounds(board);
-  const toggle = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-
-  await toggle.click();
-  await expect(page.getByRole('button', { name: 'Replier le catalogue' })).toBeVisible();
-  const afterOpening = await bounds(board);
-
-  expect(afterOpening.x).toBeCloseTo(before.x, 0);
-  expect(afterOpening.y).toBeCloseTo(before.y, 0);
-  expect(afterOpening.width).toBeCloseTo(before.width, 0);
-  expect(afterOpening.height).toBeCloseTo(before.height, 0);
-
-  await page.getByRole('button', { name: 'Fermer le catalogue' }).click();
-  await expect(page.getByRole('button', { name: 'Ouvrir le catalogue' })).toBeVisible();
+  const card = page.getByRole('button', { name: 'Poutre moyenne' });
+  await card.click();
+  await expect(card).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Annuler le placement' })).toBeVisible();
+  const afterChoosing = await bounds(board);
+  expect(afterChoosing.x).toBeCloseTo(before.x, 0);
+  expect(afterChoosing.y).toBeCloseTo(before.y, 0);
+  expect(afterChoosing.width).toBeCloseTo(before.width, 0);
+  expect(afterChoosing.height).toBeCloseTo(before.height, 0);
+  await page.getByRole('button', { name: 'Annuler le placement' }).click();
+  await expect(card).toHaveAttribute('aria-pressed', 'false');
   await expectInViewport(board, viewport);
 };
 
 const placeAndSelectMediumBeam = async (page: Page): Promise<Locator> => {
-  const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if ((await openCatalogue.count()) > 0) await openCatalogue.click();
-
   await page.getByRole('button', { name: 'Poutre moyenne' }).click();
-  const board = page.getByRole('region', { name: 'Plateau de jeu' });
-  const boardBounds = await bounds(board);
-  await board.click({
-    position: { x: boardBounds.width / 2, y: boardBounds.height / 2 },
-  });
+  const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
+  const canvasBounds = await bounds(canvas);
+  const center = {
+    x: canvasBounds.x + canvasBounds.width / 2,
+    y: canvasBounds.y + canvasBounds.height / 2,
+  };
+  // The scene frame owns pointer events and forwards them to the renderer;
+  // targeting the nested canvas locator is intercepted by its parent.
+  await page.mouse.click(center.x, center.y);
+  await page.mouse.click(center.x, center.y);
 
-  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).click();
-  const properties = page.getByRole('region', { name: 'Propriétés de Poutre' });
-  await expect(properties).toBeVisible();
-  return properties;
+  const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
+  await expect(objectBar).toBeVisible();
+  return objectBar;
 };
 
-const expectStableSceneWhileTogglingProperties = async (
+const expectStableSceneWithObjectBar = async (
   page: Page,
   viewport: { readonly width: number; readonly height: number },
 ): Promise<void> => {
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
   const before = await bounds(board);
-
-  const closeProperties = page.getByRole('button', { name: 'Fermer les propriétés' });
-  await expect(closeProperties).toBeVisible();
-  await closeProperties.click();
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toHaveCount(0);
-  const openProperties = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  await expect(openProperties).toBeVisible();
-  await openProperties.click();
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+  const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
+  const barBounds = await bounds(objectBar);
+  expect(barBounds.x).toBeGreaterThanOrEqual(0);
+  expect(barBounds.y).toBeGreaterThanOrEqual(0);
+  expect(barBounds.x + barBounds.width).toBeLessThanOrEqual(viewport.width + 1);
+  expect(barBounds.y + barBounds.height).toBeLessThanOrEqual(viewport.height + 1);
+  await expect(page.getByRole('region', { name: /^Propriétés de /u })).toHaveCount(0);
 
   const after = await bounds(board);
   expect(after.x).toBeCloseTo(before.x, 0);
@@ -110,12 +111,12 @@ const expectStableSceneWhileTogglingProperties = async (
   await expectInViewport(board, viewport);
 };
 
-test.describe('D4 — composition des grands formats', () => {
+test.describe('C7b — composition des grands formats', () => {
   [
     { width: 1440, height: 900 },
     { width: 1180, height: 820 },
   ].forEach((viewport) => {
-    test(`conserve les rails et la scène centrale à ${String(viewport.width)} × ${String(viewport.height)}`, async ({
+    test(`conserve le catalogue latéral et la scène à ${String(viewport.width)} × ${String(viewport.height)}`, async ({
       page,
     }) => {
       await page.setViewportSize(viewport);
@@ -126,7 +127,7 @@ test.describe('D4 — composition des grands formats', () => {
       const catalogueBounds = await bounds(catalogue);
       const boardBounds = await bounds(board);
 
-      // Le catalogue devient un rail gauche : pas un overlay couvrant le plateau.
+      // Le catalogue reste un rail gauche, sans recouvrir le plateau.
       expect(catalogueBounds.x).toBeLessThan(boardBounds.x);
       expect(catalogueBounds.width).toBeLessThan(viewport.width / 2);
       // L'objectif n'a plus de carte permanente : il s'ouvre à la demande.
@@ -134,59 +135,52 @@ test.describe('D4 — composition des grands formats', () => {
       await expectInViewport(board, viewport);
       await expectNoHorizontalOverflow(page);
 
-      for (const actionName of essentialActionNames) {
+      for (const actionName of actionsAtViewport(viewport.width)) {
         await expectInViewport(page.getByRole('button', { name: actionName }), viewport);
       }
 
-      const sceneBeforeProperties = await bounds(board);
-      const properties = await placeAndSelectMediumBeam(page);
-      const propertiesBounds = await bounds(properties);
-      const sceneAfterProperties = await bounds(board);
-      expect(propertiesBounds.x).toBeGreaterThanOrEqual(
-        sceneAfterProperties.x + sceneAfterProperties.width,
-      );
-      expect(sceneAfterProperties.x).toBeCloseTo(sceneBeforeProperties.x, 0);
-      expect(sceneAfterProperties.y).toBeCloseTo(sceneBeforeProperties.y, 0);
-      expect(sceneAfterProperties.width).toBeCloseTo(sceneBeforeProperties.width, 0);
-      expect(sceneAfterProperties.height).toBeCloseTo(sceneBeforeProperties.height, 0);
+      const sceneBeforePlacement = await bounds(board);
+      const objectBar = await placeAndSelectMediumBeam(page);
+      await expect(objectBar.getByRole('group', { name: 'Pour le joueur' })).toBeVisible();
+      const sceneAfterPlacement = await bounds(board);
+      expect(sceneAfterPlacement.x).toBeCloseTo(sceneBeforePlacement.x, 0);
+      expect(sceneAfterPlacement.y).toBeCloseTo(sceneBeforePlacement.y, 0);
+      expect(sceneAfterPlacement.width).toBeCloseTo(sceneBeforePlacement.width, 0);
+      expect(sceneAfterPlacement.height).toBeCloseTo(sceneBeforePlacement.height, 0);
     });
   });
 });
 
-test.describe('D4 — tiroirs superposés compacts', () => {
+test.describe('C7b — catalogue persistant aux formats compacts', () => {
   [
     { width: 820, height: 1180 },
     { width: 390, height: 844 },
     { width: 320, height: 568 },
   ].forEach((viewport) => {
-    test(`emploie un bottom sheet sans déplacer la scène à ${String(viewport.width)} × ${String(viewport.height)}`, async ({
+    test(`garde le catalogue disponible sans déplacer la scène à ${String(viewport.width)} × ${String(viewport.height)}`, async ({
       page,
     }) => {
       await page.setViewportSize(viewport);
       await openWorkshop(page);
 
       const catalogue = page.getByRole('region', { name: 'Objets disponibles' });
-      await expect(catalogue).toHaveCSS('position', 'fixed');
+      await expect(catalogue).toHaveCSS('position', 'relative');
       const catalogueBounds = await bounds(catalogue);
-      expect(catalogueBounds.y + catalogueBounds.height).toBeCloseTo(viewport.height, 0);
-      expect(catalogueBounds.width).toBeCloseTo(viewport.width, 0);
-
-      await expectStableSceneWhileTogglingCatalogue(page, viewport);
-      const properties = await placeAndSelectMediumBeam(page);
-      await expect(properties).toHaveCSS('position', 'fixed');
-      const propertiesBounds = await bounds(properties);
-      expect(propertiesBounds.y + propertiesBounds.height).toBeCloseTo(viewport.height, 0);
-      expect(propertiesBounds.width).toBeCloseTo(viewport.width, 0);
-      await expectStableSceneWhileTogglingProperties(page, viewport);
+      expect(catalogueBounds.x).toBeGreaterThanOrEqual(0);
+      expect(catalogueBounds.y).toBeGreaterThanOrEqual(0);
+      expect(catalogueBounds.x + catalogueBounds.width).toBeLessThanOrEqual(viewport.width + 1);
+      await expectStableSceneWhileChoosingObject(page, viewport);
+      await placeAndSelectMediumBeam(page);
+      await expectStableSceneWithObjectBar(page, viewport);
       await expectNoHorizontalOverflow(page);
-      for (const actionName of essentialActionNames) {
+      for (const actionName of actionsAtViewport(viewport.width)) {
         await expectInViewport(page.getByRole('button', { name: actionName }), viewport);
       }
     });
   });
 });
 
-test('D4 — le bouton de fermeture appartient au tiroir des propriétés sur petit portrait', async ({
+test('C7b — les réglages de l’objet flottent près du plateau sur petit portrait', async ({
   page,
 }) => {
   const viewport = { width: 390, height: 844 };
@@ -194,25 +188,16 @@ test('D4 — le bouton de fermeture appartient au tiroir des propriétés sur pe
   await openWorkshop(page);
 
   const properties = await placeAndSelectMediumBeam(page);
-  const closeProperties = properties.getByRole('button', { name: 'Fermer les propriétés' });
-
-  // Le contrôle doit être annoncé dans la région qu’il ferme, pas dans un
-  // conteneur inspecteur distinct.
-  await expect(closeProperties).toHaveCount(1);
-
-  const propertiesBounds = await bounds(properties);
-  const closePropertiesBounds = await bounds(closeProperties);
-  expect(closePropertiesBounds.x).toBeGreaterThanOrEqual(propertiesBounds.x);
-  expect(closePropertiesBounds.y).toBeGreaterThanOrEqual(propertiesBounds.y);
-  expect(closePropertiesBounds.x + closePropertiesBounds.width).toBeLessThanOrEqual(
-    propertiesBounds.x + propertiesBounds.width + 1,
-  );
-  expect(closePropertiesBounds.y + closePropertiesBounds.height).toBeLessThanOrEqual(
-    propertiesBounds.y + propertiesBounds.height + 1,
-  );
+  await expect(properties).toBeVisible();
+  await expect(properties.getByRole('button', { name: 'À placer' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ouvrir les propriétés' })).toHaveCount(0);
+  const board = page.getByRole('region', { name: 'Plateau de jeu' });
+  const boardBounds = await bounds(board);
+  const barBounds = await bounds(properties);
+  expect(barBounds.y + barBounds.height).toBeLessThanOrEqual(boardBounds.y + boardBounds.height);
 });
 
-test('D4 — le scrim des propriétés ferme le tiroir sans déplacer le plateau', async ({ page }) => {
+test('C7b — le clic sur le plateau ferme les réglages sans déplacer la scène', async ({ page }) => {
   const viewport = { width: 390, height: 844 };
   await page.setViewportSize(viewport);
   await openWorkshop(page);
@@ -220,11 +205,9 @@ test('D4 — le scrim des propriétés ferme le tiroir sans déplacer le plateau
   const properties = await placeAndSelectMediumBeam(page);
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
   const before = await bounds(board);
-  const propertiesScrim = page.getByRole('button', { name: 'Fermer', exact: true });
-
-  // Le fond de fermeture doit être accessible et distinct du bouton du tiroir.
-  await expect(propertiesScrim).toHaveCount(1);
-  await propertiesScrim.click();
+  const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
+  const canvasBounds = await bounds(canvas);
+  await page.mouse.click(canvasBounds.x + 8, canvasBounds.y + 8);
   await expect(properties).toHaveCount(0);
 
   const after = await bounds(board);
@@ -235,32 +218,26 @@ test('D4 — le scrim des propriétés ferme le tiroir sans déplacer le plateau
   await expectInViewport(board, viewport);
 });
 
-test('D4 — le téléphone paysage utilise un tiroir latéral et garde un plateau haut', async ({
-  page,
-}) => {
+test('C7b — le téléphone paysage garde le catalogue et la scène visibles', async ({ page }) => {
   const viewport = { width: 844, height: 390 };
   await page.setViewportSize(viewport);
   await openWorkshop(page);
 
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
   const before = await bounds(board);
-  await page.getByRole('button', { name: 'Ouvrir le catalogue' }).click();
   const catalogue = page.getByRole('region', { name: 'Objets disponibles' });
   const catalogueBounds = await bounds(catalogue);
   const boardBounds = await bounds(board);
 
-  // Un tiroir latéral conserve la hauteur : il n'occupe pas toute la largeur
-  // et s'étend sur la hauteur disponible, à gauche ou à droite de la scène.
+  // En paysage téléphone, le catalogue reste un rail à gauche de la scène.
+  expect(catalogueBounds.x).toBeLessThan(boardBounds.x);
   expect(catalogueBounds.width).toBeLessThan(viewport.width / 2);
-  expect(catalogueBounds.height).toBeGreaterThanOrEqual(viewport.height - 1);
+  expect(catalogueBounds.height).toBeGreaterThanOrEqual(boardBounds.height - 1);
   expect(boardBounds.height).toBeGreaterThanOrEqual(viewport.height * 0.6);
 
-  await page.getByRole('button', { name: 'Fermer le catalogue' }).click();
-  const properties = await placeAndSelectMediumBeam(page);
-  const propertiesBounds = await bounds(properties);
-  expect(propertiesBounds.width).toBeLessThan(viewport.width / 2);
-  expect(propertiesBounds.height).toBeGreaterThanOrEqual(viewport.height - 1);
-  await expectStableSceneWhileTogglingProperties(page, viewport);
+  const objectBar = await placeAndSelectMediumBeam(page);
+  await expect(objectBar).toBeVisible();
+  await expectStableSceneWithObjectBar(page, viewport);
   const after = await bounds(board);
   expect(after.x).toBeCloseTo(before.x, 0);
   expect(after.y).toBeCloseTo(before.y, 0);
@@ -268,7 +245,7 @@ test('D4 — le téléphone paysage utilise un tiroir latéral et garde un plate
   expect(after.height).toBeCloseTo(before.height, 0);
 
   await expectNoHorizontalOverflow(page);
-  for (const actionName of essentialActionNames) {
+  for (const actionName of actionsAtViewport(viewport.width)) {
     await expectInViewport(page.getByRole('button', { name: actionName }), viewport);
   }
 });
@@ -301,8 +278,6 @@ test.describe('D4 — le mode placement ne déplace pas la scène', () => {
       const board = page.getByRole('region', { name: 'Plateau de jeu' });
       const before = await bounds(board);
 
-      const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-      if ((await openCatalogue.count()) > 0) await openCatalogue.click();
       await page.getByRole('button', { name: 'Poutre moyenne' }).click();
 
       // Le contrôle d'annulation du placement apparaît sans réserver une

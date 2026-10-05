@@ -2,14 +2,13 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { leverFootprint } from '../src/domain/family-geometry';
 import { ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS } from '../src/presentation/rotation-handle-metrics';
+import { navigateTo } from './app-navigation';
 
 const openWorkshop = async (page: Page): Promise<void> => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-  await page.getByRole('button', { name: 'Atelier', exact: true }).click();
+  await navigateTo(page, 'Atelier');
   await expect(page).toHaveURL(/\/editor$/u);
   await expect(page.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
 };
 
 const boardBounds = async (board: Locator) => {
@@ -45,55 +44,27 @@ const screenPointForWorld = async (
 };
 
 const closeCompactProperties = async (page: Page): Promise<void> => {
-  const isCompact = await page.evaluate(() => window.matchMedia('(max-width: 999px)').matches);
-  if (!isCompact) return;
+  await expect(page.getByRole('region', { name: /^Propriétés de /u })).toHaveCount(0);
+};
 
-  const close = page.getByRole('button', { name: 'Fermer les propriétés' });
-  const open = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  // The shared C4a panel may be open after an explicit request; wait for its
-  // stable state before sending the next touch to the board.
-  await expect(close.or(open)).toBeVisible();
-  if (await close.isVisible()) {
-    await close.tap();
-    await expect(close.first()).toBeHidden();
-    await expect(page.locator('.context-panel')).toHaveCount(0);
-    await expect(open).toBeVisible();
-  }
+const clearBoardSelection = async (page: Page, canvas: Locator): Promise<void> => {
+  const bounds = await canvas.boundingBox();
+  expect(bounds).not.toBeNull();
+  if (bounds === null) throw new Error('Le canvas du plateau doit avoir une zone mesurable.');
+  await page.mouse.click(bounds.x + 24, bounds.y + 24);
+  await expect(page.getByRole('toolbar', { name: /^Réglages de /u })).toHaveCount(0);
 };
 
 const waitForCatalogueToCollapse = async (page: Page): Promise<void> => {
   const drawer = page.getByRole('region', { name: 'Objets disponibles' });
-  await expect(drawer).toHaveClass(/object-drawer-collapsed/u);
-  const isCompactPortrait = await page.evaluate(
-    () => window.matchMedia('(orientation: portrait) and (max-width: 999px)').matches,
-  );
-  if (!isCompactPortrait) return;
-
-  const expectedHeight = await drawer.evaluate((element) =>
-    Number.parseFloat(getComputedStyle(element).getPropertyValue('--drawer-peek-height')),
-  );
-  expect(Number.isFinite(expectedHeight)).toBe(true);
-  await expect
-    .poll(
-      () =>
-        drawer.evaluate(
-          (element, height) => Math.abs(element.getBoundingClientRect().height - height) < 1,
-          expectedHeight,
-        ),
-      { timeout: 1_000 },
-    )
-    .toBe(true);
+  await expect(drawer).toBeVisible();
 };
 
 const openSelectedProperties = async (page: Page): Promise<void> => {
-  const open = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  if ((await open.count()) > 0 && (await open.first().isVisible())) await open.first().click();
+  await expect(page.getByRole('toolbar', { name: /^Réglages de /u })).toBeVisible();
 };
 
 const chooseMediumBeam = async (page: Page): Promise<void> => {
-  const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if ((await openCatalogue.count()) > 0) await openCatalogue.click();
-
   const beam = page.getByRole('button', { name: 'Poutre moyenne' });
   await expect(beam).toBeVisible();
   await beam.click();
@@ -104,11 +75,11 @@ const placeBeamAtBoardCenter = async (page: Page): Promise<Locator> => {
   const bounds = await boardBounds(board);
   const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
   await page.mouse.click(center.x, center.y);
-
+  // Placement leaves the floating settings closed; a plain click on the
+  // already placed object opens them.
+  await page.mouse.click(center.x, center.y);
   await openSelectedProperties(page);
-  const properties = page.getByRole('region', { name: 'Propriétés de Poutre' });
-  await expect(properties).toBeVisible();
-  return properties;
+  return page.getByRole('toolbar', { name: 'Réglages de Poutre' });
 };
 
 const dragTouchPoints = async (
@@ -194,8 +165,9 @@ const runConstructionInteractions = async (page: Page): Promise<void> => {
   // visible on the canvas, selected through the same user input as a player.
   await page.mouse.click(start.x, start.y);
   await openSelectedProperties(page);
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
   await closeCompactProperties(page);
+  await clearBoardSelection(page, canvas);
 
   const beforeDrag = await canvasPixels(canvas);
   const delta = Math.min(80, Math.max(28, beforeMoveBounds.width * 0.15));
@@ -210,6 +182,7 @@ const runConstructionInteractions = async (page: Page): Promise<void> => {
   await page.mouse.down();
   await page.mouse.move(target.x, target.y, { steps: 8 });
   await page.mouse.up();
+  await clearBoardSelection(page, canvas);
 
   const undo = page.getByRole('button', { name: 'Annuler', exact: true });
   const redo = page.getByRole('button', { name: 'Rétablir', exact: true });
@@ -222,33 +195,33 @@ const runConstructionInteractions = async (page: Page): Promise<void> => {
   // the post-drag rendering.
   await undo.click();
   await expect(redo).toBeEnabled();
+  await clearBoardSelection(page, canvas);
   await waitForCanvasToMatch(canvas, beforeDrag);
 
   await redo.click();
   await expect(undo).toBeEnabled();
   await expect(redo).toBeDisabled();
+  await clearBoardSelection(page, canvas);
   await waitForCanvasToMatch(canvas, afterDrag);
 
+  await page.mouse.click(target.x, target.y);
   await openSelectedProperties(page);
-  const properties = page.getByRole('region', { name: 'Propriétés de Poutre' });
-  await expect(properties).toBeVisible();
-  const size = properties.getByRole('combobox', { name: 'Longueur de la poutre' });
-  const beforeResize = await canvasPixels(canvas);
-  await size.selectOption('long');
-  await expect(size).toHaveValue('long');
-  const afterResize = await waitForCanvasToDiffer(canvas, beforeResize);
-
-  await properties.getByRole('button', { name: 'Supprimer la poutre', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toHaveCount(0);
-  await waitForCanvasToDiffer(canvas, afterResize);
+  const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
+  const toPlace = objectBar.getByRole('button', { name: 'À placer' });
+  await toPlace.click();
+  await expect(toPlace).toHaveAttribute('aria-pressed', 'true');
+  const afterRoleChange = await canvasPixels(canvas);
+  await objectBar.getByRole('button', { name: 'Supprimer la poutre', exact: true }).click();
+  await expect(objectBar).toHaveCount(0);
+  await waitForCanvasToDiffer(canvas, afterRoleChange);
 
   await expect(undo).toBeEnabled();
   await undo.click();
   // Removing clears the ephemeral selection. Select the restored beam again so
-  // the exact canvas comparison uses the same selected state as afterResize.
+  // the exact canvas comparison uses the same selected state as afterRoleChange.
   await page.mouse.click(target.x, target.y);
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
-  await waitForCanvasToMatch(canvas, afterResize);
+  await expect(objectBar).toBeVisible();
+  await waitForCanvasToMatch(canvas, afterRoleChange);
 };
 
 test('C3 — place, déplace, modifie et supprime une poutre dans Chromium desktop', async ({
@@ -267,8 +240,6 @@ test('L17b — tourne le levier de 90° dans chaque sens au tactile', async ({ p
     'La poignée tactile du levier est testée sur mobile.',
   );
   await openWorkshop(page);
-  const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if (await openCatalogue.count()) await openCatalogue.click();
   await page.getByRole('button', { name: 'Levier' }).click();
 
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
@@ -278,8 +249,6 @@ test('L17b — tourne le levier de 90° dans chaque sens au tactile', async ({ p
   if (bounds === null) throw new Error('Le canvas du plateau doit être visible.');
   const centre = await screenPointForWorld(canvas, { x: 8, y: 4.5 });
   await page.touchscreen.tap(centre.x, centre.y);
-  await openSelectedProperties(page);
-  await expect(page.getByRole('region', { name: 'Propriétés de Levier' })).toBeVisible();
   await closeCompactProperties(page);
   const initial = await canvasPixels(canvas);
   await canvas.screenshot({ path: 'test-results/levels/lever-rotation-0deg.png' });
@@ -371,12 +340,12 @@ test('U6 — remet l’atelier à zéro après confirmation au tactile', async (
 
   await chooseMediumBeam(page);
   await placeBeamAtBoardCenter(page);
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
 
   await activate(reset);
   await activate(dialog.getByRole('button', { name: 'Remettre l’atelier à zéro' }));
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Propriétés de Poutre' })).toHaveCount(0);
+  await expect(page.getByRole('toolbar', { name: 'Réglages de Poutre' })).toHaveCount(0);
 });
 
 test('U6 — permet de recommencer un puzzle depuis son document initial', async ({
@@ -456,9 +425,7 @@ test('U15 — relie un levier à un convoyeur par la carte Fil, au tactile', asy
   await openWorkshop(page);
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
   const canvas = board.getByRole('img', { name: 'Rendu du plateau' });
-  const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
   const pick = async (card: string): Promise<void> => {
-    if (await openCatalogue.isVisible()) await openCatalogue.tap();
     await page.getByRole('button', { name: card, exact: true }).tap();
     await waitForCatalogueToCollapse(page);
   };
@@ -482,8 +449,8 @@ test('U15 — relie un levier à un convoyeur par la carte Fil, au tactile', asy
   // L’appareil d’abord : l’ordre est libre.
   await tapWorld(11, 4.5);
   await expect(guide).toContainText('Choisis le levier ou le bouton qui le commande');
-  // Le premier objet est sélectionné sans ouvrir l’inspecteur compact sur le plateau.
-  await expect(page.getByRole('button', { name: 'Fermer les propriétés' })).toBeHidden();
+  // The wiring guide remains available with the catalogue while selecting endpoints.
+  await expect(page.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
   await tapWorld(4, 4.5);
   await expect(canvas).toHaveAttribute('data-wires', /^placement-\d+>placement-\d+$/u);
   const wired = await canvas.getAttribute('data-wires');
@@ -500,10 +467,10 @@ test('U15 — relie un levier à un convoyeur par la carte Fil, au tactile', asy
   await guide.getByRole('button', { name: 'Annuler le fil' }).tap();
   await expect(guide).toBeHidden();
   await expect(canvas).toHaveAttribute('data-wires', wired ?? '');
-  await tapWorld(4, 4.5);
-  const wiredPanel = page.getByRole('region', { name: 'Propriétés de Levier' });
-  await expect(wiredPanel.getByText(/^Fil du circuit A/)).toBeVisible();
-  const wireRole = wiredPanel.getByRole('group', { name: /Pour le joueur · fil/ });
+  await tapWorld(7.5, 4.5);
+  const wireBar = page.getByRole('toolbar', { name: 'Réglages du fil' });
+  await expect(wireBar).toBeVisible();
+  const wireRole = wireBar.getByRole('group', { name: 'Pour le joueur' });
   await wireRole.getByRole('button', { name: 'À placer' }).tap();
   for (const viewport of [
     { width: 390, height: 844 },

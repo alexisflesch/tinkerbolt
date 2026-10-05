@@ -1,5 +1,6 @@
 import { progressFixture, seedIndexedDB } from './indexed-db-fixture';
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { navigateTo } from './app-navigation';
 
 const HERO_TITLE = 'Amène la balle jusqu’au panier.';
 
@@ -71,50 +72,26 @@ test('présente l’accueil sans débordement et mène à la campagne au tactile
   await expect(page.getByRole('region', { name: 'Campagne' })).toBeVisible();
 });
 
-test('ouvre chaque destination et revient à l’accueil depuis le menu', async ({ page }) => {
+test('ouvre chaque destination et revient à l’accueil depuis la navigation', async ({ page }) => {
   await page.goto('/');
-  for (const { open, path } of [
-    {
-      open: () =>
-        page
-          .getByRole('navigation', { name: 'Explorer TinkerBolt' })
-          .getByRole('link', { name: /^Campagne/u }),
-      path: '/levels',
-    },
-    {
-      open: () =>
-        page
-          .getByRole('navigation', { name: 'Explorer TinkerBolt' })
-          .getByRole('link', { name: /^Atelier/u }),
-      path: '/editor',
-    },
-    {
-      open: () =>
-        page
-          .getByRole('navigation', { name: 'Explorer TinkerBolt' })
-          .getByRole('link', { name: /^Mes niveaux/u }),
-      path: '/my-levels',
-    },
-    { open: () => page.getByRole('link', { name: 'Créer un niveau' }), path: '/editor' },
-    {
-      open: () =>
-        page
-          .getByRole('navigation', { name: 'Navigation principale' })
-          .getByRole('link', { name: 'Mes niveaux' }),
-      path: '/my-levels',
-    },
-    {
-      open: () => page.getByRole('button', { name: 'Paramètres', exact: true }),
-      path: '/settings',
-    },
+  for (const { destination, path } of [
+    { destination: 'Campagne', path: '/levels' },
+    { destination: 'Atelier', path: '/editor' },
+    { destination: 'Mes niveaux', path: '/my-levels' },
+    { destination: 'Paramètres', path: '/settings' },
   ]) {
-    if (path === '/settings') await page.getByRole('button', { name: 'Ouvrir le menu' }).tap();
-    await open().tap();
+    await navigateTo(page, destination);
     await expect(page).toHaveURL(new RegExp(`${path}$`));
-    await page.getByRole('button', { name: 'Ouvrir le menu' }).tap();
-    await page.getByRole('button', { name: 'Accueil', exact: true }).tap();
+    await navigateTo(page, 'Accueil');
     await expect(page.getByRole('heading', { name: HERO_TITLE })).toBeVisible();
   }
+  await page.getByRole('link', { name: 'Créer un niveau' }).tap();
+  await expect(page).toHaveURL(/\/editor$/);
+
+  // Start a clean history sequence after the route coverage loop above.
+  await page.goto('/settings');
+  await navigateTo(page, 'Accueil');
+  await expect(page).toHaveURL(/\/$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/settings$/);
   await page.goForward();

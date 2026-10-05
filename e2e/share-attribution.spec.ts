@@ -47,7 +47,7 @@ test('partage avec un pseudo, refuse un pseudo invalide et le retient (M14)', as
 
   await page.setViewportSize({ width: 390, height: 844 });
   await openMachineDraft(page);
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=/u);
   await markBeamToPlace(page);
 
   await page.getByRole('button', { name: 'Exporter le niveau' }).tap();
@@ -94,7 +94,7 @@ test('partage avec un pseudo, refuse un pseudo invalide et le retient (M14)', as
   });
 
   await page.reload();
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=/u);
   await page.getByRole('button', { name: 'Exporter le niveau' }).tap();
   await expect(
     page
@@ -116,7 +116,7 @@ test('saisit une description au toucher et la retrouve dans le fichier (M14b)', 
 
   await page.setViewportSize({ width: 390, height: 844 });
   await openMachineDraft(page);
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=/u);
   await markBeamToPlace(page);
 
   await page.getByRole('button', { name: 'Exporter le niveau' }).tap();

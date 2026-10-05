@@ -169,8 +169,8 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
     window.history.replaceState(null, '', `/levels/${levelOneId}/play`);
     await renderStorageReady(<App progressRepository={progress} />);
 
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le catalogue' })),
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Poutre courte, quantité : 1' })),
@@ -181,7 +181,7 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
       flush(0);
       for (let frame = 1; frame <= 240; frame += 1) flush(frame * 1000);
     });
-    const result = screen.getByRole('region', { name: 'Résultat du niveau' });
+    const result = screen.getByRole('toolbar', { name: 'Actions de simulation' });
     const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
     await storageAction(() =>
       fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' })),

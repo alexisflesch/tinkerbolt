@@ -30,11 +30,10 @@ const boxOf = async (locator: Locator): Promise<Box> => {
 const overlaps = (a: Box, b: Box): boolean =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
-/** The invitation never covers the board nor its actions. */
-const expectBesideTheBoard = async (page: Page, invitation: Locator): Promise<void> => {
+/** Messages live at the board's lower edge; invitations keep clear of its actions. */
+const expectInvitationAwayFromActions = async (page: Page, invitation: Locator): Promise<void> => {
   const invitationBox = await boxOf(invitation);
   const covered = [
-    page.getByRole('region', { name: 'Plateau de jeu' }),
     page.getByRole('button', { name: 'Lancer' }),
     page.getByRole('button', { name: 'Recommencer le niveau' }),
   ];
@@ -50,6 +49,13 @@ const hideFirstLevelHint = async (page: Page): Promise<void> => {
 const storedPreferences = async (page: Page): Promise<unknown> => {
   return storedEnvelope(page, 'preferences', 'player');
 };
+
+const launchCampaign = (page: Page, width: number): Locator =>
+  width > 860
+    ? page.getByRole('link', { name: 'Jouer', exact: true })
+    : page
+        .getByRole('navigation', { name: 'Explorer TinkerBolt' })
+        .getByRole('link', { name: /^Campagne/u });
 
 let nextVersion = 0;
 
@@ -106,11 +112,11 @@ test.describe('mise à jour (U10)', () => {
     await expect(invitation).toContainText('Nouvelle version disponible.');
     await expect(invitation.getByRole('button', { name: 'Mettre à jour' })).toBeVisible();
 
-    await page.getByRole('link', { name: 'Jouer', exact: true }).tap();
+    await launchCampaign(page, 390).tap();
     await page.getByRole('button', { name: 'Jouer le niveau 1', exact: true }).tap();
     await expect(page.getByRole('button', { name: 'Lancer' })).toBeVisible();
     await expect(invitation).toBeVisible();
-    await expectBesideTheBoard(page, invitation);
+    await expectInvitationAwayFromActions(page, invitation);
 
     await page.getByRole('button', { name: 'Lancer' }).tap();
     await expect(invitation).toBeHidden();
@@ -145,11 +151,11 @@ test.describe('mise à jour (U10)', () => {
       await page.waitForTimeout(200);
       await shot('mise-a-jour-accueil');
 
-      await page.getByRole('link', { name: 'Jouer', exact: true }).click();
+      await launchCampaign(page, viewport.width).click();
       await page.getByRole('button', { name: 'Jouer le niveau 1', exact: true }).click();
       await expect(page.getByRole('button', { name: 'Lancer' })).toBeVisible();
       await expect(invitation).toBeVisible();
-      await expectBesideTheBoard(page, invitation);
+      await expectInvitationAwayFromActions(page, invitation);
       await page.waitForTimeout(200);
       await shot('mise-a-jour-plateau');
     }
@@ -185,7 +191,7 @@ test.describe('installation (U10)', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'TinkerBolt' })).toBeVisible();
     await offerInstall(page);
-    await expect(page.getByRole('link', { name: 'Jouer', exact: true })).toBeVisible();
+    await expect(launchCampaign(page, 390)).toBeVisible();
     await expect(invitation).toBeHidden();
   });
 

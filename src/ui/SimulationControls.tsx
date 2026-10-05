@@ -178,6 +178,7 @@ export function SimulationControls({
       className={
         desk === undefined ? 'workspace-toolbar' : 'workspace-toolbar workspace-toolbar-desk'
       }
+      role="toolbar"
       aria-label={
         session.phase === 'construction' ? 'Actions de construction' : 'Actions de simulation'
       }

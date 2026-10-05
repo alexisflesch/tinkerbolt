@@ -34,11 +34,9 @@ test('ouvre le premier tutoriel jouable avec son inventaire tactile', async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/levels/tuto-1/play');
 
-  await expect(page.getByText('Niveau 1 · Le petit pont')).toBeVisible();
-  await expect(page.getByText('Campagne', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/levels\/tuto-1\/play$/u);
   await expect(page.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
   const drawer = page.getByRole('region', { name: 'Objets disponibles' });
-  await drawer.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
   await expect(drawer.getByRole('button', { name: /Poutre courte/ })).toBeVisible();
   await expect(drawer.getByRole('button', { name: /Tremplin/ })).toHaveCount(0);
 });

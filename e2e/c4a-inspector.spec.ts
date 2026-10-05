@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS } from '../src/presentation/rotation-handle-metrics';
+import { navigateTo } from './app-navigation';
 
 const desktopFormats = [
   { width: 1440, height: 900 },
@@ -7,17 +8,14 @@ const desktopFormats = [
 ] as const;
 
 for (const viewport of desktopFormats) {
-  test(`C4a — le redimensionnement se fait par glissement, sans ouvrir le sélecteur (${String(viewport.width)} × ${String(viewport.height)})`, async ({
+  test(`C7b — le redimensionnement se fait par glissement, sans sélecteur (${String(viewport.width)} × ${String(viewport.height)})`, async ({
     page,
   }, testInfo) => {
-    test.skip(testInfo.project.name !== 'v1', 'Ce parcours vérifie l’inspecteur desktop.');
+    test.skip(testInfo.project.name !== 'v1', 'Ce parcours vérifie les poignées desktop.');
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-    await page.getByRole('button', { name: 'Atelier', exact: true }).click();
+    await navigateTo(page, 'Atelier');
 
-    const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-    if (await openCatalogue.isVisible()) await openCatalogue.click();
     await page.getByRole('button', { name: 'Poutre moyenne' }).click();
 
     const board = page.getByRole('region', { name: 'Plateau de jeu' });
@@ -28,28 +26,24 @@ for (const viewport of desktopFormats) {
       x: boardBounds.x + boardBounds.width / 2,
       y: boardBounds.y + boardBounds.height / 2,
     };
-    const properties = page.getByRole('region', { name: 'Propriétés de Poutre' });
-    const openProperties = page.getByRole('button', { name: 'Ouvrir les propriétés' });
+    const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
 
+    // Placement selects the beam but leaves its floating settings closed.
     await page.mouse.click(centre.x, centre.y);
-    await expect(properties).toHaveCount(0);
-    await expect(openProperties).toBeVisible();
+    await expect(objectBar).toHaveCount(0);
 
-    // Clicking the size handle alone does not open a selector or the panel.
+    // A plain click on the placed beam opens its floating settings.
+    await page.mouse.click(centre.x, centre.y);
+    await expect(objectBar).toBeVisible();
+
+    // Clicking the size handle does not open a selector or dismiss the panel.
     const sizeHandle = page.getByRole('button', { name: 'Redimensionner la poutre' });
     await expect
       .poll(() => sizeHandle.evaluate((handle) => getComputedStyle(handle, '::before').width))
       .toBe(`${String(ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS * 2)}px`);
     await sizeHandle.click();
-    await expect(properties).toHaveCount(0);
+    await expect(objectBar).toBeVisible();
     await expect(page.getByRole('combobox', { name: 'Longueur de la poutre' })).toHaveCount(0);
-
-    // A simple click on the object opens its properties; closing keeps the
-    // selection so the following drag starts from the same beam.
-    await page.mouse.click(centre.x, centre.y);
-    await expect(properties).toBeVisible();
-    await properties.getByRole('button', { name: 'Fermer les propriétés' }).click();
-    await expect(properties).toHaveCount(0);
 
     const canvas = board.getByRole('img', { name: 'Rendu du plateau' });
     const pixelsPerWorldUnit = Number(await canvas.getAttribute('data-camera-zoom'));
@@ -68,12 +62,7 @@ for (const viewport of desktopFormats) {
     await page.mouse.move(handleCentre.x + pixelsPerWorldUnit, handleCentre.y, { steps: 6 });
     await page.mouse.up();
 
-    await expect(properties).toHaveCount(0);
-    await expect(openProperties).toBeVisible();
-    await page.mouse.click(centre.x, centre.y);
-    await expect(properties).toBeVisible();
-    await expect(properties.getByRole('combobox', { name: 'Longueur de la poutre' })).toHaveValue(
-      'long',
-    );
+    await expect(objectBar).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Longueur de la poutre' })).toHaveCount(0);
   });
 }

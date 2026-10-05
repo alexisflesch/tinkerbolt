@@ -65,7 +65,9 @@ test('joue un niveau reçu, montre son auteur et enregistre la victoire (M10)', 
 
   await card.getByRole('button', { name: 'Jouer' }).tap();
   await expect(page).toHaveURL(/\/my-levels\/recu-[0-9a-f]{16}\/play$/u);
-  await expect(page.getByText('par Lili · d’après La chute (par Max)')).toBeVisible();
+  await expect(page.locator('.toolbar-title')).toContainText(
+    'par Lili · d’après La chute (par Max)',
+  );
   await captureFormats(page, 'received-header');
 
   await page.getByRole('button', { name: 'Lancer' }).tap();
@@ -104,7 +106,9 @@ test('joue quand même un fichier importé que le stockage plein n’a pas gard�
 
   await playAnyway.tap();
   await expect(page.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
-  await expect(page.getByText('par Lili · d’après La chute (par Max)')).toBeVisible();
+  await expect(page.locator('.toolbar-title')).toContainText(
+    'par Lili · d’après La chute (par Max)',
+  );
   await expect(
     page.getByRole('status').filter({ hasText: 'Ce niveau n’a pas été gardé sur cet appareil.' }),
   ).toBeVisible();

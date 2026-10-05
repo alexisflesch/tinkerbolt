@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { decodeLevelFile } from '../src/infrastructure/level-file/level-file-codec';
 import { decodeShareFragment } from '../src/infrastructure/level-share/level-share-codec';
+import { navigateTo } from './app-navigation';
 
 const formats = [
   { width: 1440, height: 900 },
@@ -34,14 +35,11 @@ const clickWorld = async (page: Page, point: { x: number; y: number }): Promise<
 };
 
 const chooseBeam = async (page: Page, label: string): Promise<void> => {
-  const open = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if (await open.isVisible()) await open.click();
   await page.getByRole('button', { name: new RegExp(`^${label}`) }).click();
 };
 
 const menu = async (page: Page, destination: string): Promise<void> => {
-  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-  await page.getByRole('button', { name: destination, exact: true }).click();
+  await navigateTo(page, destination);
 };
 
 // Read-only oracle: coordinates come from the shipped tutorial, validated by its codec.
@@ -92,15 +90,14 @@ test('V8 : joue, crée, partage, reçoit et remixe un vrai puzzle depuis un appa
   await dialog.getByRole('button', { name: 'Fermer l’export' }).click();
   await chooseBeam(page, 'Poutre moyenne');
   await clickWorld(page, point);
-  // C4a : la pose laisse le panneau fermé ; on l’ouvre pour régler la poutre.
-  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).click();
-  await page.getByRole('combobox', { name: 'Longueur de la poutre' }).selectOption('short');
-  await expect(page.getByRole('combobox', { name: 'Longueur de la poutre' })).toHaveValue('short');
-  await page.getByRole('button', { name: 'À placer', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'À placer', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  const sizeHandle = page.getByRole('button', { name: 'Redimensionner la poutre' });
+  await expect(sizeHandle).toBeVisible();
+  await sizeHandle.press('ArrowLeft');
+  await clickWorld(page, point);
+  const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
+  const toPlace = objectBar.getByRole('button', { name: 'À placer', exact: true });
+  await toPlace.click();
+  await expect(toPlace).toHaveAttribute('aria-pressed', 'true');
   await capture(page, 'atelier-puzzle');
   await page.getByRole('button', { name: 'Exporter le niveau' }).click();
   await expect(dialog.getByText(/Puzzle vérifié/u)).toBeVisible({ timeout: 20_000 });
@@ -165,11 +162,10 @@ test('V8 : joue, crée, partage, reçoit et remixe un vrai puzzle depuis un appa
     await receivedVictory.getByRole('button', { name: 'Remixer' }).click();
     await expect(receivedPage).toHaveURL(/\/editor\?draft=creation-/u);
     await clickWorld(receivedPage, point);
-    await expect(
-      receivedPage.getByRole('button', { name: 'À placer', exact: true }),
-    ).toHaveAttribute('aria-pressed', 'true');
-    await expect(receivedPage.getByRole('combobox', { name: 'Longueur de la poutre' })).toHaveValue(
-      'short',
+    const remixedBeamBar = receivedPage.getByRole('toolbar', { name: 'Réglages de Poutre' });
+    await expect(remixedBeamBar.getByRole('button', { name: 'À placer' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
     );
     await capture(receivedPage, 'remix-gagnant');
     await receivedPage.goto(link);

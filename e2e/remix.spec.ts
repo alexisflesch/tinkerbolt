@@ -104,7 +104,6 @@ test('reçoit, gagne, remixe, déplace un objet et exporte au toucher (M11)', as
     .getByRole('region', { name: 'Fixture U22' });
   await card.getByRole('button', { name: 'Jouer' }).tap();
 
-  await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
   await page.getByRole('button', { name: /^Poutre courte/u }).tap();
   await tapWorldPoint(page, machineBeam.x, machineBeam.y);
   await page.getByRole('button', { name: 'Lancer', exact: true }).tap();
@@ -115,7 +114,7 @@ test('reçoit, gagne, remixe, déplace un objet et exporte au toucher (M11)', as
 
   await dialog.getByRole('button', { name: 'Remixer' }).tap();
   await expect(page).toHaveURL(/\/editor\?draft=creation-[0-9a-f]+$/u);
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=creation-[0-9a-f]+$/u);
   const draftId = new URL(page.url()).searchParams.get('draft') ?? '';
   expect(await storedBeamX(page, draftId)).toBeCloseTo(machineBeam.x, 1);
   await captureFormats(page, 'remix-workshop');
@@ -124,9 +123,6 @@ test('reçoit, gagne, remixe, déplace un objet et exporte au toucher (M11)', as
   const target = await screenPoint(page, machineBeam.x + 0.3, machineBeam.y);
   await dragTouch(page, start, target);
   await expect.poll(() => storedBeamX(page, draftId)).toBeGreaterThan(machineBeam.x + 0.1);
-  const closeProperties = page.getByRole('button', { name: 'Fermer les propriétés' });
-  if (await closeProperties.isVisible()) await closeProperties.tap();
-
   await page.getByRole('button', { name: 'Exporter le niveau' }).tap();
   const exportDialog = page.getByRole('dialog', { name: 'Exporter le niveau' });
   await expect(exportDialog.getByText(/Puzzle vérifié/u)).toBeVisible({ timeout: 30_000 });

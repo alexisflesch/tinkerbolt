@@ -1,7 +1,37 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 import { levelDocumentSchema } from '../src/domain/level-document';
 import { encodeShareFragment } from '../src/infrastructure/level-share/level-share-codec';
+import { canvasPixelAt, expectedPaperPixel } from './board-paper';
+
+const familyCenters = [
+  { x: 2.5, y: 6 },
+  { x: 4, y: 6 },
+  { x: 5.8, y: 6 },
+  { x: 7.5, y: 6 },
+  { x: 3.8, y: 3 },
+  { x: 6, y: 3 },
+] as const;
+
+const renderedFamilies = async (canvas: Locator): Promise<boolean[]> => {
+  const [originX, originY] = ((await canvas.getAttribute('data-camera-origin')) ?? '')
+    .split(',')
+    .map(Number);
+  const zoom = Number(await canvas.getAttribute('data-camera-zoom'));
+  if (originX === undefined || originY === undefined || !(zoom > 0)) return [];
+
+  const rendered: boolean[] = [];
+  for (const center of familyCenters) {
+    const local = { x: (center.x - originX) * zoom, y: (center.y - originY) * zoom };
+    const actual = await canvasPixelAt(canvas, local);
+    const paper = await expectedPaperPixel(canvas, local);
+    rendered.push(
+      actual !== null &&
+        actual.slice(0, 3).some((channel, index) => Math.abs(channel - (paper[index] ?? 0)) > 18),
+    );
+  }
+  return rendered;
+};
 
 const locked = { move: false, rotate: false, remove: false } as const;
 const placed = (id: string, type: string, x: number, y: number, props: object = {}) => ({
@@ -44,27 +74,15 @@ for (const viewport of [
     test.skip(testInfo.project.name !== 'v1', 'Parcours partagé desktop de la v1.');
     await page.setViewportSize(viewport);
     await page.goto(`/shared${await encodeShareFragment(sharedLevel)}`);
-    await expect(page.getByText('Partage · Familles partagées')).toBeVisible();
+    await expect(page.getByText('Partage · Familles partagées')).toHaveText(
+      'Partage · Familles partagées',
+    );
 
     const canvas = page
       .getByRole('region', { name: 'Plateau de jeu' })
       .getByRole('img', { name: 'Rendu du plateau' });
     await expect(canvas).toBeVisible();
     await expect(canvas).toHaveAttribute('data-wires', 'button>fan');
-
-    const sceneObjects = page.getByRole('group', { name: 'Objets sur le plateau' });
-    await sceneObjects.getByRole('button', { name: 'Objets sur le plateau' }).click();
-    for (const name of [
-      'Caisse en bois',
-      'Caisse métallique',
-      'Électroaimant',
-      'Piston',
-      'Minuteur',
-      'Ventilateur',
-    ]) {
-      await expect(
-        sceneObjects.getByRole('button', { name: `Sélectionner ${name}` }),
-      ).toBeVisible();
-    }
+    await expect.poll(() => renderedFamilies(canvas)).toEqual(Array(6).fill(true));
   });
 }

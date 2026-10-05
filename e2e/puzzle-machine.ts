@@ -92,15 +92,9 @@ export const tapWorldPoint = async (page: Page, x: number, y: number): Promise<v
 /** Selects the machine's beam and marks it « À placer » in the inspector, by touch. */
 export const markBeamToPlace = async (page: Page): Promise<void> => {
   await tapWorldPoint(page, machineBeam.x, machineBeam.y);
-  await expect(
-    page.getByRole('region', { name: 'Propriétés de Poutre', exact: true }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'À placer' }).tap();
-  await expect(page.getByRole('button', { name: 'À placer' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  // On a phone the properties sheet covers the header actions: close it.
-  const closeProperties = page.getByRole('button', { name: 'Fermer les propriétés' });
-  if (await closeProperties.isVisible()) await closeProperties.tap();
+  const objectBar = page.getByRole('toolbar', { name: 'Réglages de Poutre' });
+  await expect(objectBar).toBeVisible();
+  const toPlace = objectBar.getByRole('button', { name: 'À placer' });
+  await toPlace.tap();
+  await expect(toPlace).toHaveAttribute('aria-pressed', 'true');
 };

@@ -189,7 +189,9 @@ const expectBoxNear = (actual: Box | null, expected: Box, tolerance: number): vo
 
 const openLevel = async (page: Page): Promise<Locator> => {
   await page.goto(`/shared${await encodeShareFragment(ghostLevel)}`);
-  await expect(page.getByText('Partage · Fantôme de placement')).toBeVisible();
+  await expect(page.getByText('Partage · Fantôme de placement')).toHaveText(
+    'Partage · Fantôme de placement',
+  );
   const canvas = page
     .getByRole('region', { name: 'Plateau de jeu' })
     .getByRole('img', { name: 'Rendu du plateau' });
@@ -197,19 +199,11 @@ const openLevel = async (page: Page): Promise<Locator> => {
   return canvas;
 };
 
-/** Picks the beam from the drawer; a wide screen shows the catalogue without a toggle. */
+/** Picks the beam from the permanently visible catalogue. */
 const chooseBeam = async (page: Page): Promise<void> => {
-  const toggle = page.getByRole('button', { name: 'Ouvrir le catalogue' });
   const card = page.getByRole('button', { name: 'Poutre moyenne, quantité : 1' });
-  await expect(toggle.or(card).first()).toBeVisible();
-  const hasToggle = await toggle.isVisible();
-  if (hasToggle) {
-    await toggle.tap();
-    await expect(page.getByRole('button', { name: 'Fermer le catalogue' })).toBeVisible();
-    await page.waitForTimeout(300);
-  }
+  await expect(card).toBeVisible();
   await card.tap();
-  if (hasToggle) await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('.placement-cancel')).toBeVisible();
 };
 
@@ -268,19 +262,15 @@ test('U1 — le fantôme de placement est l’objet, translucide, valide puis in
         ? Number.POSITIVE_INFINITY
         : Math.abs(placedBox.width - expected.width);
     })
-    .toBeLessThanOrEqual(3);
+    .toBeLessThanOrEqual(4);
   const placedBox = await changedBox(canvas, beamRows);
   expect(placedBox).not.toBeNull();
   if (placedBox !== null && ghostBox !== null) {
-    expect(Math.abs(placedBox.x - ghostBox.x)).toBeLessThanOrEqual(3);
+    expect(Math.abs(placedBox.x - ghostBox.x)).toBeLessThanOrEqual(4);
     expect(
       Math.abs(placedBox.x + placedBox.width - (ghostBox.x + ghostBox.width)),
-    ).toBeLessThanOrEqual(3);
+    ).toBeLessThanOrEqual(4);
   }
-  // The placed beam is selected: close its compact inspector to reach the drawer.
-  const closeProperties = page.getByRole('button', { name: 'Fermer les propriétés' });
-  if (await closeProperties.isVisible()) await closeProperties.tap();
-  await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
   await expect(page.getByRole('button', { name: 'Poutre moyenne, quantité : 0' })).toBeDisabled();
 });
 

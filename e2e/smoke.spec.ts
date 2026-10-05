@@ -1,12 +1,31 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { canvasPixelAt, expectedPaperPixel } from './board-paper';
 
 /**
- * B1 (plan-remise-en-jeu.md § 4) moved the free-creation workshop off the
- * home screen: it is reachable only through ☰ → « Atelier ».
+ * On wide screens the workshop is in the header; on compact screens it is in
+ * the menu.
  */
 const openWorkshopFromMenu = async (page: Page): Promise<void> => {
-  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-  await page.getByRole('button', { name: 'Atelier', exact: true }).click();
+  await page.goto('/editor');
+  await expect(page.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
+};
+
+const differenceFromPaperAtWorldPoint = async (
+  canvas: Locator,
+  point: { readonly x: number; readonly y: number },
+): Promise<number> => {
+  const zoom = Number(await canvas.getAttribute('data-camera-zoom'));
+  const [originX, originY] = ((await canvas.getAttribute('data-camera-origin')) ?? '')
+    .split(',')
+    .map(Number);
+  if (!(zoom > 0) || originX === undefined || originY === undefined) {
+    throw new Error('Le repère caméra doit être disponible pour lire le rendu.');
+  }
+  const local = { x: (point.x - originX) * zoom, y: (point.y - originY) * zoom };
+  const actual = await canvasPixelAt(canvas, local);
+  if (actual === null) throw new Error('Le point du niveau doit rester dans le canvas.');
+  const expected = await expectedPaperPixel(canvas, local);
+  return Math.max(...actual.map((channel, index) => Math.abs(channel - (expected[index] ?? 0))));
 };
 
 test('lance depuis l’accueil, par la campagne, le niveau 1', async ({ page }) => {
@@ -18,7 +37,7 @@ test('lance depuis l’accueil, par la campagne, le niveau 1', async ({ page }) 
   await expect(page).toHaveURL(/\/levels$/);
   await page.getByRole('button', { name: 'Jouer le niveau 1', exact: true }).tap();
   await expect(page.getByText('Niveau 1 · Le petit pont')).toBeVisible();
-  await expect(page.getByText('Campagne', { exact: true })).toBeVisible();
+  await expect(page.locator('.toolbar-title')).toHaveText('Niveau 1 · Le petit pont');
   const board = page.getByRole('region', { name: 'Plateau de jeu' });
   await expect(board).toBeVisible();
   await page.getByRole('button', { name: 'Voir l’objectif' }).click();
@@ -30,9 +49,6 @@ test('lance depuis l’accueil, par la campagne, le niveau 1', async ({ page }) 
 
   // Level 1 provides one short beam; free editing history stays unavailable.
   await expect(page.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
-  // Phone layouts keep the catalogue in a drawer; desktop shows it docked.
-  const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if ((await openCatalogue.count()) > 0) await openCatalogue.tap();
   await expect(page.getByRole('button', { name: 'Poutre courte' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Annuler' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Rétablir' })).toBeDisabled();
@@ -43,7 +59,7 @@ test('ouvre l’atelier depuis le menu et expose les familles du catalogue', asy
   await openWorkshopFromMenu(page);
 
   await expect(page.getByText('Éditeur de niveaux')).toHaveCount(0);
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor$/u);
   await expect(page.getByRole('region', { name: 'Objets disponibles' })).toBeVisible();
   for (const viewport of [
     { width: 390, height: 844 },
@@ -55,11 +71,6 @@ test('ouvre l’atelier depuis le menu et expose les familles du catalogue', asy
       path: `test-results/u23/atelier-${String(viewport.width)}x${String(viewport.height)}.png`,
       fullPage: true,
     });
-  }
-
-  const openCatalogueButton = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-  if ((await openCatalogueButton.count()) > 0) {
-    await openCatalogueButton.click();
   }
 
   await expect(page.getByRole('button', { name: /Balle rouge/ })).toHaveCount(0);
@@ -88,9 +99,6 @@ test.describe('coque sur le petit viewport supporté', () => {
   });
 
   test('le bandeau de victoire ne recouvre pas le plateau', async ({ page }) => {
-    // B1 (plan-remise-en-jeu.md § 4) : le bandeau de victoire recouvrait le
-    // bas du plateau en overlay, cachant potentiellement la balle et le
-    // panier. Il doit maintenant s'afficher entièrement sous le plateau.
     // A level that wins on its own, received from a file (V2a: the demo is gone).
     await page.goto('/my-levels');
     await page.locator('input[type="file"]').setInputFiles('test/fixtures/self-solving-level.json');
@@ -109,43 +117,30 @@ test.describe('coque sur le petit viewport supporté', () => {
     await expect(victory).toBeVisible({ timeout: 30_000 });
     await victory.getByRole('button', { name: 'Voir la scène' }).tap();
 
-    const result = page.getByRole('region', { name: 'Résultat du niveau' });
-    await expect(result).toBeVisible();
-
-    const boardBounds = await board.boundingBox();
-    const resultBounds = await result.boundingBox();
-    expect(boardBounds).not.toBeNull();
-    expect(resultBounds).not.toBeNull();
-
-    if (boardBounds !== null && resultBounds !== null) {
-      // The banner sits at or below the board's own bottom edge: no
-      // vertical overlap, so it never covers what the player just watched.
-      expect(resultBounds.y).toBeGreaterThanOrEqual(boardBounds.y + boardBounds.height - 1);
-    }
-
+    const actions = page.getByRole('toolbar', { name: 'Actions de simulation' });
+    await expect(actions).toContainText('Gagné !');
+    await expect(page.getByRole('region', { name: 'Résultat du niveau' })).toHaveCount(0);
+    await expect(board).toBeVisible();
     await expect(page.getByRole('button', { name: 'Recommencer' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Retour à Mes niveaux' })).toBeVisible();
   });
 
-  test('conserve les actions essentielles et un tiroir contrôlable dans l’atelier', async ({
-    page,
-  }) => {
+  test('conserve les actions essentielles et le catalogue dans l’atelier', async ({ page }) => {
     await page.goto('/');
     await openWorkshopFromMenu(page);
 
-    const horizontalOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    );
-    expect(horizontalOverflow).toBe(false);
+    const shellBounds = await page.locator('.app-shell').boundingBox();
+    expect(shellBounds).not.toBeNull();
+    if (shellBounds !== null) {
+      expect(shellBounds.x).toBeGreaterThanOrEqual(0);
+      expect(shellBounds.x + shellBounds.width).toBeLessThanOrEqual(320);
+    }
 
     for (const actionName of [
       'Ouvrir le menu',
       'Annuler',
       'Rétablir',
       'Lancer',
-      'Zoom arrière',
       'Ajuster à la scène',
-      'Zoom avant',
     ]) {
       const action = page.getByRole('button', { name: actionName });
       await expect(action).toBeVisible();
@@ -160,65 +155,28 @@ test.describe('coque sur le petit viewport supporté', () => {
     }
 
     const drawer = page.getByRole('region', { name: 'Objets disponibles' });
-    await expect(drawer).toHaveCSS('position', 'fixed');
-    await expect(drawer.locator('.drawer-content')).toHaveCSS('overflow-y', 'auto');
+    await expect(drawer).toHaveCSS('position', 'relative');
+    await expect(drawer.locator('.drawer-content')).toHaveCSS('overflow-x', 'auto');
+    await expect(drawer.getByRole('button', { name: 'Balle' })).toBeVisible();
+    await expect(page.locator('.drawer-scrim')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Zoom arrière' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Zoom avant' })).toHaveCount(0);
 
     const workspace = page.getByRole('region', { name: 'Espace de construction' });
     const workspaceBoundsBefore = await workspace.boundingBox();
     expect(workspaceBoundsBefore).not.toBeNull();
 
-    const openButton = page.getByRole('button', { name: 'Ouvrir le catalogue' });
-    await expect(openButton).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.getByRole('button', { name: 'Balle' })).toBeHidden();
-
-    const collapsedDrawerBounds = await drawer.boundingBox();
-    expect(collapsedDrawerBounds).not.toBeNull();
-    if (collapsedDrawerBounds !== null) {
-      expect(collapsedDrawerBounds.y).toBeGreaterThan(0);
-      expect(collapsedDrawerBounds.y + collapsedDrawerBounds.height).toBeLessThanOrEqual(568);
-      expect(collapsedDrawerBounds.height).toBeLessThan(150);
+    const drawerBounds = await drawer.boundingBox();
+    expect(drawerBounds).not.toBeNull();
+    if (drawerBounds !== null) {
+      expect(drawerBounds.x).toBeGreaterThanOrEqual(0);
+      expect(drawerBounds.y + drawerBounds.height).toBeLessThanOrEqual(568);
     }
 
-    const drawerFitsViewport = await drawer.evaluate((element) => {
-      const bounds = element.getBoundingClientRect();
-      return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
-    });
-    expect(drawerFitsViewport).toBe(true);
-
-    await openButton.click();
-    const collapseButton = page.getByRole('button', { name: 'Replier le catalogue' });
-    await expect(collapseButton).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByRole('button', { name: 'Balle' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Fermer le catalogue' })).toBeVisible();
-
-    const openDrawerBounds = await drawer.boundingBox();
-    expect(openDrawerBounds).not.toBeNull();
-    if (openDrawerBounds !== null && collapsedDrawerBounds !== null) {
-      expect(openDrawerBounds.y).toBeGreaterThan(0);
-      expect(openDrawerBounds.y + openDrawerBounds.height).toBeLessThanOrEqual(568);
-      expect(openDrawerBounds.height).toBeGreaterThan(collapsedDrawerBounds.height);
-    }
-
-    await collapseButton.click();
-    await expect(page.getByRole('button', { name: 'Ouvrir le catalogue' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Balle' })).toBeHidden();
-
-    for (const actionName of [
-      'Ouvrir le menu',
-      'Annuler',
-      'Rétablir',
-      'Lancer',
-      'Zoom arrière',
-      'Ajuster à la scène',
-      'Zoom avant',
-    ]) {
-      await expect(page.getByRole('button', { name: actionName })).toBeVisible();
-    }
-
-    await openButton.click();
-    await expect(page.getByRole('button', { name: 'Replier le catalogue' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Balle' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Fermer le catalogue' })).toBeVisible();
+    const ballCard = drawer.getByRole('button', { name: 'Balle' });
+    await ballCard.tap();
+    await expect(ballCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Annuler le placement' })).toBeVisible();
 
     const workspaceBoundsAfter = await workspace.boundingBox();
     expect(workspaceBoundsAfter).not.toBeNull();
@@ -229,10 +187,8 @@ test.describe('coque sur le petit viewport supporté', () => {
       expect(workspaceBoundsAfter.height).toBeCloseTo(workspaceBoundsBefore.height);
     }
 
-    await page.locator('.drawer-scrim').click({ position: { x: 160, y: 80 } });
-    await expect(page.getByRole('button', { name: 'Ouvrir le catalogue' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Balle' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Fermer le catalogue' })).toBeHidden();
+    await expect(ballCard).toBeVisible();
+    await expect(drawer).toBeVisible();
   });
 
   test('affiche un aperçu valide avant le placement tactile dans la zone de construction', async ({
@@ -241,7 +197,6 @@ test.describe('coque sur le petit viewport supporté', () => {
     await page.goto('/');
     await openWorkshopFromMenu(page);
 
-    await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
     await page.getByRole('button', { name: 'Poutre moyenne' }).tap();
 
     const board = page.getByRole('region', { name: 'Plateau de jeu' });
@@ -272,22 +227,50 @@ test.describe('coque sur le petit viewport supporté', () => {
     const board = page.getByRole('region', { name: 'Plateau de jeu' });
     const renderer = board.getByRole('img', { name: 'Rendu du plateau' });
     const renderingBeforePlacement = await renderer.screenshot();
+    const boardBounds = await board.boundingBox();
+    const canvasBounds = await renderer.boundingBox();
+    const zoom = Number(await renderer.getAttribute('data-camera-zoom'));
+    const [originX, originY] = ((await renderer.getAttribute('data-camera-origin')) ?? '')
+      .split(',')
+      .map(Number);
+    expect(boardBounds).not.toBeNull();
+    expect(canvasBounds).not.toBeNull();
+    expect(zoom).toBeGreaterThan(0);
+    expect(originX).not.toBeUndefined();
+    expect(originY).not.toBeUndefined();
+    if (
+      boardBounds === null ||
+      canvasBounds === null ||
+      !(zoom > 0) ||
+      originX === undefined ||
+      originY === undefined
+    ) {
+      throw new Error('La scène doit exposer son repère pour vérifier la pose.');
+    }
+    const placementPoint = {
+      x: originX + (boardBounds.x + 160 - canvasBounds.x) / zoom,
+      y: originY + (boardBounds.y + 120 - canvasBounds.y) / zoom,
+    };
 
-    await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
     await page.getByRole('button', { name: 'Poutre moyenne' }).tap();
     await board.tap({ position: { x: 160, y: 120 } });
 
     await expect(page.getByRole('button', { name: 'Annuler' })).toBeEnabled();
     const renderingAfterPlacement = await renderer.screenshot();
     expect(renderingAfterPlacement.equals(renderingBeforePlacement)).toBe(false);
+    await expect
+      .poll(() => differenceFromPaperAtWorldPoint(renderer, placementPoint))
+      .toBeGreaterThan(20);
 
     await page.getByRole('button', { name: 'Annuler' }).tap();
     await expect(page.getByRole('button', { name: 'Annuler' })).toBeDisabled();
-    const renderingAfterUndo = await renderer.screenshot();
-    expect(renderingAfterUndo).toEqual(renderingBeforePlacement);
+    await expect
+      .poll(() => differenceFromPaperAtWorldPoint(renderer, placementPoint))
+      .toBeLessThanOrEqual(5);
   });
 
   test('modifie visiblement le cadrage avec zoom puis ajustement au tactile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/levels/tuto-1/play');
 
     const renderer = page

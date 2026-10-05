@@ -1050,6 +1050,16 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
 
 ## Dernière exécution de la gate
 
+`pnpm check` après la reprise des tests C7b/C7c (5 octobre 2026) : **passe** —
+typecheck, lint, formatage, Knip, contenu (8 documents), 1 383 tests Vitest
+(106 fichiers), build (88 entrées de précache) et 103 E2E v1. Les tests couvrent
+la nouvelle coque, les pages de contenu et les interactions remaniées. Le test
+d’annulation vérifie la disparition de l’objet au point joué sans comparer le
+cadrage complet. Le contrôle à 320 px a révélé puis corrigé le débordement des
+actions dans l’en-tête ; sa validation visuelle reste à l’auteur. Le fichier
+d’essai local a été restauré avec son SHA-256 attendu
+`1113625e…a92907`.
+
 `pnpm check` après le lot 3 de la reprise du 5 octobre (5 octobre 2026) :
 **passe**, mêmes chiffres que le lot 2 ci-dessous.
 

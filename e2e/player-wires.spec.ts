@@ -2,6 +2,8 @@ import { expect, test, type Locator } from '@playwright/test';
 
 import { levelDocumentSchema } from '../src/domain/level-document';
 import { encodeShareFragment } from '../src/infrastructure/level-share/level-share-codec';
+import { projectWires } from '../src/presentation/control-wires';
+import { wireRoutes } from '../src/presentation/wire-hit-test';
 
 const screenPointForWorld = async (
   canvas: Locator,
@@ -60,6 +62,36 @@ const wiredLevel = levelDocumentSchema.parse({
   wires: [{ id: 'level-wire', sourceId: 'button-1', targetId: 'fan-1' }],
 });
 
+const wiredLevelWithPlayerWire = levelDocumentSchema.parse({
+  ...wiredLevel,
+  wires: [...wiredLevel.wires, { id: 'player-wire', sourceId: 'lever-1', targetId: 'conveyor-1' }],
+});
+
+const selectionPointForWire = (sourceId: string, targetId: string): { x: number; y: number } => {
+  const wire = projectWires(wiredLevelWithPlayerWire).find(
+    (candidate) => candidate.sourceId === sourceId && candidate.targetId === targetId,
+  );
+  if (wire === undefined) throw new Error('Le fil attendu doit avoir une route affichable.');
+  const longestSegment = wireRoutes(wire)
+    .flatMap((route) =>
+      route.slice(1).flatMap((end, index) => {
+        const start = route[index];
+        return start === undefined
+          ? []
+          : [{ start, end, length: Math.hypot(end.x - start.x, end.y - start.y) }];
+      }),
+    )
+    .reduce((longest, segment) => (segment.length > longest.length ? segment : longest), {
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 0 },
+      length: -1,
+    });
+  return {
+    x: (longestSegment.start.x + longestSegment.end.x) / 2,
+    y: (longestSegment.start.y + longestSegment.end.y) / 2,
+  };
+};
+
 test('U21 — le joueur relie avec le fil de son inventaire, puis le délie, au tactile', async ({
   page,
 }, testInfo) => {
@@ -69,19 +101,17 @@ test('U21 — le joueur relie avec le fil de son inventaire, puis le délie, au 
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/shared${await encodeShareFragment(wiredLevel)}`);
-  await expect(page.getByText('Partage · Fil du joueur')).toBeVisible();
+  await expect(page.getByText('Partage · Fil du joueur')).toHaveText('Partage · Fil du joueur');
 
   const canvas = page
     .getByRole('region', { name: 'Plateau de jeu' })
     .getByRole('img', { name: 'Rendu du plateau' });
-  const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
   const tapWorld = async (x: number, y: number): Promise<void> => {
     const point = await screenPointForWorld(canvas, { x, y });
     await page.touchscreen.tap(point.x, point.y);
   };
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
 
-  await openCatalogue.tap();
   await page.getByRole('button', { name: 'Fil de commande, quantité : 1' }).tap();
   const guide = page.getByRole('group', { name: 'Pose d’un fil' });
   await expect(guide).toContainText('Choisis une commande ou l’appareil à relier');
@@ -95,38 +125,25 @@ test('U21 — le joueur relie avec le fil de son inventaire, puis le délie, au 
   await page.reload();
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1 lever-1>conveyor-1');
   await expect(page.getByRole('button', { name: 'Annuler', exact: true })).toBeDisabled();
-  await openCatalogue.tap();
   await expect(page.getByRole('button', { name: 'Fil de commande, quantité : 0' })).toBeDisabled();
-  await page.getByRole('button', { name: 'Fermer le catalogue' }).tap();
-  await expect(page.getByRole('button', { name: 'Fermer le catalogue' })).toBeHidden();
 
-  // Un fil du niveau ne se délie pas.
-  await tapWorld(1.8, 1.6);
-  const buttonPanel = page.getByRole('region', { name: 'Propriétés de Bouton' });
-  await expect(buttonPanel.getByText(/^Fil du circuit A/)).toBeVisible();
-  await expect(buttonPanel.getByRole('button', { name: /Délier/ })).toHaveCount(0);
-
-  // L’inspecteur compact couvre le bas du plateau : le fermer, toucher le
-  // levier, puis rouvrir ses propriétés.
-  await page.getByRole('button', { name: 'Fermer les propriétés' }).tap();
-  await tapWorld(1.8, 3.4);
-  const openProperties = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  if (await openProperties.isVisible()) await openProperties.tap();
-  await page
-    .getByRole('region', { name: 'Propriétés de Levier' })
-    .getByRole('button', { name: 'Délier le circuit B' })
-    .tap();
+  // A level wire stays fixed, while the player's wire can be disconnected.
+  const fixedWirePoint = selectionPointForWire('button-1', 'fan-1');
+  await tapWorld(fixedWirePoint.x, fixedWirePoint.y);
+  const wireBar = page.getByRole('toolbar', { name: 'Réglages du fil' });
+  await expect(wireBar).toBeVisible();
+  await expect(wireBar.getByRole('button', { name: 'Débrancher le fil' })).toHaveCount(0);
+  const playerWirePoint = selectionPointForWire('lever-1', 'conveyor-1');
+  await tapWorld(playerWirePoint.x, playerWirePoint.y);
+  await expect(wireBar.getByRole('button', { name: 'Débrancher le fil' })).toBeVisible();
+  await wireBar.getByRole('button', { name: 'Débrancher le fil' }).tap();
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
   await page.getByRole('button', { name: 'Annuler', exact: true }).tap();
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1 lever-1>conveyor-1');
   await page.getByRole('button', { name: 'Rétablir', exact: true }).tap();
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
-  const closeProperties = page.getByRole('button', { name: 'Fermer les propriétés' });
-  if (await closeProperties.isVisible()) await closeProperties.tap();
-  await openCatalogue.tap();
   await expect(page.getByRole('button', { name: 'Fil de commande, quantité : 1' })).toBeEnabled();
   await page.reload();
   await expect(canvas).toHaveAttribute('data-wires', 'button-1>fan-1');
-  await openCatalogue.tap();
   await expect(page.getByRole('button', { name: 'Fil de commande, quantité : 1' })).toBeEnabled();
 });

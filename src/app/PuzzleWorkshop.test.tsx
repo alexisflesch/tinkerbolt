@@ -74,6 +74,7 @@ const tapBoard = async (clientX: number, clientY: number): Promise<void> => {
     });
     fireEvent(board, event);
   }
+  fireEvent.click(board, { detail: 1, clientX, clientY });
   await storageAction();
 };
 
@@ -103,8 +104,6 @@ const openMachine = async (document: LevelDocument = machine): Promise<void> => 
 
 const selectBeam = async (): Promise<void> => {
   await tapWorldPoint(5, 2.15);
-  const openProperties = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
-  if (openProperties !== null) await storageAction(() => fireEvent.click(openProperties));
 };
 
 describe('atelier créateur de puzzles (U22)', () => {
@@ -160,7 +159,7 @@ describe('atelier créateur de puzzles (U22)', () => {
     const openProperties = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
     if (openProperties !== null) await storageAction(() => fireEvent.click(openProperties));
 
-    const panel = screen.getByRole('region', { name: 'Propriétés de Panier' });
+    const panel = screen.getByRole('toolbar', { name: 'Réglages de Panier' });
     await waitFor(() => {
       expect(within(panel).getByText('Panier')).toBeVisible();
     });
@@ -187,7 +186,7 @@ describe('atelier créateur de puzzles (U22)', () => {
       const openProperties = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
       if (openProperties !== null) await storageAction(() => fireEvent.click(openProperties));
 
-      const panel = screen.getByRole('region', { name: `Propriétés de ${name}` });
+      const panel = screen.getByRole('toolbar', { name: `Réglages de ${name}` });
       await waitFor(() => {
         expect(within(panel).queryByRole('button', { name: /Supprimer/ })).toBeNull();
       });
@@ -203,9 +202,6 @@ describe('atelier créateur de puzzles (U22)', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Essayer en joueur' })),
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Atelier', { selector: '.level-mode' })).toBeVisible();
-    });
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Exporter le niveau' })).toBeNull();
     });

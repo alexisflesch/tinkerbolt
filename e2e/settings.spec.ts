@@ -2,6 +2,7 @@ import { seedIndexedDB, browserRows } from './indexed-db-fixture';
 import { mkdir } from 'node:fs/promises';
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { navigateTo } from './app-navigation';
 
 const formats = [
   { width: 390, height: 844 },
@@ -164,8 +165,7 @@ test('U11 — au toucher, le pseudo retenu se modifie et s’efface, et la progr
   );
 
   // Sans rechargement, la campagne est de nouveau verrouillée après le niveau 1.
-  await page.getByRole('button', { name: 'Ouvrir le menu' }).tap();
-  await page.getByRole('button', { name: 'Campagne', exact: true }).tap();
+  await navigateTo(page, 'Campagne');
   await expect(page.getByRole('button', { name: 'Jouer le niveau 1', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Jouer le niveau 2', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Jouer le niveau 3', exact: true })).toBeDisabled();

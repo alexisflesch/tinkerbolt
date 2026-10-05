@@ -64,7 +64,7 @@ describe('CampaignVictoryDialog — victoire de campagne (U4b)', () => {
     expect(illustration).toHaveAttribute('aria-hidden', 'true');
     expect(illustration?.previousElementSibling).toHaveClass('victory-summary');
     expect(image).toHaveAttribute('alt', '');
-    expect(image?.getAttribute('src')).toBe('/assets/bolt/bolt-victory.webp');
+    expect(image?.getAttribute('src')).toBe('/assets/home/bolt-victoire.webp');
     expect(within(dialog).getByRole('button', { name: 'Recommencer' })).toBeVisible();
   });
 

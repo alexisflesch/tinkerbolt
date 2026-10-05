@@ -167,18 +167,24 @@ const launchToOutcome = async (flush: (timestamp: number) => void): Promise<HTML
     flush(0);
     for (let frame = 1; frame <= 240; frame += 1) flush(frame * 1000);
   });
-  return screen.getByRole('region', { name: 'Résultat du niveau' });
+  const toolbar = screen.getByRole('toolbar', { name: 'Actions de simulation' });
+  await waitFor(() => {
+    expect(within(toolbar).getByText(/^(Gagné !|Raté :)/u)).toBeVisible();
+  });
+  return toolbar;
 };
 
 /** U24: a received level only ever shows the Resolved tier. */
 const expectResolvedOnly = async (result: HTMLElement): Promise<void> => {
   await waitFor(() => {
-    expect(within(result).getByText('Victoire')).toBeVisible();
-  });
-  await waitFor(() => {
-    expect(result).toHaveAttribute('data-level-tier', 'resolved');
+    expect(within(result).getByText('Gagné !')).toBeVisible();
   });
   const automaticDialog = await screen.findByRole('dialog', { name: 'Bravo !' });
+  expect(automaticDialog).toHaveAttribute('data-level-tier', 'resolved');
+  const automaticTiers = within(within(automaticDialog).getByRole('list', { name: 'Paliers' }))
+    .getAllByRole('listitem')
+    .map((tier) => tier.textContent);
+  expect(automaticTiers).toEqual(['Résolu obtenu']);
   await storageAction(() =>
     fireEvent.click(within(automaticDialog).getByRole('button', { name: 'Voir la scène' })),
   );
@@ -242,7 +248,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     vi.restoreAllMocks();
   });
 
-  it('montre l’auteur et la première source dans l’en-tête, en texte brut', async () => {
+  it('montre l’auteur et la première source dans le titre de la barre, en texte brut', async () => {
     await waitFor(async () => {
       expect((await storage().save(entry(attributed))).status).toBe('ok');
     });
@@ -250,20 +256,19 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
 
     await renderStorageReady(<App />);
 
-    const header = screen.getByRole('banner');
     await waitFor(() => {
-      expect(within(header).getByText('Le saut')).toBeVisible();
+      expect(screen.getByText(/^Le saut · /u, { selector: '.toolbar-title' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(
-        within(header).getByText('par <i>Lili</i> · d’après <b>La chute</b> (par Max)'),
-      ).toBeVisible();
+      expect(screen.getByText(/Le saut · /u, { selector: '.toolbar-title' })).toHaveTextContent(
+        'par <i>Lili</i> · d’après <b>La chute</b> (par Max)',
+      );
     });
     await waitFor(() => {
-      expect(within(header).queryByText(/Plus ancien/u)).toBeNull();
+      expect(screen.getByRole('banner')).not.toHaveTextContent(/Plus ancien/u);
     });
     await waitFor(() => {
-      expect(header.querySelector('i, b')).toBeNull();
+      expect(document.querySelector('.toolbar-title')?.querySelector('i, b')).toBeNull();
     });
   });
 
@@ -306,7 +311,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     const result = await launchToOutcome(flush);
 
     await waitFor(() => {
-      expect(within(result).getByText('Échec')).toBeVisible();
+      expect(within(result).getByText(/Raté :/u)).toBeVisible();
     });
     await waitFor(async () => {
       expect(await storedEntry(entryId)).toEqual(before);
@@ -330,20 +335,18 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     await expectResolvedOnly(result);
   });
 
-  it('enregistre la victoire d’un lien partagé gardé, avec l’attribution dans l’en-tête', async () => {
+  it('enregistre la victoire d’un lien partagé gardé, avec l’attribution dans la barre du plateau', async () => {
     const flush = createAnimationFrameHarness();
     window.history.replaceState(null, '', '/shared' + (await encodeShareFragment(attributed)));
     const { repository: progress, save: saveProgress } = createProgressRepository();
     await renderStorageReady(<App progressRepository={progress} />);
-    await waitFor(async () => {
-      expect(await screen.findByText('Partage · Le saut')).toBeVisible();
-    });
+    expect(
+      await screen.findByText(/Partage · Le saut/u, { selector: '.toolbar-title' }),
+    ).toBeVisible();
     await waitFor(() => {
-      expect(
-        within(screen.getByRole('banner')).getByText(
-          'par <i>Lili</i> · d’après <b>La chute</b> (par Max)',
-        ),
-      ).toBeVisible();
+      expect(screen.getByText(/Le saut · /u, { selector: '.toolbar-title' })).toHaveTextContent(
+        'par <i>Lili</i> · d’après <b>La chute</b> (par Max)',
+      );
     });
 
     const result = await launchToOutcome(flush);
@@ -370,9 +373,9 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
       code: 'quota-exceeded',
     });
     await renderStorageReady(<App receivedLevelRepository={repository} />);
-    await waitFor(async () => {
-      expect(await screen.findByText('Partage · Le saut')).toBeVisible();
-    });
+    expect(
+      await screen.findByText(/Partage · Le saut/u, { selector: '.toolbar-title' }),
+    ).toBeVisible();
     await waitFor(() => {
       expect(saves).toHaveLength(1);
     });
@@ -406,14 +409,13 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
     });
-    const header = screen.getByRole('banner');
     await waitFor(() => {
-      expect(within(header).getByText('Le saut')).toBeVisible();
+      expect(screen.getByText(/^Le saut · /u, { selector: '.toolbar-title' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(
-        within(header).getByText('par <i>Lili</i> · d’après <b>La chute</b> (par Max)'),
-      ).toBeVisible();
+      expect(screen.getByText(/Le saut · /u, { selector: '.toolbar-title' })).toHaveTextContent(
+        'par <i>Lili</i> · d’après <b>La chute</b> (par Max)',
+      );
     });
     await waitFor(() => {
       expect(screen.getByText('Ce niveau n’a pas été gardé sur cet appareil.')).toHaveAttribute(
@@ -432,17 +434,28 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
     });
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Fermer le résultat' })),
-    );
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Retour à Mes niveaux' })),
+      fireEvent.click(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Campagne' },
+        ),
+      ),
     );
     await waitFor(() => {
-      expect(screen.getByRole('region', { name: 'Niveaux reçus' })).toBeVisible();
+      expect(window.location.pathname).toBe('/levels');
     });
+    await storageAction(() =>
+      fireEvent.click(
+        within(screen.getByRole('navigation', { name: 'Navigation principale' })).getByRole(
+          'link',
+          { name: 'Mes niveaux' },
+        ),
+      ),
+    );
     await waitFor(() => {
       expect(window.location.pathname).toBe('/my-levels');
     });
+    expect(await screen.findByRole('region', { name: 'Niveaux reçus' })).toBeVisible();
   });
 
   it('propose de jouer quand même un fichier importé sans `crypto.subtle`', async () => {
@@ -462,7 +475,7 @@ describe('jouer un niveau reçu (M10, ADR 0015 § Victoire sur un niveau reçu)'
       expect(screen.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(within(screen.getByRole('banner')).getByText('Le saut')).toBeVisible();
+      expect(screen.getByText(/^Le saut · /u, { selector: '.toolbar-title' })).toBeVisible();
     });
     await waitFor(async () => {
       expect(await activeStoredRowCount()).toBe(0);

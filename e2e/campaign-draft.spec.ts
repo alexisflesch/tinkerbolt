@@ -43,29 +43,33 @@ test('édite un tutoriel de campagne au toucher et conserve le brouillon', async
   await page.goto('/levels');
   await page.getByRole('button', { name: 'Modifier le niveau 2' }).tap();
   // V7b removes the calibration guide from campaign drafts.
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=tuto-2-brouillon$/u);
   await expect(page.getByRole('dialog', { name: 'Fiche de calibrage' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Ouvrir le catalogue' }).tap();
-  await expect(page.getByRole('button', { name: 'Ouvrir la fiche de calibrage' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Fermer le catalogue' }).tap();
 
   await expect(page).toHaveURL(/\/editor\?draft=tuto-2-brouillon$/u);
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
   expect(await storedFloorX(page)).toBe(8.195822458208895);
 
   await tapWorldPoint(page, 8.195822458208895, 7.974035655966092);
-  const beamProperties = page.getByRole('region', { name: 'Propriétés de Poutre' });
-  const openProperties = page.getByRole('button', { name: 'Ouvrir les propriétés' });
-  // Selection and panel visibility are separate: the touch opens the panel
-  // after release, while the explicit button is a fallback for either state.
-  await expect(beamProperties.or(openProperties)).toBeVisible();
-  if (!(await beamProperties.isVisible())) await openProperties.tap();
-  await expect(beamProperties).toBeVisible();
-  await page.getByRole('button', { name: 'Vers la droite' }).tap();
+  await expect(page.getByRole('toolbar', { name: 'Réglages de Poutre' })).toBeVisible();
+  const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
+  const bounds = await canvas.boundingBox();
+  const origin = await canvas.getAttribute('data-camera-origin');
+  const zoom = Number(await canvas.getAttribute('data-camera-zoom'));
+  if (bounds === null || origin === null || !(zoom > 0)) throw new Error('Caméra indisponible.');
+  const [originX, originY] = origin.split(',').map(Number);
+  if (originX === undefined || originY === undefined) throw new Error('Origine indisponible.');
+  const start = {
+    x: bounds.x + (8.195822458208895 - originX) * zoom,
+    y: bounds.y + (7.974035655966092 - originY) * zoom,
+  };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + zoom * 0.4, start.y, { steps: 6 });
+  await page.mouse.up();
   await expect.poll(() => storedFloorX(page)).toBeGreaterThan(8.195822458208895);
 
   await page.reload();
-  await expect(page.getByText('Atelier', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/editor\?draft=tuto-2-brouillon$/u);
   expect(await storedFloorX(page)).toBeGreaterThan(8.195822458208895);
   await expect(page.getByRole('button', { name: 'Exporter le niveau' })).toBeVisible();
 });
