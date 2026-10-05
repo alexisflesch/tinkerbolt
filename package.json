@@ -20,6 +20,7 @@
     "deadcode": "knip",
     "content:check": "tsx scripts/validate-content.ts",
     "release:check": "tsx scripts/check-release-metadata.ts",
+    "release": "tsx scripts/release.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

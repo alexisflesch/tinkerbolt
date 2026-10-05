@@ -114,6 +114,7 @@ export default defineConfig(
       'test-results/**',
       'node_modules/**',
       'pnpm-lock.yaml',
+      'tmp/**',
     ],
   },
   eslint.configs.recommended,

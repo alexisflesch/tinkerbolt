@@ -1,21 +1,30 @@
 # Procédure de release
 
-La version de l’application est celle de `package.json`. `CHANGELOG.md` décrit
-les changements destinés aux joueurs et aux créateurs de niveaux ; il peut rester
-vide lorsqu’un lot ne change pas leur expérience.
+`package.json` est la source de vérité de la version ; `CHANGELOG.md` contient
+les notes destinées aux joueurs et créateurs de niveaux. La politique SemVer est
+décidée dans l’[ADR 0003](decisions/0003-project-bootstrap.md#version-de-lapplication-et-releases).
 
-Pour publier une version :
+La commande `pnpm release X.Y.Z` prépare une version stable, valide que le numéro
+est supérieur à la version courante, déplace les notes de « Non publié » vers une
+section datée et conserve la référence initiale `0.1.0`. Elle exécute ensuite
+`pnpm check`, crée un commit limité à `package.json` et `CHANGELOG.md`, crée le tag
+annoté `vX.Y.Z`, pousse atomiquement `main` et ce tag vers `origin`, puis crée la
+GitHub Release avec les notes du changelog.
 
-1. Choisir le numéro selon la convention de l’[ADR 0003](decisions/0003-project-bootstrap.md#version-de-lapplication-et-releases).
-2. Déplacer les notes de « Non publié » dans une section datée
-   `## [X.Y.Z] - AAAA-MM-JJ`, puis laisser « Non publié » en place, quitte à ce
-   qu’elle soit vide. Si la première publication porte la version `0.1.0`,
-   transformer la référence `0.1.0` en section de release datée. Pour toute autre
-   version, conserver cette référence initiale et ajouter la nouvelle section.
-3. Mettre à jour `version` dans `package.json` avec le même numéro.
-4. Lancer `pnpm release:check`, puis `pnpm check`.
-5. Créer le commit de release, puis un tag Git annoté `vX.Y.Z` sur ce commit.
-   Une GitHub Release peut reprendre les notes datées du changelog.
+Avant une vraie release, être sur `main` avec un arbre Git propre, avoir configuré
+`origin` vers un dépôt GitHub et disposer de `gh` installé et connecté avec
+`gh auth login`. Le préflight vérifie aussi l’absence du tag local et distant et
+teste le push atomique sans modifier le dépôt distant. L’aperçu
+`pnpm release X.Y.Z --dry-run` n’appelle ni GitHub CLI, ni le réseau, ni aucune
+opération de mutation ; il fonctionne sans authentification.
+
+Si `pnpm check` échoue, la commande restaure exactement `package.json` et
+`CHANGELOG.md` et retire leur éventuel staging. Après création du commit, les
+références locales ne sont pas annulées automatiquement. En cas d’échec du push,
+vérifier `git ls-remote --heads --tags origin main vX.Y.Z` avant de relancer le
+push atomique indiqué par la commande. Si le push a réussi mais pas la GitHub
+Release, ne pas supprimer le commit ou le tag : vérifier avec `gh release view`,
+puis reprendre avec la commande `gh release create` exacte affichée par le script.
 
 Le déploiement de `main` continue à chaque push. Le panneau « À propos » affiche
 la version du build et le SHA court du commit (avec `-dirty` si le checkout avait

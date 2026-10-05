@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 const semVerPattern =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
+export const isValidSemVer = (value: string): boolean => semVerPattern.test(value);
+
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const validateReleaseMetadata = (
@@ -13,7 +15,7 @@ export const validateReleaseMetadata = (
 ): readonly string[] => {
   const errors: string[] = [];
 
-  if (!semVerPattern.test(packageVersion)) {
+  if (!isValidSemVer(packageVersion)) {
     errors.push(
       `La version ${packageVersion} de package.json n’est pas une version SemVer valide.`,
     );
