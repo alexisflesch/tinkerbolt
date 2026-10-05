@@ -16,8 +16,6 @@ const root = process.cwd();
 const packagePath = resolve(root, 'package.json');
 const changelogPath = resolve(root, 'CHANGELOG.md');
 
-const shellQuote = (value: string): string => `'${value.replaceAll("'", "'\\''")}'`;
-
 const output = (command: string, args: readonly string[]): string => {
   try {
     return execFileSync(command, [...args], { cwd: root, encoding: 'utf8' }).trim();
@@ -44,9 +42,7 @@ const githubRepositoryFromOrigin = (): string => {
   return `${owner}/${repository}`;
 };
 
-const makePorts = (): ReleasePorts => {
-  let githubRepository = '';
-
+export const makePorts = (): ReleasePorts => {
   const ports: ReleasePorts = {
     preflight: (plan) => {
       const branch = output('git', ['branch', '--show-current']);
@@ -60,34 +56,9 @@ const makePorts = (): ReleasePorts => {
         throw new Error(`Le tag ${plan.tag} existe déjà localement.`);
       }
 
-      githubRepository = githubRepositoryFromOrigin();
+      githubRepositoryFromOrigin();
       if (output('git', ['ls-remote', '--tags', 'origin', `refs/tags/${plan.tag}`]) !== '') {
         throw new Error(`Le tag ${plan.tag} existe déjà sur origin.`);
-      }
-
-      try {
-        output('gh', ['auth', 'status', '--hostname', 'github.com']);
-      } catch (error) {
-        throw new Error(
-          'GitHub CLI (`gh`) et une session `gh auth login` sont requis avant une release.',
-          {
-            cause: error,
-          },
-        );
-      }
-      const ghRepository = output('gh', [
-        'repo',
-        'view',
-        githubRepository,
-        '--json',
-        'nameWithOwner',
-        '--jq',
-        '.nameWithOwner',
-      ]);
-      if (ghRepository.toLocaleLowerCase('en-US') !== githubRepository.toLocaleLowerCase('en-US')) {
-        throw new Error(
-          `gh a résolu ${ghRepository}, alors que origin désigne ${githubRepository}.`,
-        );
       }
 
       try {
@@ -130,27 +101,6 @@ const makePorts = (): ReleasePorts => {
         stdio: 'inherit',
       });
     },
-    createGithubRelease: (plan) => {
-      execFileSync(
-        'gh',
-        [
-          'release',
-          'create',
-          plan.tag,
-          '--verify-tag',
-          '--repo',
-          githubRepository,
-          '--notes',
-          plan.releaseNotes,
-        ],
-        { cwd: root, stdio: 'inherit' },
-      );
-    },
-    githubReleaseRecoveryCommands: (plan) =>
-      [
-        `gh release view ${shellQuote(plan.tag)} --repo ${shellQuote(githubRepository)}`,
-        `gh release create ${shellQuote(plan.tag)} --verify-tag --repo ${shellQuote(githubRepository)} --notes ${shellQuote(plan.releaseNotes)}`,
-      ].join('\n'),
     restoreFiles: (files: ReleaseOriginalFiles) => {
       try {
         execFileSync('git', ['restore', '--staged', '--', 'package.json', 'CHANGELOG.md'], {

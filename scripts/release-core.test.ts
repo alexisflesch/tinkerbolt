@@ -46,11 +46,6 @@ const makePorts = (events: string[], overrides: Partial<ReleasePorts> = {}): Rel
   push: () => {
     events.push('push');
   },
-  createGithubRelease: () => {
-    events.push('github');
-  },
-  githubReleaseRecoveryCommands: () =>
-    "gh release view 'v0.2.0' --repo owner/repo\ngh release create 'v0.2.0' --verify-tag --repo owner/repo --notes '- release note'",
   restoreFiles: () => {
     events.push('restore');
   },
@@ -131,12 +126,14 @@ describe('runReleaseWorkflow', () => {
     expect(events[0]).toContain('git push --atomic');
   });
 
-  it('runs checks before committing, tagging, pushing and creating the release', () => {
+  it('runs checks before committing, tagging and pushing without local GitHub CLI', () => {
     const events: string[] = [];
 
     runReleaseWorkflow(makePlan(), originalFiles, false, makePorts(events));
 
-    expect(events).toEqual(['preflight', 'write', 'check', 'commit', 'tag', 'push', 'github']);
+    expect(events.slice(0, 6)).toEqual(['preflight', 'write', 'check', 'commit', 'tag', 'push']);
+    expect(events).toHaveLength(7);
+    expect(events[6]).toContain('GitHub Actions');
   });
 
   it('does not mutate files when preflight fails', () => {
@@ -144,13 +141,13 @@ describe('runReleaseWorkflow', () => {
     const ports = makePorts(events, {
       preflight: () => {
         events.push('preflight');
-        throw new Error('no GitHub auth');
+        throw new Error('no Git push auth');
       },
     });
 
     expect(() => {
       runReleaseWorkflow(makePlan(), originalFiles, false, ports);
-    }).toThrow('no GitHub auth');
+    }).toThrow('no Git push auth');
     expect(events).toEqual(['preflight']);
   });
 
@@ -169,18 +166,18 @@ describe('runReleaseWorkflow', () => {
     expect(events).toEqual(['preflight', 'write', 'check', 'restore']);
   });
 
-  it('does not undo pushed refs when GitHub release creation fails', () => {
+  it('keeps local refs and gives recovery instructions when the push fails', () => {
     const events: string[] = [];
     const ports = makePorts(events, {
-      createGithubRelease: () => {
-        events.push('github');
-        throw new Error('GitHub unavailable');
+      push: () => {
+        events.push('push');
+        throw new Error('Git unavailable');
       },
     });
 
     expect(() => {
       runReleaseWorkflow(makePlan(), originalFiles, false, ports);
-    }).toThrow(/gh release create 'v0\.2\.0' --verify-tag --repo owner\/repo/iu);
-    expect(events).toEqual(['preflight', 'write', 'check', 'commit', 'tag', 'push', 'github']);
+    }).toThrow(/git ls-remote --heads --tags origin main v0\.2\.0/iu);
+    expect(events).toEqual(['preflight', 'write', 'check', 'commit', 'tag', 'push']);
   });
 });

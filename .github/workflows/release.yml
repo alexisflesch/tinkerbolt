@@ -1,0 +1,36 @@
+name: Release GitHub
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Extraire les notes de la version taguée
+        run: pnpm exec tsx scripts/release-notes.ts "$GITHUB_REF_NAME" > "$RUNNER_TEMP/release-notes.md"
+      - name: Créer la release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Une reprise du job conserve une release déjà créée.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "La release existe déjà."
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi

@@ -107,7 +107,9 @@ pour mémoire, sur demande explicite de l’auteur ; elles ne sont pas des contr
 
 `pnpm release X.Y.Z` automatise les releases stables : préconditions Git/GitHub,
 préparation version/changelog, gate, commit ciblé, tag annoté, push atomique et
-GitHub Release. L’aperçu `pnpm release 0.2.0 --dry-run` passe sans mutation.
+GitHub Release via le workflow « Release GitHub » après réception du tag.
+La commande locale utilise les identifiants Git du push, sans `gh auth login`.
+L’aperçu `pnpm release 0.2.0 --dry-run` passe sans mutation.
 `tmp/`, déjà ignoré par Git, est exclu du lint et du formatage ; le scratch de
 l’auteur reste identique.
 
@@ -121,11 +123,11 @@ même JavaScript qu’avant nettoyage ; aucun comportement produit n’est modif
 
 La version reste `0.1.0` jusqu’à l’exécution réelle de la release `0.2.0`.
 Les notes sont prêtes dans « Non publié ». Aucun tag ni push n’a été effectué :
-une connexion GitHub est nécessaire pour la publication.
+le push doit être lancé depuis une machine authentifiée auprès du dépôt Git.
 
 ## Dernière gate
 
-`pnpm check` après OUT2/OUT3, 5 octobre 2026 : **vert** — contrôle
+`pnpm check` après OUT4, 5 octobre 2026 : **vert** — contrôle
 version/changelog, typecheck, lint, formatage, Knip, huit documents,
-**1 406 tests Vitest dans 110 fichiers**, build (89 entrées, 5 639,27 Kio)
-et **103 E2E v1**. Log : `/tmp/tinkerbolt-release-cleanup-check.log`.
+**1 411 tests Vitest dans 112 fichiers**, build (89 entrées, 5 639,27 Kio)
+et **103 E2E v1**. Log : `/tmp/tinkerbolt-release-auth-check.log`.

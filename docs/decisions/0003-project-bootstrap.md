@@ -217,8 +217,11 @@ Chaque release publiée synchronise `package.json` et la section datée du
 changelog, passe `pnpm check`, puis reçoit un tag Git annoté `vX.Y.Z` sur le commit
 de release. La commande sans dépendance supplémentaire `pnpm release X.Y.Z`
 orchestre ces étapes depuis `main` propre, vérifie le tag et l’authentification
-GitHub avant les mutations, puis pousse atomiquement `main` et le tag avant de
-créer la GitHub Release. `pnpm release X.Y.Z --dry-run` affiche le plan sans
+Git pour le push avant les mutations, puis pousse atomiquement `main` et le tag.
+Le workflow GitHub Actions `release.yml` crée ensuite la GitHub Release avec
+les notes de la version taguée et son jeton automatique `GITHUB_TOKEN`
+(permission `contents: write`). Aucun `gh` ni connexion API supplémentaire
+n’est requis sur la machine de l’auteur. `pnpm release X.Y.Z --dry-run` affiche le plan sans
 accès réseau ni mutation. La procédure opérationnelle et la reprise après échec
 sont dans `docs/release-process.md`. La vérification `release:check`, intégrée à
 `check`, confirme que la version du package est présente dans le changelog. Le

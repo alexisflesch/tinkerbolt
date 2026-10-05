@@ -27,8 +27,6 @@ export interface ReleasePorts {
   readonly commit: (plan: ReleasePlan) => void;
   readonly createTag: (plan: ReleasePlan) => void;
   readonly push: (plan: ReleasePlan) => void;
-  readonly createGithubRelease: (plan: ReleasePlan) => void;
-  readonly githubReleaseRecoveryCommands: (plan: ReleasePlan) => string;
   readonly restoreFiles: (files: ReleaseOriginalFiles) => void;
   readonly print: (message: string) => void;
 }
@@ -187,8 +185,8 @@ export const formatReleaseDryRun = (plan: ReleasePlan): string =>
     `Aperçu de release ${plan.version} (aucune mutation, aucun accès réseau ou GitHub).`,
     `Version : ${plan.currentVersion} → ${plan.version}`,
     `Date prévue : ${plan.date}`,
-    `Actions prévues : mise à jour package.json et CHANGELOG.md, pnpm check, commit ciblé, tag annoté, puis \`git push --atomic origin main refs/tags/v${plan.version}\` et GitHub Release.`,
-    'Préconditions du mode réel : branche main propre, origin joignable, tag absent, gh installé et authentifié.',
+    `Actions prévues : mise à jour package.json et CHANGELOG.md, pnpm check, commit ciblé, tag annoté, puis \`git push --atomic origin main refs/tags/v${plan.version}\` ; GitHub Actions crée ensuite la GitHub Release.`,
+    'Préconditions du mode réel : branche main propre, origin joignable, tag absent, authentification Git valide pour le push.',
     'Notes de release :',
     plan.releaseNotes.length === 0 ? '(aucune note notable)' : plan.releaseNotes,
   ].join('\n');
@@ -211,7 +209,6 @@ export const runReleaseWorkflow = (
   let releaseCommitCreated = false;
   let releaseTagCreated = false;
   let pushAttempted = false;
-  let refsPushed = false;
 
   try {
     ports.writeFiles(plan);
@@ -222,8 +219,6 @@ export const runReleaseWorkflow = (
     releaseTagCreated = true;
     pushAttempted = true;
     ports.push(plan);
-    refsPushed = true;
-    ports.createGithubRelease(plan);
   } catch (error) {
     if (!releaseCommitCreated) {
       try {
@@ -238,13 +233,6 @@ export const runReleaseWorkflow = (
     }
 
     const pushCommand = `git push --atomic origin main refs/tags/${plan.tag}`;
-    if (refsPushed) {
-      const githubCommands = ports.githubReleaseRecoveryCommands(plan);
-      throw new Error(
-        `Le commit, le tag et le push sont publiés, mais la GitHub Release n’a pas été confirmée (${errorText(error)}). Ne supprime pas les refs. Vérifie son état et reprends si nécessaire :\n${githubCommands}`,
-        { cause: error },
-      );
-    }
     if (pushAttempted) {
       throw new Error(
         `Le commit ${plan.version} et son tag existent localement, mais le résultat du push atomique est incertain (${errorText(error)}). Vérifie « git ls-remote --heads --tags origin main ${plan.tag} » ; si les refs manquent, relance : ${pushCommand}`,
@@ -262,4 +250,8 @@ export const runReleaseWorkflow = (
       { cause: error },
     );
   }
+
+  ports.print(
+    `Le commit et le tag ${plan.tag} sont poussés. GitHub Actions crée la GitHub Release ; consulte le workflow « Release GitHub » dans l’onglet Actions.`,
+  );
 };

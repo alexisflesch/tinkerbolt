@@ -85,7 +85,8 @@ le [`CHANGELOG.md`](CHANGELOG.md) et [`docs/release-process.md`](docs/release-pr
 
 Après avoir renseigné « Non publié » dans le changelog et commité les changements,
 préparer un aperçu avec `pnpm release 0.2.0 --dry-run`, puis publier avec
-`pnpm release 0.2.0`. La publication demande `main` propre et GitHub CLI connecté.
+`pnpm release 0.2.0`. La publication demande `main` propre et des identifiants Git permettant de pousser
+vers `origin`. GitHub Actions crée ensuite la GitHub Release, sans connexion `gh` locale.
 
 ## Déploiement
 

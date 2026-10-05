@@ -13,7 +13,7 @@ tutoriels et le stockage IndexedDB sont implémentés. Cela ne clôture pas C10 
 la recette visuelle de l’auteur reste attendue. C7d reste à faire.
 
 Le lot indépendant commande de release → nettoyage documentaire → vérifications
-est livré. La publication `0.2.0` attend une connexion GitHub ; elle ne rouvre
+est livré. La publication `0.2.0` attend le push depuis la machine de l’auteur ; elle ne rouvre
 pas les anciens lots produit. `art/` est conservé intégralement.
 
 ## Règles de la reprise active
@@ -248,3 +248,18 @@ Gate finale verte : `/tmp/tinkerbolt-release-cleanup-check.log`. Aucun lien
 Markdown local cassé ; dix fichiers TS/TSX ne diffèrent que par les commentaires,
 avec JavaScript émis identique. Aperçu réel de `0.2.0` vert, notes prêtes ;
 aucun tag ni push avant la connexion GitHub.
+
+
+### OUT4 — Utiliser les identifiants Git pour les releases — livré — 5 octobre 2026
+
+La connexion séparée à `gh` bloquait la commande malgré des identifiants Git
+valides. ADR 0003 amendée : la commande utilise l’authentification du push ;
+GitHub Actions crée la release après réception du tag, avec son jeton automatique.
+Tests rouges : appel GitHub local encore présent et extraction des notes absente.
+Tests verts : ordre gate/commit/tag/push, diagnostic de reprise du push,
+notes limitées à la version taguée, refus des tags et sections incohérents.
+Gate complète verte : 1 411 tests Vitest dans 112 fichiers, huit documents,
+build et 103 E2E v1. Log : `/tmp/tinkerbolt-release-auth-check.log`.
+Workflow validé localement (format YAML, syntaxe shell et extraction des notes) ;
+son exécution distante sera confirmée au premier push de tag. Aucun push ni
+publication pendant cette correction ; l’auteur peut relancer `pnpm release 0.2.0`.

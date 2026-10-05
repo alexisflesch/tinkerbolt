@@ -7,6 +7,7 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 
 - Les paramètres affichent la version de l’application et le SHA court du build.
 - La commande `pnpm release X.Y.Z` prépare, vérifie et publie une release ;
+  elle utilise les identifiants Git habituels et GitHub Actions pour la publication.
   `--dry-run` affiche un aperçu sans modification ni publication.
 - La documentation du dépôt est consolidée : anciens plans, todos, journaux,
   maquettes terminées et captures de travail retirés ; contrats, tâches encore
