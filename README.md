@@ -80,6 +80,9 @@ Les décisions d’architecture, l’état livré et les tâches restantes sont
 documentés dans [`docs/`](docs/), notamment [`docs/etat.md`](docs/etat.md) et
 [`docs/feuille-de-route.md`](docs/feuille-de-route.md).
 
+Le suivi des versions, le changelog et la procédure de release sont décrits dans
+le [`CHANGELOG.md`](CHANGELOG.md) et [`docs/release-process.md`](docs/release-process.md).
+
 ## Déploiement
 
 Le workflow [Déploiement GitHub Pages](.github/workflows/deploy-pages.yml)

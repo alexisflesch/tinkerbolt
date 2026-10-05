@@ -1,7 +1,15 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
+import { getBuildMetadata } from './scripts/build-metadata';
+
+const buildMetadata = getBuildMetadata();
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(buildMetadata.version),
+    __APP_COMMIT__: JSON.stringify(buildMetadata.commit),
+  },
   resolve: {
     alias: {
       'virtual:pwa-register': fileURLToPath(

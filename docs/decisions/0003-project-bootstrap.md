@@ -193,6 +193,34 @@ Les suites plus lentes que celles de `check`, comme la matrice Playwright
 complète, peuvent être lancées en plus, mais aucune CI ne réimplémente une
 variante plus faible des commandes de `check`.
 
+### Version de l’application et releases
+
+`package.json` est la source de vérité de la version de l’application. Le
+`CHANGELOG.md` maintient une section « Non publié » et des notes datées pour les
+versions publiées, en décrivant les effets visibles pour les joueurs et les
+créateurs de niveaux. La section `0.1.0` créée avec cette décision est une
+référence de l’état actuel du dépôt, pas une release antérieure reconstituée.
+Les refactorings sans effet notable ne nécessitent pas d’entrée.
+
+La convention suit SemVer, avec une règle explicite pour le développement avant
+la première stable : rester en `0.y.z`, incrémenter `z` pour les corrections et
+`y` pour les nouveautés ou ruptures, en indiquant les incompatibilités dans le
+changelog. `1.0.0` marque la livraison stable du jalon produit v1 (ordinateur).
+Après `1.0.0`, une correction compatible incrémente `z`, une nouveauté compatible
+incrémente `y` et une rupture de compatibilité incrémente `x`. Les jalons de
+feuille de route (dont l’expérience téléphone v2) décrivent le périmètre produit ;
+ils ne déterminent pas mécaniquement le numéro SemVer. La version de l’application
+ne remplace ni ne modifie `LevelDocument.schemaVersion`, qui conserve son contrat
+de migration indépendant.
+
+Chaque release publiée synchronise `package.json` et la section datée du
+changelog, passe `pnpm check`, puis reçoit un tag Git annoté `vX.Y.Z` sur le commit
+de release. Une GitHub Release peut reprendre les mêmes notes. La vérification
+`release:check`, intégrée à `check`, confirme que la version du package est
+présente dans le changelog. Le build affiche la version et le SHA court du commit
+dans « À propos » ; un checkout modifié ajoute `-dirty`, et une source sans Git
+affiche `local`.
+
 ### Gates CI
 
 Chaque pull request et chaque push sur la branche principale doivent :

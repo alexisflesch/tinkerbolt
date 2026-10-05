@@ -602,6 +602,31 @@ déplacer. Aucun de ces exemples n’est déjà un contrat technique.
 Une entrée par tâche : résultat, décisions, tests rouges pertinents, gate,
 captures et validation de l’auteur. Les reports et blocages sont explicites.
 
+### OUT1 — Changelog et versionnement — livré — 5 octobre 2026
+
+- Lot indépendant demandé explicitement par l’auteur, sans changer l’ordre
+  des tâches produit. Implémentation et tests confiés à Luna `xhigh`, sans
+  délégation imbriquée ; revue et journal par l’orchestrateur.
+- Décision consignée avant le code dans l’ADR 0003 : version applicative
+  dans `package.json`, SemVer, changelog français, tags annotés `vX.Y.Z`
+  après gate verte. Les jalons produit et `LevelDocument.schemaVersion`
+  restent distincts. Index et README raccordés à la procédure de release.
+- Référence initiale `0.1.0` documentée sans reconstruire de releases passées.
+  `release:check` vérifie la version, « Non publié » et la section courante ;
+  il est intégré à `check`. Rouge initial : module de contrôle absent
+  (`/tmp/tinkerbolt-release-red.log`), puis sept cas de contrôle verts.
+- Métadonnées du build injectées par Vite : version, SHA court, `-dirty`
+  sur checkout modifié, `local` sans Git. Trois tests couvrent leur origine
+  et ces cas ; le test des Paramètres couvre leur rendu. L’ancien `1.0`
+  codé en dur dans À propos est remplacé par la version réelle.
+- Gate `pnpm check` verte : 1 395 Vitest (108 fichiers), huit documents
+  embarqués, build et 103 E2E v1. Log :
+  `/tmp/tinkerbolt-versioning-check.log`. Scratch de l’auteur restauré à
+  l’identique après exclusion temporaire prescrite ; aucun test affaibli.
+- Captures inspectées par Luna et l’orchestrateur :
+  `tmp/versioning/captures/settings-{1440x900,1280x720}.png`.
+  Validation visuelle de l’auteur attendue. Aucun tag, release ou push.
+
 ### Méthode de travail — allégée — 3 octobre 2026
 
 - À la demande de l’auteur, skill et règles actives alignés : un agent séquentiel

@@ -19,13 +19,14 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,css,html}\"",
     "deadcode": "knip",
     "content:check": "tsx scripts/validate-content.ts",
+    "release:check": "tsx scripts/check-release-metadata.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:critical": "playwright test --project=v1",
     "check:fast": "pnpm typecheck && pnpm lint && pnpm test:run",
-    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm deadcode && pnpm content:check && pnpm test:run && pnpm build && pnpm test:e2e:critical"
+    "check": "pnpm release:check && pnpm typecheck && pnpm lint && pnpm format:check && pnpm deadcode && pnpm content:check && pnpm test:run && pnpm build && pnpm test:e2e:critical"
   },
   "dependencies": {
     "dexie": "4.4.6",

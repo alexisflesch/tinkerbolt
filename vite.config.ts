@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+import { getBuildMetadata } from './scripts/build-metadata';
 import { createNavigateFallbackAllowlist } from './scripts/navigate-fallback-allowlist';
 import { precacheGlobIgnores, precacheGlobPatterns } from './scripts/precache-globs';
 
@@ -9,9 +10,14 @@ import { precacheGlobIgnores, precacheGlobPatterns } from './scripts/precache-gl
 // this variable. Locally, in tests and in Playwright, the app lives at `/`.
 const basePath = process.env.TINKERBOLT_BASE_PATH ?? '/';
 const navigateFallbackAllowlist = createNavigateFallbackAllowlist(basePath);
+const buildMetadata = getBuildMetadata();
 
 export default defineConfig({
   base: basePath,
+  define: {
+    __APP_VERSION__: JSON.stringify(buildMetadata.version),
+    __APP_COMMIT__: JSON.stringify(buildMetadata.commit),
+  },
   plugins: [
     react(),
     VitePWA({

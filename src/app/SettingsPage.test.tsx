@@ -9,6 +9,7 @@ import type {
 } from '../application/preferences/preferences-repository';
 import type { ProgressRepository } from '../application/progression/progress-repository';
 import { campaignChapters } from '../content/embedded-levels';
+import { appBuildInfo } from './build-info';
 import { renderStorageReady, storageAction, testDatabase } from './storage-test-fixture';
 import { App } from './App';
 
@@ -95,8 +96,9 @@ describe('Paramètres — pseudo retenu (U11, ADR 0016 § Pseudo)', () => {
 
     const about = screen.getByRole('region', { name: 'À propos de TinkerBolt' });
     await waitFor(() => {
-      expect(about).toHaveTextContent(/Version\s*:\s*1\.0/);
+      expect(within(about).getByText(appBuildInfo.version)).toBeInTheDocument();
     });
+    expect(within(about).getByText(appBuildInfo.commit)).toBeInTheDocument();
     expect(about).toHaveTextContent(/Licence\s*:\s*AGPL-3\.0-or-later/);
     expect(within(about).getByRole('link', { name: 'Voir le dépôt' })).toHaveAttribute(
       'href',

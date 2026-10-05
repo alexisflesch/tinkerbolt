@@ -34,6 +34,21 @@ et ne contient ni décision ni spécification ; celles-ci restent dans
 `decisions/`. Le travail restant et son ordre sont dans
 [la feuille de route](feuille-de-route.md).
 
+## Versionnement et changelog
+
+Lot d’outillage demandé par l’auteur le 5 octobre 2026, indépendant de la
+séquence produit C/M/F, réalisé par Luna `xhigh` et relu par l’orchestrateur.
+`CHANGELOG.md` conserve une référence initiale `0.1.0` et une section
+« Non publié ». La procédure est dans `release-process.md` et la politique
+dans l’ADR 0003. `pnpm release:check`, intégré à `pnpm check`, vérifie la
+version SemVer, la section « Non publié » et la présence de la version courante.
+Le panneau « À propos » utilise la version de `package.json` et le SHA court
+du build, avec `-dirty` pour les modifications locales ou `local` sans Git.
+L’ancien affichage `1.0` codé en dur est remplacé par la version réelle `0.1.0`.
+Les captures `tmp/versioning/captures/settings-{1440x900,1280x720}.png` sont
+inspectées ; validation visuelle de l’auteur attendue. Aucune release ni aucun
+tag n’a été créé ; le déploiement continu de `main` reste en place.
+
 ## Reprise active après la v1
 
 La [feuille de route](feuille-de-route.md) porte seule les tâches C/M/F et
@@ -1053,6 +1068,15 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après le lot de versionnement (5 octobre 2026) : **passe** —
+contrôle version/changelog, typecheck, lint, formatage, Knip, contenu
+(8 documents), 1 395 tests Vitest (108 fichiers), build (89 entrées de
+précache, 5 639,27 Kio) et 103 E2E v1. Log :
+`/tmp/tinkerbolt-versioning-check.log`. Le fichier d’essai `tmp/check-levels.ts`
+a été écarté temporairement selon les instructions, puis restauré et comparé
+octet pour octet. Captures du panneau À propos aux deux formats desktop
+inspectées par Luna et l’orchestrateur.
 
 `pnpm check` après les Paramètres, le fond partagé et le cadrage du tremplin
 (5 octobre 2026) : **passe** — typecheck, lint, formatage, Knip, contenu

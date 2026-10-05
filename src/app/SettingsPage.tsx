@@ -21,6 +21,7 @@ import { useStorageRead } from './use-storage-read';
 import { pseudoRefusal } from './level-export';
 import { usePreferencesRepository } from './preferences-repository-context';
 import { useCampaignProgress } from './use-campaign-progress';
+import { appBuildInfo } from './build-info';
 
 /** Mirrors the pseudonym's length limit (`level-document.ts`), like the export dialog (M14). */
 const MAX_PSEUDO_LENGTH = 40;
@@ -309,7 +310,14 @@ function AboutSettings() {
               <Package size={20} aria-hidden="true" />
               Version :
             </dt>
-            <dd>1.0</dd>
+            <dd>{appBuildInfo.version}</dd>
+          </div>
+          <div>
+            <dt>
+              <Code2 size={20} aria-hidden="true" />
+              Commit :
+            </dt>
+            <dd>{appBuildInfo.commit}</dd>
           </div>
           <div>
             <dt>
