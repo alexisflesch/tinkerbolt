@@ -3545,34 +3545,34 @@ select:focus-visible {
     linear-gradient(rgb(255 252 244 / 78%), rgb(255 252 244 / 78%)),
     url('/assets/home/papier.webp') 0 0 / 320px;
   clip-path: polygon(
-    0% 0.8px,
-    11% 1.7px,
-    22% 1.2px,
-    33% 1.9px,
-    44% 2px,
-    56% 0.2px,
+    0% 0.3px,
+    11% 0.8px,
+    22% 0.5px,
+    33% 0.8px,
+    44% 0.9px,
+    56% 0.1px,
     67% 0px,
-    78% 2.7px,
-    89% 0.8px,
-    calc(100% - 0.7px) 0%,
-    calc(100% - 3.2px) 20%,
-    calc(100% - 1.5px) 40%,
-    calc(100% - 2.7px) 60%,
-    calc(100% - 1.5px) 80%,
-    100% calc(100% - 2px),
-    89% calc(100% - 0.5px),
-    78% calc(100% - 2px),
-    67% calc(100% - 2.8px),
-    56% calc(100% - 1.7px),
-    44% calc(100% - 2.4px),
-    33% calc(100% - 2.1px),
-    22% calc(100% - 0.2px),
-    11% calc(100% - 2.4px),
-    1.9px 100%,
-    1px 80%,
-    0.1px 60%,
-    2.8px 40%,
-    1.5px 20%
+    78% 1.2px,
+    89% 0.4px,
+    calc(100% - 0.3px) 0%,
+    calc(100% - 1.4px) 20%,
+    calc(100% - 0.7px) 40%,
+    calc(100% - 1.2px) 60%,
+    calc(100% - 0.7px) 80%,
+    100% calc(100% - 0.9px),
+    89% calc(100% - 0.2px),
+    78% calc(100% - 0.9px),
+    67% calc(100% - 1.2px),
+    56% calc(100% - 0.7px),
+    44% calc(100% - 1px),
+    33% calc(100% - 0.9px),
+    22% calc(100% - 0.1px),
+    11% calc(100% - 1.1px),
+    0.8px 100%,
+    0.4px 80%,
+    0px 60%,
+    1.2px 40%,
+    0.7px 20%
   );
   text-align: center;
 }
@@ -3582,34 +3582,34 @@ select:focus-visible {
     0 0,
     120px 80px;
   clip-path: polygon(
-    0% 1.4px,
-    11% 1.8px,
-    22% 3px,
-    33% 1.5px,
-    44% 1.6px,
-    56% 1.9px,
-    67% 0.6px,
-    78% 1.6px,
-    89% 2px,
-    calc(100% - 2.5px) 0%,
-    calc(100% - 0.3px) 20%,
-    calc(100% - 1px) 40%,
-    calc(100% - 0.3px) 60%,
-    calc(100% - 2.6px) 80%,
-    100% calc(100% - 2.2px),
+    0% 0.6px,
+    11% 0.8px,
+    22% 1.3px,
+    33% 0.7px,
+    44% 0.7px,
+    56% 0.8px,
+    67% 0.3px,
+    78% 0.7px,
+    89% 0.9px,
+    calc(100% - 1.1px) 0%,
+    calc(100% - 0.1px) 20%,
+    calc(100% - 0.4px) 40%,
+    calc(100% - 0.1px) 60%,
+    calc(100% - 1.1px) 80%,
+    100% calc(100% - 1px),
     89% calc(100% - 0.1px),
-    78% calc(100% - 3.1px),
-    67% calc(100% - 3.1px),
-    56% calc(100% - 2.1px),
-    44% calc(100% - 2px),
-    33% calc(100% - 0.5px),
+    78% calc(100% - 1.4px),
+    67% calc(100% - 1.4px),
+    56% calc(100% - 0.9px),
+    44% calc(100% - 0.9px),
+    33% calc(100% - 0.2px),
     22% calc(100% - 0px),
-    11% calc(100% - 1.7px),
-    0.2px 100%,
-    0.6px 80%,
-    0.8px 60%,
-    0.1px 40%,
-    1.5px 20%
+    11% calc(100% - 0.7px),
+    0.1px 100%,
+    0.3px 80%,
+    0.3px 60%,
+    0px 40%,
+    0.6px 20%
   );
 }
 
@@ -3618,34 +3618,34 @@ select:focus-visible {
     0 0,
     60px 200px;
   clip-path: polygon(
-    0% 3px,
-    11% 3px,
-    22% 2.9px,
-    33% 0.3px,
-    44% 1.9px,
-    56% 1.4px,
-    67% 1.7px,
-    78% 0.4px,
-    89% 0.6px,
-    calc(100% - 1.4px) 0%,
-    calc(100% - 0.7px) 20%,
-    calc(100% - 1.5px) 40%,
-    calc(100% - 0.1px) 60%,
-    calc(100% - 0.3px) 80%,
-    100% calc(100% - 2.3px),
-    89% calc(100% - 1.3px),
-    78% calc(100% - 1.6px),
-    67% calc(100% - 2.3px),
-    56% calc(100% - 1.1px),
-    44% calc(100% - 0.2px),
-    33% calc(100% - 2.5px),
-    22% calc(100% - 1.9px),
-    11% calc(100% - 2.1px),
-    2px 100%,
-    3.1px 80%,
-    1.2px 60%,
-    2.4px 40%,
-    1.2px 20%
+    0% 1.3px,
+    11% 1.3px,
+    22% 1.2px,
+    33% 0.1px,
+    44% 0.8px,
+    56% 0.6px,
+    67% 0.7px,
+    78% 0.2px,
+    89% 0.3px,
+    calc(100% - 0.6px) 0%,
+    calc(100% - 0.3px) 20%,
+    calc(100% - 0.6px) 40%,
+    calc(100% - 0px) 60%,
+    calc(100% - 0.1px) 80%,
+    100% calc(100% - 1px),
+    89% calc(100% - 0.6px),
+    78% calc(100% - 0.7px),
+    67% calc(100% - 1px),
+    56% calc(100% - 0.5px),
+    44% calc(100% - 0.1px),
+    33% calc(100% - 1.1px),
+    22% calc(100% - 0.8px),
+    11% calc(100% - 0.9px),
+    0.9px 100%,
+    1.4px 80%,
+    0.5px 60%,
+    1.1px 40%,
+    0.5px 20%
   );
 }
 
@@ -4061,5 +4061,949 @@ select:focus-visible {
 @media (orientation: portrait) and (max-width: 359px) {
   .app-shell-desk .toolbar-icons[aria-label='Cadrage du plateau'] .btn:not(:last-child) {
     display: none;
+  }
+}
+
+/* 9. Pages de contenu — identité visuelle ---------------------------------------- */
+
+/*
+ * Maquettes `docs/maquettes/identite/campagne.html` et `mes-niveaux.html` : le
+ * parchemin, la navigation dans l'en-tête, un titre de page commun (zone libre
+ * à droite), des sections et la carte de niveau en papier. L'accueil, sans
+ * titre, garde sa propre scène.
+ */
+.app-shell-page {
+  color: #4a4037;
+  background:
+    linear-gradient(rgb(226 196 140 / 34%), rgb(226 196 140 / 34%)),
+    #f0e2c6 url('/assets/home/papier.webp') 0 0 / 320px;
+}
+
+.app-shell-page .app-main {
+  position: relative;
+  overflow: clip;
+}
+
+.page-head,
+.app-shell-page .page-content:not(.home-page) {
+  width: min(100% - 48px, 1240px);
+  max-width: none;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.app-shell-page .page-content:not(.home-page) {
+  position: relative;
+  padding: 0 0 max(40px, env(safe-area-inset-bottom));
+}
+
+.page-head {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding: 22px 0 18px;
+}
+
+.page-head h2 {
+  margin: 0;
+  color: #17233d;
+  font-family: var(--font-title);
+  font-size: clamp(30px, 3.4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.page-head-context {
+  margin-top: 2px;
+  color: #7a6a58;
+  font-size: var(--text-s);
+  font-weight: 700;
+}
+
+.page-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Boutons à plat des pages, comme sur le plateau. */
+.app-shell-page .app-main .btn {
+  border: 0;
+  border-radius: 12px;
+  color: #17233d;
+  background: #fdf6e6;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.app-shell-page .app-main .btn-go {
+  background: linear-gradient(#ffd266, #ffb720);
+  box-shadow: none;
+}
+
+.app-shell-page .app-main .btn-reset {
+  color: #fff;
+  background: var(--reset);
+  box-shadow: none;
+}
+
+.page-head-actions .header-action-label {
+  display: inline;
+}
+
+.page-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.page-progress strong {
+  color: #17233d;
+  font-weight: 800;
+}
+
+.page-progress progress {
+  width: 180px;
+  height: 10px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 8px;
+  appearance: none;
+  background: #e4d6b8;
+}
+
+.page-progress progress::-webkit-progress-bar {
+  background: #e4d6b8;
+}
+
+.page-progress progress::-webkit-progress-value {
+  border-radius: 8px;
+  background: var(--go);
+}
+
+.page-progress progress::-moz-progress-bar {
+  border-radius: 8px;
+  background: var(--go);
+}
+
+/* Accessoires : seulement dans les marges des grands écrans. */
+.page-prop {
+  position: absolute;
+  display: none;
+  background: center / contain no-repeat;
+  pointer-events: none;
+}
+
+@media (min-width: 1500px) {
+  .page-prop {
+    display: block;
+  }
+
+  .page-prop-plans {
+    top: 150px;
+    right: -150px;
+    width: 280px;
+    aspect-ratio: 800 / 590;
+    background-image: url('/assets/home/plans.webp');
+    transform: rotate(12deg);
+  }
+
+  .page-prop-square {
+    top: 620px;
+    right: -70px;
+    width: 170px;
+    aspect-ratio: 1;
+    background-image: url('/assets/home/equerre.webp');
+    transform: rotate(-8deg);
+  }
+
+  .page-prop-screwdriver {
+    top: 420px;
+    left: -110px;
+    width: 230px;
+    aspect-ratio: 900 / 227;
+    background-image: url('/assets/home/tournevis.webp');
+    transform: rotate(62deg);
+  }
+}
+
+/* Très grand écran : la page s'élargit pour une cinquième colonne de cartes. */
+@media (min-width: 1700px) {
+  .page-head:has(+ .page-content-levels),
+  .app-shell-page .page-content-levels:not(.home-page) {
+    width: min(100% - 48px, 1560px);
+  }
+}
+
+/* Panneaux et messages des pages : du papier bordé, sans bandeau bleu nuit. */
+.app-shell-page .app-main .panel,
+.app-shell-page .my-levels-empty,
+.app-shell-page .my-levels-notice {
+  border: 0;
+  border-radius: 12px;
+  color: #4a4037;
+  background: #fdf6e6;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+}
+
+.app-shell-page .app-main .panel-header {
+  border-bottom: 2px solid #e2d3b4;
+  color: #8a6a3c;
+  background: none;
+}
+
+/* Sections : chapitres de la campagne, « Mes créations », « Niveaux reçus ». */
+.app-shell-page .level-chapters,
+.app-shell-page .my-levels {
+  display: grid;
+  gap: 26px;
+}
+
+.app-shell-page .level-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #dcc9a0;
+}
+
+.app-shell-page .level-section-head h2 {
+  color: #17233d;
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.app-shell-page .level-section-count {
+  color: #7a6a58;
+  background: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* La grille : autant de colonnes que la largeur en offre, jamais plus de cinq. */
+.app-shell-page .level-cards {
+  grid-template-columns: repeat(auto-fill, minmax(max(236px, (100% - 4 * 18px) / 5 - 1px), 1fr));
+  gap: 18px;
+}
+
+/* La carte de niveau commune : une feuille au bord à peine déchiré, l'aperçu collé dessus. */
+.app-shell-page .level-card {
+  padding: 9px 9px 11px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(rgb(255 252 244 / 80%), rgb(255 252 244 / 80%)),
+    url('/assets/home/papier.webp') 0 0 / 320px;
+  clip-path: polygon(
+    0% 1px,
+    9% 1.2px,
+    18% 1.3px,
+    27% 1.5px,
+    36% 1.2px,
+    45% 1.5px,
+    55% 0px,
+    64% 0.7px,
+    73% 1.5px,
+    82% 1px,
+    91% 1.4px,
+    calc(100% - 0.2px) 0%,
+    calc(100% - 0.8px) 11%,
+    calc(100% - 0.4px) 22%,
+    calc(100% - 0.9px) 33%,
+    calc(100% - 0.9px) 44%,
+    calc(100% - 0px) 56%,
+    calc(100% - 0.3px) 67%,
+    calc(100% - 0.4px) 78%,
+    calc(100% - 1.5px) 89%,
+    100% calc(100% - 1.2px),
+    91% calc(100% - 0.3px),
+    82% calc(100% - 1.3px),
+    73% calc(100% - 0.2px),
+    64% calc(100% - 1px),
+    55% calc(100% - 0.2px),
+    45% calc(100% - 0px),
+    36% calc(100% - 1.4px),
+    27% calc(100% - 0.3px),
+    18% calc(100% - 0.3px),
+    9% calc(100% - 1.6px),
+    1.4px 100%,
+    0.5px 89%,
+    1.5px 78%,
+    0.9px 67%,
+    1.1px 56%,
+    0.3px 44%,
+    1.5px 33%,
+    1.1px 22%,
+    1.5px 11%
+  );
+  container-type: inline-size;
+  transition: none;
+}
+
+.app-shell-page .level-card:nth-child(3n + 2) {
+  background-position:
+    0 0,
+    140px 90px;
+  clip-path: polygon(
+    0% 0.8px,
+    9% 1.3px,
+    18% 1.5px,
+    27% 0.5px,
+    36% 1.2px,
+    45% 1.1px,
+    55% 1.1px,
+    64% 0.2px,
+    73% 0px,
+    82% 0.6px,
+    91% 1.2px,
+    calc(100% - 0.4px) 0%,
+    calc(100% - 0.8px) 11%,
+    calc(100% - 0.5px) 22%,
+    calc(100% - 1.4px) 33%,
+    calc(100% - 1.5px) 44%,
+    calc(100% - 0.6px) 56%,
+    calc(100% - 1.6px) 67%,
+    calc(100% - 0.1px) 78%,
+    calc(100% - 1.3px) 89%,
+    100% calc(100% - 1.4px),
+    91% calc(100% - 0.2px),
+    82% calc(100% - 1.1px),
+    73% calc(100% - 0.9px),
+    64% calc(100% - 1.5px),
+    55% calc(100% - 0.3px),
+    45% calc(100% - 0.9px),
+    36% calc(100% - 1.4px),
+    27% calc(100% - 1px),
+    18% calc(100% - 0.5px),
+    9% calc(100% - 0.1px),
+    1.5px 100%,
+    0.8px 89%,
+    1.6px 78%,
+    0.2px 67%,
+    1.3px 56%,
+    1.3px 44%,
+    1.5px 33%,
+    0px 22%,
+    0.6px 11%
+  );
+}
+
+.app-shell-page .level-card:nth-child(3n) {
+  background-position:
+    0 0,
+    60px 210px;
+  clip-path: polygon(
+    0% 0.9px,
+    9% 0.6px,
+    18% 1.4px,
+    27% 0.5px,
+    36% 0.8px,
+    45% 0.6px,
+    55% 0.7px,
+    64% 1.6px,
+    73% 0.2px,
+    82% 0.7px,
+    91% 0.4px,
+    calc(100% - 0.6px) 0%,
+    calc(100% - 1.6px) 11%,
+    calc(100% - 0.5px) 22%,
+    calc(100% - 1px) 33%,
+    calc(100% - 0.7px) 44%,
+    calc(100% - 1.2px) 56%,
+    calc(100% - 0.7px) 67%,
+    calc(100% - 0.3px) 78%,
+    calc(100% - 0.7px) 89%,
+    100% calc(100% - 0.7px),
+    91% calc(100% - 1.3px),
+    82% calc(100% - 0.9px),
+    73% calc(100% - 0.3px),
+    64% calc(100% - 1.1px),
+    55% calc(100% - 0.5px),
+    45% calc(100% - 0.8px),
+    36% calc(100% - 0.4px),
+    27% calc(100% - 0.7px),
+    18% calc(100% - 1.3px),
+    9% calc(100% - 0.8px),
+    1.2px 100%,
+    1.2px 89%,
+    0.9px 78%,
+    1px 67%,
+    0.6px 56%,
+    1px 44%,
+    1.2px 33%,
+    0.2px 22%,
+    1.5px 11%
+  );
+}
+
+.app-shell-page .level-card:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.app-shell-page .level-card-thumb {
+  overflow: hidden;
+  border: 0;
+  box-shadow: inset 0 0 0 1px #e2d0a9;
+}
+
+.app-shell-page .level-card-number {
+  top: 6px;
+  left: 6px;
+  min-width: 28px;
+  height: 28px;
+  padding: 2px 6px 0;
+  border-radius: 7px;
+  background: var(--night-800);
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.app-shell-page .level-card-tier {
+  top: 6px;
+  right: 6px;
+  height: 26px;
+  gap: 5px;
+  padding: 0 9px 0 7px;
+  color: #2c7a2c;
+  background: #fdf6e6;
+  box-shadow: none;
+  font-size: 12.5px;
+}
+
+.app-shell-page .level-card-tier svg {
+  color: inherit;
+}
+
+.app-shell-page .level-card-tier-elegant {
+  color: #b85a00;
+}
+
+.app-shell-page .level-card-tier-minimal {
+  color: #17233d;
+  background: linear-gradient(#ffd266, #ffb720);
+}
+
+.app-shell-page .level-card-lock {
+  color: #6d5c45;
+  background: #fdf6e6;
+  box-shadow: none;
+}
+
+.app-shell-page .level-card-body {
+  padding: 9px 4px 0;
+}
+
+.app-shell-page .level-card-title {
+  color: #17233d;
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.app-shell-page .level-card-meta {
+  color: #8a6a3c;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.app-shell-page .level-card-description {
+  color: #4a4037;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.app-shell-page .level-card-actions {
+  padding-top: 10px;
+}
+
+.app-shell-page .level-card-actions .btn {
+  border-radius: 10px;
+}
+
+.app-shell-page .level-card-actions .level-card-primary {
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.app-shell-page .level-card-actions .level-card-tool {
+  background: none;
+}
+
+.app-shell-page .level-card-actions .level-card-tool-danger {
+  color: #c0392b;
+  box-shadow: inset 0 0 0 2px #e3b3ab;
+}
+
+/*
+ * Carte étroite avec plus de deux icônes : le bouton principal prend sa propre
+ * ligne et les icônes se partagent la suivante, pour que rien ne déborde.
+ */
+@container (max-width: 345px) {
+  .level-card-actions:has(.level-card-tool:nth-child(4)) {
+    flex-wrap: wrap;
+  }
+
+  .level-card-actions:has(.level-card-tool:nth-child(4)) .level-card-primary {
+    flex-basis: 100%;
+  }
+
+  .level-card-actions:has(.level-card-tool:nth-child(4)) .level-card-tool {
+    width: auto;
+    flex: 1;
+  }
+}
+
+/* Téléphone : deux cartes par ligne, le texte sous l'aperçu comme ailleurs. */
+@media (max-width: 600px) {
+  .page-head,
+  .app-shell-page .page-content:not(.home-page) {
+    width: calc(100% - 24px);
+  }
+
+  .page-head {
+    padding: 14px 0 12px;
+  }
+
+  .page-progress progress {
+    width: 120px;
+  }
+
+  .page-head-actions .header-action-label {
+    display: none;
+  }
+
+  .app-shell-page .level-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .app-shell-page .level-card {
+    padding: 6px 6px 8px;
+  }
+
+  .app-shell-page .level-card-body {
+    padding: 7px 2px 0;
+  }
+
+  .app-shell-page .level-card-title {
+    font-size: 16px;
+  }
+
+  .app-shell-page .level-card-description {
+    font-size: 12px;
+  }
+
+  .app-shell-page .level-card-actions {
+    gap: 5px;
+    padding-top: 8px;
+  }
+
+  .app-shell-page .level-card-actions .btn {
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    font-size: 15px;
+  }
+
+  .app-shell-page .level-card-number {
+    min-width: 24px;
+    height: 24px;
+    font-size: 13px;
+  }
+
+  /* Le palier se réduit à son icône. */
+  .app-shell-page .level-card-tier {
+    height: 24px;
+    gap: 0;
+    padding: 0 6px;
+    font-size: 0;
+  }
+}
+
+/* 10. En-tête : navigation ou menu, jamais les deux -------------------------------- */
+
+/*
+ * Au-dessus de 760 px, la navigation principale (Paramètres compris) remplace
+ * le menu ; en dessous, c'est l'inverse. Une commande propre à un écran, que
+ * le menu porte sur petit écran, est alors montrée dans la barre du plateau.
+ */
+@media (min-width: 761px) {
+  .app-header:has(.main-nav) .menu-toggle {
+    display: none;
+  }
+}
+
+/* Écran large : une colonne vide de la largeur du logo garde la navigation centrée. */
+@media (min-width: 1100px) {
+  .app-header:has(.main-nav) .header-actions:not(:has(> :not(.menu-toggle))) {
+    width: 146px;
+  }
+}
+
+.main-nav a {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .wide-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1099px) {
+  .main-nav a {
+    gap: 6px;
+    padding: 0 10px;
+    font-size: var(--text-s);
+  }
+}
+
+/* Juste au-dessus du seuil du menu : les libellés seuls, sans icône, tiennent sur une ligne. */
+@media (min-width: 761px) and (max-width: 899px) {
+  .main-nav a svg {
+    display: none;
+  }
+}
+
+/* Le bouton du menu et son panneau, dans le style de l'application. */
+.menu-toggle {
+  border: 0;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.menu-toggle[aria-expanded='true'] {
+  color: var(--night-950);
+  background: var(--accent);
+}
+
+.level-menu {
+  gap: 4px;
+  padding: 8px;
+  border: 0;
+  border-radius: 14px;
+  color: #17233d;
+  background:
+    linear-gradient(rgb(255 252 244 / 88%), rgb(255 252 244 / 88%)),
+    #fdf6e6 url('/assets/home/papier.webp') 0 0 / 320px;
+  box-shadow:
+    inset 0 0 0 2px #cdbb98,
+    0 0 0 100vmax rgb(10 20 38 / 35%);
+  clip-path: inset(-100vmax);
+}
+
+.level-menu .btn,
+.app-shell-page .app-header .level-menu .btn {
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  color: #17233d;
+  background: none;
+  box-shadow: none;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.level-menu .btn.level-menu-current {
+  background: linear-gradient(#ffd266, #ffb720);
+}
+
+.level-menu::-webkit-scrollbar-thumb {
+  background-color: #d4c19c;
+}
+
+/* 11. Barre du plateau pendant la simulation ---------------------------------------- */
+
+/* L'état à gauche, en texte ; « Recommencer » reste à la place de « Lancer ». */
+.app-shell-desk .workspace-toolbar-desk .toolbar-status-text {
+  overflow: hidden;
+  color: #17233d;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell-desk .workspace-toolbar-desk .toolbar-status {
+  min-width: 0;
+  padding-left: 4px;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .app-shell-desk .workspace .toolbar-restart .toolbar-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 699px) {
+  .app-shell-desk .workspace-toolbar .toolbar-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .app-shell-desk .workspace-toolbar .btn {
+    min-width: 44px;
+    padding: 0;
+  }
+
+  .app-shell-desk .workspace-toolbar-desk .toolbar-status-text {
+    font-size: 14px;
+    white-space: normal;
+  }
+}
+
+/* 12. Boîtes de dialogue — identité visuelle ---------------------------------------- */
+
+/* Toutes les boîtes : une feuille de papier bordée, un titre en clair, des boutons à plat. */
+.dialog {
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  color: #4a4037;
+  background:
+    linear-gradient(rgb(255 252 244 / 90%), rgb(255 252 244 / 90%)),
+    #fdf6e6 url('/assets/home/papier.webp') 0 0 / 320px;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+}
+
+.dialog .panel-header {
+  min-height: 0;
+  padding: 12px 12px 0 18px;
+  color: #17233d;
+  background: none;
+}
+
+.dialog .panel-title {
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dialog .panel-close {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+  border: 0;
+  border-radius: 10px;
+  color: #17233d;
+  background: none;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+}
+
+.dialog .panel-body {
+  padding: 12px 18px 18px;
+}
+
+.dialog .btn {
+  border: 0;
+  border-radius: 12px;
+  color: #17233d;
+  background: #fdf6e6;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.dialog .btn-go {
+  background: linear-gradient(#ffd266, #ffb720);
+  box-shadow: none;
+}
+
+.dialog .btn-reset {
+  color: #fff;
+  background: var(--reset);
+  box-shadow: none;
+}
+
+/*
+ * Victoire de campagne : Bolt détouré à gauche, « Bravo ! » en grand, les
+ * paliers en pastilles, puis l'action suivante en jaune sur toute la largeur.
+ */
+.victory-dialog {
+  width: min(540px, calc(100vw - 2 * var(--space-4)));
+}
+
+.victory-dialog .panel-header {
+  padding: 16px 14px 0 22px;
+  background: none;
+}
+
+.victory-dialog .panel-title {
+  font-size: 36px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.victory-dialog .panel-body {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 18px;
+  padding: 8px 22px 14px;
+}
+
+.victory-summary-row {
+  display: contents;
+}
+
+.victory-bolt {
+  width: auto;
+  grid-area: 1 / 1 / 3 / 2;
+  align-self: end;
+  margin: 0;
+  aspect-ratio: auto;
+}
+
+.victory-bolt img {
+  display: block;
+  width: 100%;
+}
+
+.victory-tiers {
+  justify-content: flex-start;
+  gap: 8px;
+  grid-area: 1 / 2 / 2 / 3;
+  align-self: end;
+}
+
+.victory-tier,
+.victory-tier[data-earned='true'] {
+  display: flex;
+  width: auto;
+  min-width: 82px;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 10px 6px;
+  border: 0;
+  border-radius: 12px;
+  color: #8a7a62;
+  background: #eadbbb;
+}
+
+.victory-tier[data-earned='true'] {
+  color: #17233d;
+  background: linear-gradient(#ffd266, #ffb720);
+}
+
+.victory-tier-icon {
+  color: inherit;
+}
+
+.victory-tier-name,
+.victory-tier[data-earned='true'] .victory-tier-name {
+  color: inherit;
+  font-family: var(--font-title);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.victory-summary {
+  grid-area: 2 / 2 / 3 / 3;
+  align-self: start;
+  text-align: left;
+}
+
+.victory-count {
+  color: #17233d;
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.victory-challenge {
+  color: #6d5c45;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.victory-remix-error,
+.victory-actions {
+  grid-column: 1 / -1;
+}
+
+.victory-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 2px solid #e2d3b4;
+}
+
+.victory-actions .victory-next,
+.victory-actions .btn-go,
+.victory-see-scene {
+  grid-column: 1 / -1;
+}
+
+.victory-actions .victory-next {
+  min-height: 52px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* Seul sur sa ligne quand il n'y a pas de « Remixer ». */
+.victory-actions .btn:not(.btn-go):only-of-type,
+.victory-actions .victory-replay:nth-last-child(2) {
+  grid-column: 1 / -1;
+}
+
+.victory-see-scene {
+  color: #6d5c45;
+}
+
+@media (max-width: 480px) {
+  .victory-dialog .panel-body {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 8px 12px;
+    padding: 6px 14px 10px;
+  }
+
+  .victory-dialog .panel-title {
+    font-size: 30px;
+  }
+
+  .victory-tier,
+  .victory-tier[data-earned='true'] {
+    min-width: 0;
+    flex: 1;
+    padding: 6px 4px 4px;
+  }
+
+  .victory-tier-name,
+  .victory-tier[data-earned='true'] .victory-tier-name {
+    font-size: 12.5px;
   }
 }

@@ -1,5 +1,5 @@
-import type { AttemptFailureReason, AttemptOutcome } from '../domain/attempt-failure-evaluator';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import type { AttemptOutcome } from '../domain/attempt-failure-evaluator';
+import { RotateCcw } from 'lucide-react';
 import type { CampaignVictory } from './CampaignVictoryDialog';
 import { Button } from './Button';
 import { Panel } from './Panel';
@@ -22,22 +22,11 @@ interface LevelResultProps {
   readonly outcome: AttemptOutcome | null;
   readonly isCreation: boolean;
   readonly onReplay: () => void;
-  readonly onReset: () => void;
   readonly onReturnToLevels: () => void;
   /** U22: « Retour à l’atelier » while the author plays his puzzle. */
   readonly returnLabel?: string;
   readonly campaign?: CampaignResult;
 }
-
-/**
- * B2 (plan-remise-en-jeu.md § 4): the two reasons an attempt can be lost, in
- * the player's words. The wording carries the explanation the status word
- * cannot: "Échec" alone never says what went wrong.
- */
-const failureExplanations: Record<AttemptFailureReason, string> = {
-  'out-of-scene': 'Hors de la scène : la balle a quitté le plateau.',
-  timeout: 'Temps écoulé : la balle n’est pas entrée dans le panier.',
-};
 
 /**
  * The banner shown once a level's simulation has concluded, won or lost.
@@ -50,44 +39,15 @@ export function LevelResult({
   outcome,
   isCreation,
   onReplay,
-  onReset,
   onReturnToLevels,
   returnLabel = 'Retour aux niveaux',
   campaign,
 }: LevelResultProps) {
   if (outcome === null) return null;
 
-  if (outcome.outcome === 'lost') {
-    return (
-      <Panel className="level-result level-result-failure" label="Résultat du niveau" title="Échec">
-        <p className="level-result-reason">{failureExplanations[outcome.reason]}</p>
-        <div className="level-result-actions">
-          <Button tone="reset" onClick={onReset}>
-            <RotateCcw size={18} aria-hidden="true" />
-            Recommencer
-          </Button>
-          <Button onClick={onReturnToLevels}>{returnLabel}</Button>
-        </div>
-      </Panel>
-    );
-  }
-
-  if (isCreation) {
-    return (
-      <Panel
-        className="level-result level-result-victory"
-        label="Résultat du niveau"
-        title="Victoire"
-      >
-        <div className="level-result-actions">
-          <Button tone="go" onClick={onReset}>
-            <ArrowLeft size={18} aria-hidden="true" />
-            Retour à l’édition
-          </Button>
-        </div>
-      </Panel>
-    );
-  }
+  // A lost attempt, and an author's own test whatever its end, are told in the
+  // board's bar, where « Recommencer » stays: no panel, and nowhere to be sent to.
+  if (outcome.outcome === 'lost' || isCreation) return null;
 
   if (campaign !== undefined) {
     return (

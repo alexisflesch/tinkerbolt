@@ -60,10 +60,36 @@ export function LevelsPage() {
   const [opening, setOpening] = useState(false);
   const [draftErrorLevelId, setDraftErrorLevelId] = useState<string | null>(null);
 
+  const campaignLevels = numberedChapters.flatMap(({ levels }) => levels);
+  const levelTotal = campaignLevels.length;
+  const resolvedTotal = campaignLevels.filter(
+    ({ level }) => levelProgress[level.id]?.resolved === true,
+  ).length;
+
   if (loading) return <StorageLoading title="Campagne" />;
 
   return (
-    <AppFrame title="Campagne" variant="page">
+    <AppFrame
+      title="Campagne"
+      variant="page"
+      headerAction={
+        known && (
+          <p className="page-progress">
+            <progress
+              aria-label="Progression de la campagne"
+              value={resolvedTotal}
+              max={levelTotal}
+            />
+            <span>
+              <strong>
+                {resolvedTotal} / {levelTotal}
+              </strong>{' '}
+              niveaux résolus
+            </span>
+          </p>
+        )
+      }
+    >
       <div className="page-content page-content-levels">
         {opening && <p role="status">Chargement du brouillon…</p>}
         {storageError !== null && (

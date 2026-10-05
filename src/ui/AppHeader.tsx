@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { House, LayoutGrid, Map, Menu, Wrench } from 'lucide-react';
+import { House, LayoutGrid, Map, Menu, Settings, Wrench } from 'lucide-react';
 
 import { Button } from './Button';
 
@@ -30,14 +30,18 @@ interface AppHeaderProps {
   readonly navigation?: MainSection | undefined;
 }
 
-/** The four places of the main navigation; `home` is the page without a title. */
-export type MainSection = 'home' | 'campaign' | 'workshop' | 'my-levels';
+/**
+ * The four places of the main navigation; `home` is the page without a title,
+ * `none` a page that belongs to no place (« Paramètres »).
+ */
+export type MainSection = 'home' | 'campaign' | 'workshop' | 'my-levels' | 'settings' | 'none';
 
 const mainSections = [
   { id: 'home', to: '/', label: 'Accueil', Icon: House },
   { id: 'campaign', to: '/levels', label: 'Campagne', Icon: Map },
   { id: 'workshop', to: '/editor', label: 'Atelier', Icon: Wrench },
   { id: 'my-levels', to: '/my-levels', label: 'Mes niveaux', Icon: LayoutGrid },
+  { id: 'settings', to: '/settings', label: 'Paramètres', Icon: Settings },
 ] as const satisfies readonly { readonly id: MainSection; readonly [key: string]: unknown }[];
 
 export interface MenuAction {
@@ -123,7 +127,7 @@ export function AppHeader({
       <div className="header-actions">
         {action}
         <button
-          className="icon-button"
+          className="icon-button menu-toggle"
           type="button"
           aria-label="Ouvrir le menu"
           aria-expanded={isMenuOpen}
@@ -148,46 +152,20 @@ export function AppHeader({
               {label}
             </Button>
           ))}
-          <Button
-            onClick={() => {
-              if (beforeNavigate === undefined) void navigate('/');
-              else void beforeNavigate().then(() => navigate('/'));
-            }}
-          >
-            Accueil
-          </Button>
-          <Button
-            onClick={() => {
-              if (beforeNavigate === undefined) void navigate('/levels');
-              else void beforeNavigate().then(() => navigate('/levels'));
-            }}
-          >
-            Campagne
-          </Button>
-          <Button
-            onClick={() => {
-              if (beforeNavigate === undefined) void navigate('/editor');
-              else void beforeNavigate().then(() => navigate('/editor'));
-            }}
-          >
-            Atelier
-          </Button>
-          <Button
-            onClick={() => {
-              if (beforeNavigate === undefined) void navigate('/my-levels');
-              else void beforeNavigate().then(() => navigate('/my-levels'));
-            }}
-          >
-            Mes niveaux
-          </Button>
-          <Button
-            onClick={() => {
-              if (beforeNavigate === undefined) void navigate('/settings');
-              else void beforeNavigate().then(() => navigate('/settings'));
-            }}
-          >
-            Paramètres
-          </Button>
+          {mainSections.map(({ id, to, label, Icon }) => (
+            <Button
+              key={id}
+              className={id === section ? 'level-menu-current' : undefined}
+              aria-current={id === section ? 'page' : undefined}
+              onClick={() => {
+                if (beforeNavigate === undefined) void navigate(to);
+                else void beforeNavigate().then(() => navigate(to));
+              }}
+            >
+              <Icon size={18} aria-hidden="true" />
+              {label}
+            </Button>
+          ))}
         </nav>
       )}
     </header>

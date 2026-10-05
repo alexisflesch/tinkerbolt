@@ -4,7 +4,19 @@ import {
 } from '../application/editor-session/editor-session';
 import type { ObjectKind } from '../app/object-catalog';
 import type { ReactNode } from 'react';
-import { Maximize2, Pause, Play, Redo2, RotateCcw, Undo2, X, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  Maximize2,
+  Pause,
+  Play,
+  Redo2,
+  RotateCcw,
+  Undo2,
+  X,
+  ZoomIn,
+  ZoomOut,
+  Trophy,
+} from 'lucide-react';
+import type { AttemptFailureReason, AttemptOutcome } from '../domain/attempt-failure-evaluator';
 import { Button } from './Button';
 
 interface SimulationControlsProps {
@@ -12,6 +24,10 @@ interface SimulationControlsProps {
   readonly session: EditorSession;
   readonly isCreation: boolean;
   readonly feedback: string | null;
+  /** How the last attempt ended, told in the bar once the simulation is over. */
+  readonly outcome?: AttemptOutcome | null;
+  /** Reopens the campaign victory dialog, once the attempt is won and the dialog closed. */
+  readonly onOpenResult?: (() => void) | undefined;
   /** A discreet, dismissable status (M8: a shared level not kept), shown when no feedback is. */
   readonly notice?: { readonly message: string; readonly onDismiss: () => void } | undefined;
   readonly activePlacementKind: ObjectKind | null;
@@ -42,11 +58,22 @@ interface SimulationControlsProps {
     | undefined;
 }
 
+/**
+ * B2 (plan-remise-en-jeu.md § 4): the two reasons an attempt can be lost, in
+ * the player's words, said in the bar rather than in an error panel.
+ */
+const failureExplanations: Record<AttemptFailureReason, string> = {
+  'out-of-scene': 'Raté : la balle a quitté le plateau.',
+  timeout: 'Raté : la balle n’est pas entrée dans le panier à temps.',
+};
+
 /** The "tester / pause / reset" bar: construction commands while building, playback controls while simulating. */
 export function SimulationControls({
   isLaunching = false,
   session,
   feedback,
+  outcome = null,
+  onOpenResult,
   notice,
   isCreation,
   activePlacementKind,
@@ -199,16 +226,22 @@ export function SimulationControls({
       {session.phase !== 'construction' && framing}
 
       {session.phase !== 'construction' && (
-        <div className="toolbar-status" aria-live="polite">
-          <strong className="toolbar-status-text">
-            {session.phase === 'running'
-              ? 'Simulation en cours'
-              : session.phase === 'paused'
-                ? 'Simulation en pause'
-                : 'Simulation terminée'}
-          </strong>
+        <>
+          <div className="toolbar-status" aria-live="polite">
+            <strong className="toolbar-status-text">
+              {session.phase === 'running'
+                ? 'Simulation en cours'
+                : session.phase === 'paused'
+                  ? 'Simulation en pause'
+                  : outcome === null
+                    ? 'Simulation terminée'
+                    : outcome.outcome === 'won'
+                      ? 'Gagné !'
+                      : failureExplanations[outcome.reason]}
+            </strong>
+          </div>
           {session.phase === 'running' && (
-            <Button tone="pause" onClick={onPause}>
+            <Button onClick={onPause}>
               <Pause size={18} aria-hidden="true" />
               <span className="toolbar-button-label">Mettre en pause</span>
             </Button>
@@ -219,13 +252,22 @@ export function SimulationControls({
               <span className="toolbar-button-label">Reprendre</span>
             </Button>
           )}
-          {session.phase !== 'result' && (
-            <Button tone="reset" onClick={onRestoreConstruction}>
-              <RotateCcw size={18} aria-hidden="true" />
-              <span className="toolbar-button-label">Recommencer</span>
+          {session.phase === 'result' && onOpenResult !== undefined && (
+            <Button tone="go" onClick={onOpenResult}>
+              <Trophy size={18} aria-hidden="true" />
+              <span className="toolbar-button-label">Voir le résultat</span>
             </Button>
           )}
-        </div>
+          {/*
+            Always the last command, where « Lancer » was, and still there once
+            the attempt has ended: the hand that is about to press it never
+            finds it gone.
+          */}
+          <Button className="toolbar-primary toolbar-restart" onClick={onRestoreConstruction}>
+            <RotateCcw size={18} aria-hidden="true" />
+            <span className="toolbar-button-label">Recommencer</span>
+          </Button>
+        </>
       )}
 
       {session.phase === 'construction' && wiringGuide !== null ? (

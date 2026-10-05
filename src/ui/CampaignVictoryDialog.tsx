@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import type { ChallengeHint } from '../application/progression';
+import { publicAssetUrl } from '../presentation/sprite-loader';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 
@@ -34,6 +35,9 @@ export interface CampaignVictory {
   /** Why the last « Remixer » could not create the creation (storage). */
   readonly remixError?: string;
 }
+
+/** Bolt cut out in his victory pose (`art/build-landing.py`). */
+const victoryBolt = publicAssetUrl('/assets/home/bolt-victoire.webp', import.meta.env.BASE_URL);
 
 type Tier = CampaignVictory['tier'];
 
@@ -77,7 +81,7 @@ function TierRow({ campaign }: { readonly campaign: CampaignVictory }) {
         return (
           <li key={tier} className="victory-tier" data-earned={String(isEarned)}>
             <span className="victory-tier-icon" aria-hidden="true">
-              <Icon size={30} aria-hidden="true" />
+              <Icon size={24} aria-hidden="true" />
             </span>
             <span className="victory-tier-name">{name}</span>
             <span className="visually-hidden">{isEarned ? ' obtenu' : ' non obtenu'}</span>
@@ -123,7 +127,7 @@ export function CampaignVictoryDialog({ campaign, onReplay, onClose }: CampaignV
           {challenge !== null && <p className="victory-challenge">{challenge}</p>}
         </div>
         <figure className="victory-bolt" aria-hidden="true">
-          <img src="/assets/bolt/bolt-victory.webp" alt="" draggable={false} />
+          <img src={victoryBolt} alt="" draggable={false} />
         </figure>
       </div>
       {campaign.remixError !== undefined && (

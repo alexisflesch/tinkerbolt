@@ -1,0 +1,599 @@
+/* Maquette « identité visuelle » — Campagne et Mes niveaux. Complète identite.css. */
+body.niveaux {
+  min-height: 100vh;
+}
+.niveaux .wrap {
+  width: min(100% - 48px, 1240px);
+}
+.page {
+  position: relative;
+  padding: 22px 0 40px;
+  overflow: clip;
+}
+
+/* Accessoires : seulement dans les marges des grands écrans. */
+.page > .prop {
+  display: none;
+  background: center / contain no-repeat;
+  filter: none;
+}
+/* Très grand écran : la page s'élargit pour une cinquième colonne. */
+@media (min-width: 1700px) {
+  .niveaux .wrap {
+    width: min(100% - 48px, 1560px);
+  }
+}
+@media (min-width: 1500px) {
+  .page > .prop {
+    display: block;
+  }
+  .page > .prop-plans {
+    top: 150px;
+    right: -150px;
+    width: 280px;
+    aspect-ratio: 800 / 590;
+    background-image: url('img/plans.webp');
+    transform: rotate(12deg);
+  }
+  .page > .prop-equerre {
+    top: 620px;
+    right: -70px;
+    bottom: auto;
+    width: 170px;
+    aspect-ratio: 1;
+    background-image: url('img/equerre.webp');
+    transform: rotate(-8deg);
+  }
+  .page > .prop-tournevis {
+    top: 420px;
+    bottom: auto;
+    left: -110px;
+    width: 230px;
+    aspect-ratio: 900 / 227;
+    background-image: url('img/tournevis.webp');
+    transform: rotate(62deg);
+  }
+}
+
+/* En-tête de page commun : titre à gauche, zone libre à droite. */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+}
+.page-head h1 {
+  font-size: clamp(30px, 3.4vw, 44px);
+}
+.page-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.page-progress strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+.page-progress .meter {
+  width: 180px;
+  margin: 0;
+}
+.page-progress .meter i {
+  max-width: none;
+  height: 10px;
+  background: linear-gradient(90deg, var(--go) var(--done), #e4d6b8 var(--done));
+}
+.page-actions {
+  display: flex;
+  gap: 8px;
+}
+.page-button,
+.search,
+.segmented {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: #fdf6e6;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.page-button {
+  padding: 0 14px;
+  cursor: pointer;
+}
+.page-button span {
+  padding-top: 2px;
+}
+.page-button-main {
+  background: linear-gradient(#ffd266, #ffb720);
+  box-shadow: none;
+}
+
+/* Recherche et filtre (Mes niveaux) : toujours sur une seule ligne. */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.search {
+  min-width: 0;
+  max-width: 380px;
+  flex: 1 1 120px;
+  padding: 0 12px;
+}
+.search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: none;
+  font: 600 15px var(--font-ui);
+  color: var(--ink);
+}
+.segmented {
+  flex: none;
+  gap: 0;
+  padding: 4px;
+  background: #eadbbb;
+  box-shadow: none;
+}
+.segmented button {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font: 700 14px var(--font-ui);
+  color: #6d5c45;
+  cursor: pointer;
+}
+.segmented button[aria-pressed='true'] {
+  background: linear-gradient(#ffd266, #ffb720);
+  color: var(--ink);
+}
+
+/* Sections : chapitres de la campagne, « Mes créations », « Niveaux reçus ». */
+.chapter {
+  margin-top: 26px;
+}
+.chapter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #dcc9a0;
+}
+.chapter-head h2 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.chapter-head span {
+  font-size: 14px;
+  font-weight: 700;
+  color: #7a6a58;
+}
+
+/* La grille : autant de colonnes que la largeur en offre, jamais plus de cinq. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(236px, (100% - 4 * 18px) / 5 - 1px), 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+/* La carte de niveau commune : une feuille déchirée, l'aperçu collé dessus. */
+.card {
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  padding: 9px 9px 11px;
+  background:
+    linear-gradient(rgb(255 252 244 / 80%), rgb(255 252 244 / 80%)),
+    url('img/papier.webp') 0 0 / 320px;
+  clip-path: polygon(
+    0% 1px,
+    9% 1.2px,
+    18% 1.3px,
+    27% 1.5px,
+    36% 1.2px,
+    45% 1.5px,
+    55% 0px,
+    64% 0.7px,
+    73% 1.5px,
+    82% 1px,
+    91% 1.4px,
+    calc(100% - 0.2px) 0%,
+    calc(100% - 0.8px) 11%,
+    calc(100% - 0.4px) 22%,
+    calc(100% - 0.9px) 33%,
+    calc(100% - 0.9px) 44%,
+    calc(100% - 0px) 56%,
+    calc(100% - 0.3px) 67%,
+    calc(100% - 0.4px) 78%,
+    calc(100% - 1.5px) 89%,
+    100% calc(100% - 1.2px),
+    91% calc(100% - 0.3px),
+    82% calc(100% - 1.3px),
+    73% calc(100% - 0.2px),
+    64% calc(100% - 1px),
+    55% calc(100% - 0.2px),
+    45% calc(100% - 0px),
+    36% calc(100% - 1.4px),
+    27% calc(100% - 0.3px),
+    18% calc(100% - 0.3px),
+    9% calc(100% - 1.6px),
+    1.4px 100%,
+    0.5px 89%,
+    1.5px 78%,
+    0.9px 67%,
+    1.1px 56%,
+    0.3px 44%,
+    1.5px 33%,
+    1.1px 22%,
+    1.5px 11%
+  );
+}
+.card:nth-child(3n + 2) {
+  background-position:
+    0 0,
+    140px 90px;
+  clip-path: polygon(
+    0% 0.8px,
+    9% 1.3px,
+    18% 1.5px,
+    27% 0.5px,
+    36% 1.2px,
+    45% 1.1px,
+    55% 1.1px,
+    64% 0.2px,
+    73% 0px,
+    82% 0.6px,
+    91% 1.2px,
+    calc(100% - 0.4px) 0%,
+    calc(100% - 0.8px) 11%,
+    calc(100% - 0.5px) 22%,
+    calc(100% - 1.4px) 33%,
+    calc(100% - 1.5px) 44%,
+    calc(100% - 0.6px) 56%,
+    calc(100% - 1.6px) 67%,
+    calc(100% - 0.1px) 78%,
+    calc(100% - 1.3px) 89%,
+    100% calc(100% - 1.4px),
+    91% calc(100% - 0.2px),
+    82% calc(100% - 1.1px),
+    73% calc(100% - 0.9px),
+    64% calc(100% - 1.5px),
+    55% calc(100% - 0.3px),
+    45% calc(100% - 0.9px),
+    36% calc(100% - 1.4px),
+    27% calc(100% - 1px),
+    18% calc(100% - 0.5px),
+    9% calc(100% - 0.1px),
+    1.5px 100%,
+    0.8px 89%,
+    1.6px 78%,
+    0.2px 67%,
+    1.3px 56%,
+    1.3px 44%,
+    1.5px 33%,
+    0px 22%,
+    0.6px 11%
+  );
+}
+.card:nth-child(3n) {
+  background-position:
+    0 0,
+    60px 210px;
+  clip-path: polygon(
+    0% 0.9px,
+    9% 0.6px,
+    18% 1.4px,
+    27% 0.5px,
+    36% 0.8px,
+    45% 0.6px,
+    55% 0.7px,
+    64% 1.6px,
+    73% 0.2px,
+    82% 0.7px,
+    91% 0.4px,
+    calc(100% - 0.6px) 0%,
+    calc(100% - 1.6px) 11%,
+    calc(100% - 0.5px) 22%,
+    calc(100% - 1px) 33%,
+    calc(100% - 0.7px) 44%,
+    calc(100% - 1.2px) 56%,
+    calc(100% - 0.7px) 67%,
+    calc(100% - 0.3px) 78%,
+    calc(100% - 0.7px) 89%,
+    100% calc(100% - 0.7px),
+    91% calc(100% - 1.3px),
+    82% calc(100% - 0.9px),
+    73% calc(100% - 0.3px),
+    64% calc(100% - 1.1px),
+    55% calc(100% - 0.5px),
+    45% calc(100% - 0.8px),
+    36% calc(100% - 0.4px),
+    27% calc(100% - 0.7px),
+    18% calc(100% - 1.3px),
+    9% calc(100% - 0.8px),
+    1.2px 100%,
+    1.2px 89%,
+    0.9px 78%,
+    1px 67%,
+    0.6px 56%,
+    1px 44%,
+    1.2px 33%,
+    0.2px 22%,
+    1.5px 11%
+  );
+}
+.card-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #f6ead3;
+  box-shadow: inset 0 0 0 1px #e2d0a9;
+}
+.card-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card-number {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: grid;
+  min-width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 2px 6px 0;
+  border-radius: 7px;
+  background: var(--night-800);
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+.card-tier {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  height: 26px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px 0 7px;
+  border-radius: 13px;
+  background: #fdf6e6;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #2c7a2c;
+}
+.card-tier .icon {
+  width: 15px;
+  height: 15px;
+}
+.card-tier-elegant {
+  color: #b85a00;
+}
+.card-tier-minimal {
+  background: linear-gradient(#ffd266, #ffb720);
+  color: var(--ink);
+}
+.card-body {
+  flex: 1;
+  padding: 9px 4px 0;
+}
+.card h3 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.card-meta {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #8a6a3c;
+}
+.card-desc {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.card-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 0 2px;
+}
+.card-primary {
+  display: inline-flex;
+  height: 40px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(#ffd266, #ffb720);
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.card-primary .icon {
+  width: 17px;
+  height: 17px;
+}
+.card-primary span {
+  padding-top: 2px;
+}
+.card-action {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  box-shadow: inset 0 0 0 2px #cdbb98;
+  color: var(--ink);
+  cursor: pointer;
+}
+.card-action .icon {
+  width: 17px;
+  height: 17px;
+}
+.card-danger {
+  box-shadow: inset 0 0 0 2px #e3b3ab;
+  color: #c0392b;
+}
+
+/*
+ * Carte étroite avec plus de deux icônes : le bouton principal prend sa propre
+ * ligne et les icônes se partagent la suivante, pour que rien ne déborde.
+ */
+@container (max-width: 345px) {
+  .card-foot:has(.card-action:nth-child(4)) {
+    flex-wrap: wrap;
+  }
+  .card-foot:has(.card-action:nth-child(4)) .card-primary {
+    flex-basis: 100%;
+  }
+  .card-foot:has(.card-action:nth-child(4)) .card-action {
+    width: auto;
+    flex: 1;
+  }
+}
+
+/* Verrouillé : aperçu grisé, cadenas, aucune action. */
+.card-is-locked .card-thumb img {
+  filter: grayscale(1) contrast(0.85) brightness(1.05);
+  opacity: 0.5;
+}
+.card-is-locked h3,
+.card-is-locked .card-desc {
+  opacity: 0.6;
+}
+.card-lock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  color: #6d5c45;
+}
+.card-locked {
+  display: inline-flex;
+  height: 40px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  background: #eadbbb;
+  font-size: 14px;
+  font-weight: 800;
+  color: #6d5c45;
+}
+
+/* Téléphone : deux cartes par ligne, le texte sous l'aperçu comme ailleurs. */
+@media (max-width: 600px) {
+  .niveaux .wrap {
+    width: calc(100% - 24px);
+  }
+  .page {
+    padding-top: 14px;
+  }
+  .page-progress .meter {
+    width: 120px;
+  }
+  .page-button span {
+    display: none;
+  }
+  .segmented button {
+    padding: 0 10px;
+    font-size: 13px;
+  }
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .card {
+    padding: 6px 6px 8px;
+  }
+  .card-body {
+    padding: 7px 2px 0;
+  }
+  .card h3 {
+    font-size: 16px;
+  }
+  .card-desc {
+    font-size: 12px;
+  }
+  .card-foot {
+    gap: 5px;
+    margin-top: 8px;
+    padding: 0;
+  }
+  .card-primary,
+  .card-action,
+  .card-locked {
+    height: 36px;
+  }
+  .card-primary {
+    font-size: 15px;
+  }
+  .card-action {
+    width: 36px;
+  }
+  .card-number {
+    min-width: 24px;
+    height: 24px;
+    font-size: 13px;
+  }
+  .card-tier {
+    top: 6px;
+    right: 6px;
+    height: 24px;
+    gap: 0;
+    padding: 0 6px;
+    font-size: 0;
+  }
+}
+
+/* Comme dans l'application : la navigation de l'en-tête se masque sous 761 px. */
+@media (max-width: 760px) {
+  .niveaux .nav {
+    display: none;
+  }
+  .niveaux .top-tool {
+    margin-left: auto;
+  }
+}

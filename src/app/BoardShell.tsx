@@ -24,11 +24,9 @@ import { puzzleFromWorkshop } from '../application/puzzle/puzzle-workshop';
 import type { LevelDocument } from '../domain/level-document';
 import type { AttemptOutcome } from '../domain/attempt-failure-evaluator';
 import { AppFrame } from '../ui/AppFrame';
-import type { MainSection } from '../ui/AppHeader';
 import { frameLevel } from '../presentation/level-framing';
 import { BoardView } from '../ui/BoardView';
 import { CampaignVictoryDialog, type CampaignVictory } from '../ui/CampaignVictoryDialog';
-import { LevelResult } from '../ui/LevelResult';
 import { Button } from '../ui/Button';
 import { ObjectDrawer } from '../ui/ObjectDrawer';
 import { Dialog } from '../ui/Dialog';
@@ -124,12 +122,6 @@ const wireAnchor = (routes: ReturnType<typeof wireRoutes>): { x: number; y: numb
     });
   }
   return best;
-};
-
-const sectionBySubtitle: Readonly<Record<string, MainSection>> = {
-  Atelier: 'workshop',
-  Campagne: 'campaign',
-  'Mes niveaux': 'my-levels',
 };
 
 /** ADR 0015 § Révéler: how many of the author's wires could not be laid again. */
@@ -502,6 +494,26 @@ export function BoardShell({
 
   const levelActions = (
     <>
+      {revealSource !== undefined && (
+        // On a wide screen the header has no menu: the author's command sits in the bar.
+        <button
+          className="icon-button objective-button wide-only"
+          type="button"
+          aria-label={revealLabel}
+          title={revealLabel}
+          aria-haspopup="dialog"
+          onClick={() => {
+            setIsRevealDialogOpen(true);
+          }}
+        >
+          <span className="objective-button-glyph" aria-hidden="true">
+            <Eye size={18} />
+          </span>
+          <span className="objective-button-label" aria-hidden="true">
+            Solution
+          </span>
+        </button>
+      )}
       {exit !== undefined && (
         <button
           className="icon-button objective-button"
@@ -575,26 +587,6 @@ export function BoardShell({
     </>
   );
 
-  const levelResult = (
-    <LevelResult
-      outcome={simulation.attemptOutcome}
-      isCreation={mode === 'creation'}
-      onReplay={resetToInitialAttempt}
-      onReset={simulation.restoreConstruction}
-      onReturnToLevels={returnToLevels}
-      {...(exit === undefined ? {} : { returnLabel: exit.label })}
-      {...(shownCampaignVictory === null
-        ? {}
-        : {
-            campaign: {
-              tier: shownCampaignVictory.tier,
-              areActionsAvailable: victoryDialog.areActionsAvailable,
-              onOpenResult: victoryDialog.open,
-            },
-          })}
-    />
-  );
-
   return (
     <AppFrame
       title={title}
@@ -615,7 +607,7 @@ export function BoardShell({
               },
             ],
           })}
-      desk={sectionBySubtitle[subtitle] ?? 'workshop'}
+      desk
       {...(isNarrowPortrait ? { headerAction: levelActions } : {})}
     >
       {hasDrawer && (
@@ -659,6 +651,13 @@ export function BoardShell({
           isCreation={mode === 'creation'}
           session={session}
           feedback={feedback}
+          outcome={simulation.attemptOutcome}
+          // After « Voir la scène », the bar is where the victory dialog is reopened from.
+          onOpenResult={
+            shownCampaignVictory !== null && victoryDialog.areActionsAvailable
+              ? victoryDialog.open
+              : undefined
+          }
           notice={
             shownNotice === undefined
               ? undefined
@@ -755,8 +754,6 @@ export function BoardShell({
           {hintStep !== null && firstLevelHint !== undefined && (
             <FirstLevelHint step={hintStep} onDismiss={firstLevelHint.onDone} />
           )}
-          {/* No right rail: the commands float by the object, the result lies over the board's foot. */}
-          {levelResult}
         </div>
       </section>
       {isObjectiveOpen && (

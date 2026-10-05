@@ -14,7 +14,6 @@ const renderVictory = (campaign?: CampaignResult): HTMLElement => {
       outcome={won}
       isCreation={false}
       onReplay={() => undefined}
-      onReset={() => undefined}
       onReturnToLevels={() => undefined}
       {...(campaign === undefined ? {} : { campaign })}
     />,

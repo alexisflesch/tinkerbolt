@@ -202,6 +202,8 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
 | Implémenté, à valider | C7a  | Identité visuelle de l’accueil (atelier, Bolt détouré, niveau résolu)    | C7 ; maquette `maquettes/identite/` validée le 5 octobre.       |
 | Implémenté, à valider | C7b  | Identité visuelle des écrans de plateau en grand format (Atelier, jeu)   | C7a ; maquette `maquettes/identite/atelier.html` validée.       |
+| Implémenté, à valider | C7c  | Identité visuelle des pages de contenu (Campagne, Mes niveaux, autres)   | C7b ; maquettes `maquettes/identite/` validées.                 |
+| À faire (Luna)        | C7d  | Recherche et filtre « Tous / Créations / Reçus » dans Mes niveaux        | C7c ; maquette `maquettes/identite/mes-niveaux.html`.           |
 | Reprise avant C10     | C6   | Favicon, icônes PWA et splash ; aspect de la barre à retravailler         | C2a ; retouche de la barre demandée le 5 octobre.               |
 | Reprise avant C10     | C4   | Poignées des poutres : position et cohérence visuelle à corriger          | Trois tailles fixes ; aperçu direct et une commande annulable.  |
 | Implémenté, gate C10  | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
@@ -1142,6 +1144,56 @@ conversation.
   plus montés par l’application ; ils restent dans le dépôt pour leurs tests,
   à supprimer avec la reprise des tests. Recoupe M0 à M3, dont les gestes et
   contrats restent à réconcilier avec `mobile-editor-interactions.md`.
+
+### C7c — Pages de contenu — implémenté, tests à reprendre — 5 octobre 2026
+
+- **Maquettes.** `docs/maquettes/identite/campagne.html` et `mes-niveaux.html`
+  (une feuille de style commune), validées après reprise : bord déchiré à peine
+  marqué (1,6 px), pas de tri, deux cartes par ligne sur téléphone avec le texte
+  sous l’aperçu, aucun débordement des actions.
+- **Livré.** `AppFrame` : toute page de contenu titrée montre la navigation
+  principale dans l’en-tête (section courante déduite du titre ou du contexte)
+  et un titre de page commun, avec à droite l’action que la page lui confie
+  (progression de la campagne, « Importer » et « Nouveau niveau »). Styles
+  communs sous `.app-shell-page` : parchemin, sections, grille de 2 à 5 colonnes
+  (cinq à partir de 1700 px), carte de niveau en papier, boutons à plat,
+  accessoires dans les marges à partir de 1500 px. `LevelCard` et
+  `LevelSection` ne changent pas de structure. Paramètres et les autres pages
+  titrées héritent du même habillage. Tuiles du catalogue de l’atelier : bord
+  adouci de la même façon.
+- **Points ouverts.** Tests à reprendre avec ceux de C7a et C7b. Les panneaux
+  de Paramètres et les messages de Mes niveaux sont restylés sans vérification
+  visuelle. Dialogues inchangés.
+
+### C7c, retouches — en-tête, simulation, dialogues — 5 octobre 2026
+
+- **En-tête.** Au-dessus de 760 px, la navigation principale reçoit
+  « Paramètres » et le bouton de menu disparaît ; en dessous, le menu seul,
+  refait en feuille de papier avec icônes et entrée courante surlignée. La
+  navigation tient sur une ligne à toutes les largeurs. « Révéler la solution
+  de l’auteur », que portait le menu, a aussi un bouton dans la barre de
+  l’atelier en écran large.
+- **Simulation.** « Recommencer » reste à la place de « Lancer » pendant et
+  après la simulation ; l’issue se lit dans la barre (« Gagné ! », « Raté : … »).
+  Le panneau de résultat n’est plus affiché : ni échec, ni « Victoire », ni
+  renvoi vers la liste des niveaux. Après « Voir la scène », « Voir le
+  résultat » se trouve dans la barre. `LevelResult` n’est plus monté ; il
+  reste pour ses tests, à supprimer avec leur reprise.
+- **Dialogues.** Toutes les boîtes en papier bordé, boutons à plat. Victoire de
+  campagne refaite : Bolt détouré en pose de victoire
+  (`public/assets/home/bolt-victoire.webp`, produit par `art/build-landing.py`),
+  paliers en pastilles, « Niveau suivant » en jaune. Les illustrations de
+  `public/assets/bolt/` et `art/build-bolt-illustrations.py` ne servent plus.
+
+### C7d — Recherche et filtre de Mes niveaux — à faire (Luna)
+
+- Ajouter dans « Mes niveaux », sous le titre de page, un champ de recherche
+  sur le titre et un filtre « Tous / Créations / Reçus », sur une seule ligne à
+  toutes les largeurs, comme dans `docs/maquettes/identite/mes-niveaux.html`
+  (`.filters`, `.search`, `.segmented` de `niveaux.css`).
+- Pas de tri : écarté par l’auteur le 5 octobre, à rouvrir seulement si le
+  besoin apparaît.
+- Tâche simple, confiée à Luna par l’auteur ; Red-Green-Refactor.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 
