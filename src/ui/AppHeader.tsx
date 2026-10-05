@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, Plus } from 'lucide-react';
+import { House, LayoutGrid, Map, Menu, Wrench } from 'lucide-react';
 
 import { Button } from './Button';
 
 interface AppHeaderProps {
   readonly beforeNavigate?: (() => Promise<void>) | undefined;
-  /** The page's title, centred; none on the home page (V7). */
+  /** The page's title, centred; none on the home page, which shows the main navigation instead. */
   readonly title?: string | undefined;
   /** The context after the title (« Atelier », « Campagne »…), if the title needs one. */
   readonly subtitle?: string | undefined;
@@ -67,13 +67,28 @@ export function AppHeader({
           void beforeNavigate().then(() => navigate('/'));
         }}
       >
-        <span className="brand-mark" aria-hidden="true">
-          <Plus size={18} strokeWidth={3.5} />
-        </span>
-        <h1 className="brand-name">TinkerBolt</h1>
+        <span className="brand-logo" aria-hidden="true" />
+        <h1 className="brand-name visually-hidden">TinkerBolt</h1>
       </Link>
       {title === undefined ? (
-        <span aria-hidden="true" />
+        <nav className="main-nav" aria-label="Navigation principale">
+          <Link to="/" aria-current="page">
+            <House size={18} aria-hidden="true" />
+            Accueil
+          </Link>
+          <Link to="/levels">
+            <Map size={18} aria-hidden="true" />
+            Campagne
+          </Link>
+          <Link to="/editor">
+            <Wrench size={18} aria-hidden="true" />
+            Atelier
+          </Link>
+          <Link to="/my-levels">
+            <LayoutGrid size={18} aria-hidden="true" />
+            Mes niveaux
+          </Link>
+        </nav>
       ) : (
         <p className="level-label">
           <span className="level-title">{title}</span>

@@ -39,6 +39,9 @@ describe('AppHeader — navigation et lexique (V3)', () => {
     const brand = screen.getByRole('link', { name: 'TinkerBolt, accueil' });
     expect(brand).toHaveAttribute('href', '/');
     expect(within(brand).getByRole('heading', { name: 'TinkerBolt' })).toBeVisible();
+    // Identité visuelle : le logo dessiné remplace la pastille « + » et le nom écrit.
+    expect(brand.querySelector('.brand-logo')).toHaveAttribute('aria-hidden', 'true');
+    expect(brand.querySelector('svg')).toBeNull();
 
     fireEvent.click(brand);
     expect(screen.getByText('Page d’accueil')).toBeVisible();
@@ -57,6 +60,27 @@ describe('AppHeader — navigation et lexique (V3)', () => {
       .getAllByRole('button')
       .map((button) => button.textContent);
     expect(entries).toEqual(['Accueil', 'Campagne', 'Atelier', 'Mes niveaux', 'Paramètres']);
+  });
+});
+
+describe('AppHeader — navigation principale de l’accueil', () => {
+  afterEach(cleanup);
+
+  it('n’affiche la navigation principale que sans titre de page', () => {
+    const { unmount } = render(
+      <MemoryRouter>
+        <AppHeader />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('navigation', { name: 'Navigation principale' })).toBeVisible();
+    unmount();
+
+    render(
+      <MemoryRouter>
+        <AppHeader title="Campagne" />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
   });
 });
 

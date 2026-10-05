@@ -54,7 +54,7 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
       expect(screen.getByRole('link', { name: 'Jouer' })).toHaveAttribute('href', '/levels');
     });
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'ou créer un niveau' })).toHaveAttribute(
+      expect(screen.getByRole('link', { name: 'Créer un niveau' })).toHaveAttribute(
         'href',
         '/editor',
       );
@@ -62,6 +62,21 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
     await waitFor(() => {
       expect(screen.queryByRole('region', { name: 'Plateau de jeu' })).not.toBeInTheDocument();
     });
+  });
+
+  it('montre le tutoriel 5 résolu dans son cadre, avec les flèches décoratives de la chaîne', async () => {
+    const { container } = await renderStorageReady(<App progressRepository={createRepository()} />);
+
+    const hero = screen.getByRole('img', { name: 'Aperçu du niveau « La chaîne »' });
+    await waitFor(() => {
+      expect(hero.querySelector('.level-preview')).not.toBeNull();
+    });
+    const hints = container.querySelector('.home-board .home-hints');
+    expect(hints).toHaveAttribute('aria-hidden', 'true');
+    expect(hints?.getAttribute('viewBox')).toBe('0 0 16 9');
+    // Quatre flèches : une trajectoire pointillée et une pointe chacune.
+    expect(hints?.querySelectorAll('path')).toHaveLength(8);
+    expect(hero.closest('.home-frame')).not.toBeNull();
   });
 
   it('montre l’aperçu réel du tutoriel 5, dessiné par le rendu du plateau', async () => {
@@ -80,7 +95,7 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
     });
   });
 
-  it('affiche Bolt près des actions d’accueil comme illustration décorative', async () => {
+  it('affiche Bolt détouré dans la scène d’accueil comme illustration décorative', async () => {
     const { container } = await renderStorageReady(<App progressRepository={createRepository()} />);
 
     const illustration = await waitFor(() => {
@@ -91,18 +106,18 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
     const image = illustration.querySelector('img');
 
     expect(illustration).toHaveAttribute('aria-hidden', 'true');
-    expect(illustration.closest('.home-hero-actions')).not.toBeNull();
+    expect(illustration.closest('.home-stage')).not.toBeNull();
     expect(image).toHaveAttribute('alt', '');
-    expect(image?.getAttribute('src')).toBe('/assets/bolt/bolt-explaining.webp');
+    expect(image?.getAttribute('src')).toBe('/assets/home/bolt.webp');
   });
 
-  it('ouvre les trois destinations illustrées par un sprite, puis Paramètres en pied de page', async () => {
+  it('ouvre les trois destinations illustrées par un sprite, sans pied de page', async () => {
     await renderStorageReady(<App progressRepository={createRepository()} />);
 
     for (const { name, path, sprite } of [
       { name: 'Campagne', path: '/levels', sprite: 'basket' },
       { name: 'Atelier', path: '/editor', sprite: 'lever' },
-      { name: 'Mes niveaux', path: '/my-levels', sprite: 'springboard' },
+      { name: 'Mes niveaux', path: '/my-levels', sprite: 'box-wood' },
     ]) {
       const link = within(destinations()).getByRole('link', { name: new RegExp(`^${name}`, 'u') });
       await waitFor(() => {
@@ -134,19 +149,11 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
       expect(screen.getByText('Tes créations et les niveaux qu’on t’a envoyés.')).toBeVisible();
     });
 
-    const footer = screen
-      .getByText('Les niveaux partagés sont sous licence CC BY 4.0.')
-      .closest('footer');
-    if (footer === null) throw new Error('Pied de page introuvable.');
-    await waitFor(() => {
-      expect(within(footer).getByRole('link', { name: 'Paramètres' })).toHaveAttribute(
-        'href',
-        '/settings',
-      );
-    });
+    expect(screen.queryByText(/CC BY 4\.0/u)).toBeNull();
+    expect(screen.queryByRole('contentinfo')).toBeNull();
   });
 
-  it('n’a ni kicker, ni faits, ni carnet de bord, ni statistiques, ni titre au centre de l’en-tête', async () => {
+  it('n’a ni kicker, ni faits, ni carnet de bord, ni statistiques', async () => {
     await renderStorageReady(<App progressRepository={createRepository()} />);
 
     await waitFor(() => {
@@ -164,13 +171,30 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
     await waitFor(() => {
       expect(screen.queryByText(/%/u)).toBeNull();
     });
-    const header = screen.getByRole('banner');
     await waitFor(() => {
-      expect(header).not.toHaveTextContent('Accueil');
+      expect(screen.getByRole('banner')).not.toHaveTextContent('À toi d’inventer');
     });
-    await waitFor(() => {
-      expect(header).not.toHaveTextContent('À toi d’inventer');
+  });
+
+  it('remplace le titre de l’en-tête par la navigation principale, Accueil étant la page courante', async () => {
+    await renderStorageReady(<App progressRepository={createRepository()} />);
+
+    const navigation = within(screen.getByRole('banner')).getByRole('navigation', {
+      name: 'Navigation principale',
     });
+    const links = within(navigation).getAllByRole('link');
+    expect(links.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['Accueil', '/'],
+      ['Campagne', '/levels'],
+      ['Atelier', '/editor'],
+      ['Mes niveaux', '/my-levels'],
+    ]);
+    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([
+      'page',
+      null,
+      null,
+      null,
+    ]);
   });
 
   it('montre dans la carte Campagne la progression résolus / total, en barre et en texte', async () => {

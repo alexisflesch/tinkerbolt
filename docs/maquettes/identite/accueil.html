@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Maquette — identité visuelle, accueil</title>
+    <link rel="stylesheet" href="identite.css" />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-house" viewBox="0 0 24 24">
+        <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+        <path
+          d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+        />
+      </symbol>
+      <symbol id="i-map" viewBox="0 0 24 24">
+        <path
+          d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"
+        />
+        <path d="M15 5.764v15" />
+        <path d="M9 3.236v15" />
+      </symbol>
+      <symbol id="i-wrench" viewBox="0 0 24 24">
+        <path
+          d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+        />
+      </symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24">
+        <rect width="7" height="7" x="3" y="3" rx="1" />
+        <rect width="7" height="7" x="14" y="3" rx="1" />
+        <rect width="7" height="7" x="14" y="14" rx="1" />
+        <rect width="7" height="7" x="3" y="14" rx="1" />
+      </symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <path
+          d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
+        />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24">
+        <path
+          d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"
+        />
+      </symbol>
+      <symbol id="i-pencil" viewBox="0 0 24 24">
+        <path
+          d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+        />
+        <path d="m15 5 4 4" />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+    </svg>
+
+    <header class="top">
+      <div class="wrap">
+        <a class="logo" href="#"><img src="img/logo.webp" alt="TinkerBolt" /></a>
+        <nav class="nav" aria-label="Navigation principale">
+          <a href="#" aria-current="page"
+            ><svg class="icon"><use href="#i-house" /></svg>Accueil</a
+          >
+          <a href="#"
+            ><svg class="icon"><use href="#i-map" /></svg>Campagne</a
+          >
+          <a href="#"
+            ><svg class="icon"><use href="#i-wrench" /></svg>Atelier</a
+          >
+          <a href="#"
+            ><svg class="icon"><use href="#i-grid" /></svg>Mes niveaux</a
+          >
+        </nav>
+        <a class="top-tool" href="#" aria-label="Paramètres"
+          ><svg class="icon"><use href="#i-settings" /></svg
+        ></a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <img class="prop prop-plans" src="img/plans.webp" alt="" />
+        <div class="shelf" aria-hidden="true">
+          <img src="img/etabli.webp" alt="" /><img src="img/etabli.webp" alt="" /><img
+            src="img/etabli.webp"
+            alt=""
+          />
+        </div>
+        <img class="prop prop-tournevis" src="img/tournevis.webp" alt="" />
+        <img class="prop prop-boulons" src="img/boulons.webp" alt="" />
+        <div class="wrap stage">
+          <div class="sheet-shadow">
+            <span class="pin"></span>
+            <div class="sheet">
+              <h1>Amène la balle<br /><em>jusqu’au panier.</em></h1>
+              <p class="lead">
+                Poutres, tremplins, ventilateurs, leviers&nbsp;: place les pièces, lance la machine
+                et regarde ce qui se passe. Raté&nbsp;? Ajuste et relance.
+              </p>
+              <div class="actions">
+                <a class="btn btn-play" href="#"
+                  ><svg class="icon"><use href="#i-play" /></svg><span>Jouer</span></a
+                >
+                <a class="btn btn-ghost" href="#"
+                  ><svg class="icon"><use href="#i-pencil" /></svg><span>Créer un niveau</span></a
+                >
+              </div>
+            </div>
+          </div>
+          <div class="frame">
+            <img class="board" src="img/plateau.webp" alt="Aperçu d’un niveau" />
+            <svg
+              class="hints"
+              viewBox="0 0 1102 616"
+              preserveAspectRatio="xMidYMid slice"
+              aria-hidden="true"
+            >
+              <path class="dash" d="M177 177 C 82 192, 37 312, 37 434" />
+              <path d="M25 411 L37 434 L49 411" />
+              <path class="dash" d="M237 444 C 412 52, 832 32, 995 224" />
+              <path d="M971 215 L995 224 L990 199" />
+              <path class="dash" d="M520 442 C 632 428, 714 462, 758 572" />
+              <path d="M738 555 L758 572 L761 546" />
+              <path class="dash" d="M784 570 C 827 552, 850 540, 860 526" />
+              <path d="M857 552 L860 526 L837 537" />
+            </svg>
+            <img class="wood" src="img/cadre.webp" alt="" />
+          </div>
+          <img class="bolt" src="img/bolt.webp" alt="" />
+        </div>
+      </section>
+
+      <section class="places-zone">
+        <img class="prop prop-equerre" src="img/equerre.webp" alt="" />
+        <nav class="wrap places" aria-label="Explorer TinkerBolt">
+          <a class="place place-primary" href="#">
+            <span class="place-art"><img src="img/basket.png" alt="" /></span>
+            <span>
+              <h2>Campagne</h2>
+              <p>Sept niveaux pour découvrir chaque pièce.</p>
+              <span class="meter"><i></i>3 / 7</span>
+            </span>
+            <span class="go"
+              ><svg class="icon"><use href="#i-chevron" /></svg
+            ></span>
+          </a>
+          <a class="place" href="#">
+            <span class="place-art"><img src="img/lever.png" alt="" /></span>
+            <span>
+              <h2>Atelier</h2>
+              <p>Construis ton propre niveau, teste-le, puis envoie-le à qui tu veux.</p>
+            </span>
+            <span class="go"
+              ><svg class="icon"><use href="#i-chevron" /></svg
+            ></span>
+          </a>
+          <a class="place" href="#">
+            <span class="place-art"><img src="img/caisse.png" alt="" /></span>
+            <span>
+              <h2>Mes niveaux</h2>
+              <p>Tes créations et les niveaux qu’on t’a envoyés.</p>
+            </span>
+            <span class="go"
+              ><svg class="icon"><use href="#i-chevron" /></svg
+            ></span>
+          </a>
+        </nav>
+      </section>
+    </main>
+  </body>
+</html>

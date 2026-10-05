@@ -1,7 +1,18 @@
 import { progressFixture, seedIndexedDB } from './indexed-db-fixture';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const HERO_TITLE = 'Amène la balle jusqu’au panier.';
+
+/**
+ * Identité visuelle : sous 861 px, les boutons de la feuille disparaissent et
+ * la carte « Campagne » devient l'appel principal.
+ */
+const launchCommand = (page: Page, width: number): Locator =>
+  width > 860
+    ? page.getByRole('link', { name: 'Jouer', exact: true })
+    : page
+        .getByRole('navigation', { name: 'Explorer TinkerBolt' })
+        .getByRole('link', { name: /^Campagne/u });
 
 test('présente l’accueil sans débordement et mène à la campagne au tactile', async ({ page }) => {
   for (const viewport of [
@@ -42,7 +53,7 @@ test('présente l’accueil sans débordement et mène à la campagne au tactile
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth),
     ).toBe(false);
-    const launch = page.getByRole('link', { name: 'Jouer', exact: true });
+    const launch = launchCommand(page, viewport.width);
     const bounds = await launch.boundingBox();
     if (bounds === null) throw new Error('La commande principale doit être visible.');
     expect(bounds.width).toBeGreaterThanOrEqual(44);
@@ -55,7 +66,7 @@ test('présente l’accueil sans débordement et mène à la campagne au tactile
   const font = await page.request.get('/fonts/Nunito.woff2');
   expect(font.ok()).toBe(true);
   expect(font.headers()['content-type']).toBe('font/woff2');
-  await page.getByRole('link', { name: 'Jouer', exact: true }).tap();
+  await launchCommand(page, 320).tap();
   await expect(page).toHaveURL(/\/levels$/);
   await expect(page.getByRole('region', { name: 'Campagne' })).toBeVisible();
 });
@@ -84,9 +95,20 @@ test('ouvre chaque destination et revient à l’accueil depuis le menu', async 
           .getByRole('link', { name: /^Mes niveaux/u }),
       path: '/my-levels',
     },
-    { open: () => page.getByRole('link', { name: 'ou créer un niveau' }), path: '/editor' },
-    { open: () => page.getByRole('link', { name: 'Paramètres', exact: true }), path: '/settings' },
+    { open: () => page.getByRole('link', { name: 'Créer un niveau' }), path: '/editor' },
+    {
+      open: () =>
+        page
+          .getByRole('navigation', { name: 'Navigation principale' })
+          .getByRole('link', { name: 'Mes niveaux' }),
+      path: '/my-levels',
+    },
+    {
+      open: () => page.getByRole('button', { name: 'Paramètres', exact: true }),
+      path: '/settings',
+    },
   ]) {
+    if (path === '/settings') await page.getByRole('button', { name: 'Ouvrir le menu' }).tap();
     await open().tap();
     await expect(page).toHaveURL(new RegExp(`${path}$`));
     await page.getByRole('button', { name: 'Ouvrir le menu' }).tap();
@@ -118,7 +140,7 @@ test('reprend la progression enregistrée après rechargement', async ({ page })
     path: 'test-results/home/accueil-progression-390x844.png',
     fullPage: true,
   });
-  await page.getByRole('link', { name: 'Jouer', exact: true }).tap();
+  await launchCommand(page, 390).tap();
   await expect(page).toHaveURL(/\/levels$/);
   await expect(page.getByRole('button', { name: 'Jouer le niveau 2', exact: true })).toBeEnabled();
 });

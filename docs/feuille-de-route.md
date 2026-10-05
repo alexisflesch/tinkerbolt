@@ -200,6 +200,7 @@ précise leurs dépendances supplémentaires.
 | Livré                 | C9c  | Piston                                                                  | C9b ; comportement accepté dans ADR 0019.                       |
 | Livré                 | C9d  | Minuteur                                                                | C9c ; minuteur/fils accepté dans ADR 0009/0019.                 |
 | Livré                 | C7   | Bolt sur l’accueil et à la victoire                                     | C5 ; maquettes validées par l’auteur.                           |
+| Implémenté, à valider | C7a  | Identité visuelle de l’accueil (atelier, Bolt détouré, niveau résolu)    | C7 ; maquette `maquettes/identite/` validée le 5 octobre.       |
 | Reprise avant C10     | C6   | Favicon, icônes PWA et splash ; aspect de la barre à retravailler         | C2a ; retouche de la barre demandée le 5 octobre.               |
 | Reprise avant C10     | C4   | Poignées des poutres : position et cohérence visuelle à corriger          | Trois tailles fixes ; aperçu direct et une commande annulable.  |
 | Implémenté, gate C10  | C4a  | Propriétés desktop ouvertes à la demande                                | C4 ; maquette validée.                                          |
@@ -1060,6 +1061,41 @@ conversation.
   ajouté. `object-family-registry.ts` garde les anciennes descriptions de
   catalogue, non affichées. Sur cette machine, les captures de pages hors
   application demandent une police nommée (texte absent sinon).
+
+### C7a — Identité visuelle de l’accueil — implémenté, validation visuelle attendue — 5 octobre 2026
+
+- **Origine.** Demande directe de l’auteur le 5 octobre, hors séquence : donner
+  une identité graphique à l’application à partir de sa référence
+  `art/refs/landing.png` et de neuf images qu’il a fait générer
+  (`art/landing/`). Recoupe le todo § 5 (Bolt sur l’accueil) et, pour l’accueil
+  seulement, le § 6 (téléphone, tablette). Réalisé par Claude Opus 5.5 avec
+  l’auteur, maquette validée avant le code.
+- **Maquette.** `docs/maquettes/identite/accueil.html`, captures à sept formats.
+  Décisions de l’auteur : Baloo 2 pour les titres ; ni post-it ni annotation
+  manuscrite ; ligne de licence retirée de l’accueil ; aucun défilement sur
+  ordinateur ; plans bleus visibles dès 861 px ; sous 861 px les boutons de la
+  feuille disparaissent et les trois cartes portent les actions, « Campagne » en
+  appel principal ; le plateau montre le niveau résolu, flèches pointillées sur
+  toute la chaîne.
+- **Livré.** `art/build-landing.py` exporte les images vers
+  `public/assets/home/` ; Baloo 2 est embarquée (`public/fonts/`, SIL OFL 1.1).
+  `HomePage` : scène d’atelier, Bolt détouré, cadre en bois autour de
+  `LevelPreview`, trois cartes. `withSolutionPlaced` (`src/app/home-hero.ts`)
+  pose la solution de référence du tutoriel 5 sur une copie valide, sans
+  toucher au niveau embarqué ; les quatre flèches sont des tracés en unités du
+  monde, liés à ce niveau. En-tête commun : le logo dessiné remplace la
+  pastille « + » et le nom ; sans titre de page (accueil), la navigation
+  principale Accueil · Campagne · Atelier · Mes niveaux prend la place du
+  titre et se masque sous 761 px. Le menu garde Paramètres ; le pied de page
+  de l’accueil est supprimé.
+- **Tests.** `home-hero.test.ts`, `HomePage.test.tsx`, `AppHeader.test.tsx` et
+  `e2e/home.spec.ts` repris : sous 861 px, la commande de lancement testée est
+  la carte « Campagne ».
+- **Points ouverts.** Validation visuelle de l’auteur sur l’application
+  (captures dans `maquettes/identite/captures/app/`). L’auteur prévoit un
+  niveau dédié à l’accueil : les flèches seront alors à retracer. Le reste de
+  l’application (campagne, Mes niveaux, plateau, splash) garde l’ancienne
+  identité. `public/assets/bolt/bolt-explaining.webp` n’est plus affiché.
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

@@ -22,7 +22,9 @@ partager. Elle ne couvre pas les sprites et illustrations de `art/` et de
 
 La police de l’interface, Nunito (© 2014 The Nunito Project Authors), est
 embarquée dans `public/fonts/` sous
-[SIL Open Font License 1.1](public/fonts/OFL.txt).
+[SIL Open Font License 1.1](public/fonts/OFL.txt). La police des titres,
+Baloo 2 (© 2019 The Baloo 2 Project Authors), l’est sous la même licence
+([texte](public/fonts/Baloo2-OFL.txt)).
 
 La v1 desktop est validée pour le fonctionnement du core de l’application.
 Les détails visuels seront réévalués avec l’auteur lors d’une prochaine reprise.

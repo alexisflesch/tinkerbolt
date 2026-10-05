@@ -574,12 +574,17 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   (`e2e/board-paper.ts`). Captures dans `test-results/board-paper/` ; validation
   de l’auteur attendue (V2b).
 
-- **Accueil `/`** (V7, maquette V4) : « Amène la balle jusqu’au panier. », un
-  paragraphe, « Jouer » (→ `/levels`) et « ou créer un niveau » (→ `/editor`) ;
-  à droite l’aperçu réel du tutoriel 5 (`LevelPreview`) ; trois cartes Campagne
-  (progression `résolus / total`, barre et texte), Atelier et Mes niveaux,
-  illustrées par une vignette de sprite ; pied de page « Les niveaux partagés
-  sont sous licence CC BY 4.0. » et « Paramètres ». Pas de titre dans l’en-tête.
+- **Accueil `/`** (V7, identité visuelle C7a du 5 octobre, maquette
+  `maquettes/identite/`) : scène d’atelier en parchemin ; « Amène la balle
+  jusqu’au panier. » en Baloo 2 sur une feuille épinglée, un paragraphe,
+  « Jouer » (→ `/levels`) et « Créer un niveau » (→ `/editor`) ; Bolt détouré
+  et, dans un cadre en bois, le tutoriel 5 dessiné avec sa solution posée
+  (`withSolutionPlaced`, `LevelPreview`) et quatre flèches décoratives ; trois
+  cartes Campagne (progression `résolus / total`, barre et texte), Atelier et
+  Mes niveaux, illustrées par une vignette de sprite. Sous 861 px la scène
+  s’empile, les deux boutons disparaissent et la carte Campagne devient
+  l’appel principal. Plus de pied de page. Dans l’en-tête, le logo dessiné et,
+  sur l’accueil seulement, la navigation principale à la place du titre.
   L’invitation PWA et les notes de stockage restent. Le menu de chaque écran
   propose un retour à l’accueil (ADR 0008 amendée).
 - **En-tête** (V7) : titre de page en texte simple centré, « Titre · Contexte »
