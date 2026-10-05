@@ -24,10 +24,10 @@ import {
   rotationMode,
   type LevelDocument,
 } from '../domain/level-document';
-import { projectWires, type ProjectedWire } from './control-wires';
-import { drawWireLabels, drawWires, type WireCanvas } from './wire-renderer';
+import { projectWires, type ProjectedWire, type ProjectedWireSegment } from './control-wires';
+import { drawPendingWire, drawWireLabels, drawWires, type WireCanvas } from './wire-renderer';
 import {
-  ROTATION_HANDLE_GAP_CSS_PIXELS,
+  ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS,
   ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS,
   ROTATION_HANDLE_SIZE_CSS_PIXELS,
 } from './rotation-handle-metrics';
@@ -239,6 +239,8 @@ type BoardProjection = Readonly<{
   readonly objects: readonly ProjectedBoardObject[];
   /** Derived segments of the control wires (ADR 0009), drawn under the objects. */
   readonly wires: readonly ProjectedWire[];
+  /** The wire being laid, up to the cursor; view state, like the selection. */
+  readonly pendingWire?: readonly ProjectedWireSegment[];
   readonly timerDisplays: readonly {
     readonly id: string;
     readonly position: BoardPoint;
@@ -814,8 +816,15 @@ const requiredFamilies = (projection: BoardProjection): readonly SpriteFamily[] 
 ];
 
 const SELECTION_LINE_WIDTH_CSS_PIXELS = 2;
-const ROTATION_HANDLE_COLOUR = '#1e88e5';
-const ROTATION_HANDLE_FILL = '#ffffff';
+/**
+ * The selection and its handles wear the interface's own colours (author's
+ * choice, 5 October 2026): night-blue buttons with an amber pictogram, like
+ * the header's. `styles.css` gives the beam's size handle the same ones.
+ */
+const SELECTION_COLOUR = '#0f1d36';
+const ROTATION_HANDLE_FILL = '#152a4b';
+const ROTATION_HANDLE_RIM = '#0a1426';
+const ROTATION_HANDLE_ARROW_COLOUR = '#ffc53d';
 const ROTATION_HANDLE_ARROW_WIDTH_CSS_PIXELS = 2.5;
 const ZONE_FILL = 'rgba(30, 136, 229, 0.1)';
 const ZONE_OUTLINE = 'rgba(30, 136, 229, 0.65)';
@@ -830,7 +839,7 @@ const GHOST_ALPHA: Record<BoardAppearance, number> = {
   'ghost-valid': 0.55,
   'ghost-invalid': 0.35,
 };
-/** The selection and rotation handle's blue: a valid ghost is outlined like a selection. */
+/** A valid ghost keeps the placement blue of the build zones. */
 const GHOST_VALID_OUTLINE = '#1e88e5';
 const GHOST_INVALID_DASH_CSS_PIXELS = [6, 4];
 
@@ -1096,29 +1105,29 @@ const drawTimerDisplays = (
 };
 
 /**
- * A point `distance` CSS pixels above the object's top edge, in its own
- * frame: it turns with the object, so the handle never jumps while turning.
+ * A point `distance` CSS pixels off the object's top-left corner, leftwards
+ * and upwards alike, in its own frame: it turns with the object, so the
+ * handle never jumps while turning.
  */
-const pointAboveObject = (
+const pointOffTopLeftCorner = (
   object: ProjectedBoardObject,
   viewport: BoardViewport,
   distance: number,
 ): BoardPoint => {
   const center = worldToPixels(object.position, viewport);
-  const offset = -destinationToPixels(object.destination, viewport).y + distance;
+  const destination = destinationToPixels(object.destination, viewport);
+  const local = { x: destination.x - distance, y: destination.y - distance };
+  const cosine = Math.cos(object.rotation);
+  const sine = Math.sin(object.rotation);
   return {
-    x: center.x + offset * Math.sin(object.rotation),
-    y: center.y - offset * Math.cos(object.rotation),
+    x: center.x + local.x * cosine - local.y * sine,
+    y: center.y + local.x * sine + local.y * cosine,
   };
 };
 
-/** The knob's centre, a stem above the object's top edge, in CSS pixels. */
+/** The knob's centre, a diagonal stem off the object's top-left corner, in CSS pixels. */
 const rotationHandleCenter = (object: ProjectedBoardObject, viewport: BoardViewport): BoardPoint =>
-  pointAboveObject(
-    object,
-    viewport,
-    ROTATION_HANDLE_GAP_CSS_PIXELS + ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS,
-  );
+  pointOffTopLeftCorner(object, viewport, ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS);
 
 export const rotationHandleBounds = (
   object: ProjectedBoardObject,
@@ -1222,8 +1231,48 @@ const drawToPlaceOutlines = (
 };
 
 /**
- * The rotation handle: a white knob carrying a turning arrow, joined to the
- * object's top edge by a short stem, so it reads as « tourner » at a glance.
+ * The turning arrow's shape, relative to the arc's own centre, and where that
+ * centre must sit for the whole pictogram — arc and arrowhead — to be centred
+ * in the knob: the head sticks out on one side, so the arc alone would not be.
+ */
+const ROTATION_ARROW = (() => {
+  const radius = ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS * 0.5;
+  const start = -0.8 * Math.PI;
+  const end = 0.45 * Math.PI;
+  const headSize = ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS * 0.32;
+  const tip = { x: radius * Math.cos(end), y: radius * Math.sin(end) };
+  // The tangent at `end`, clockwise, points along (−sin, cos).
+  const along = { x: -Math.sin(end), y: Math.cos(end) };
+  const across = { x: Math.cos(end), y: Math.sin(end) };
+  const head: readonly BoardPoint[] = [
+    { x: tip.x + along.x * headSize, y: tip.y + along.y * headSize },
+    { x: tip.x - across.x * headSize, y: tip.y - across.y * headSize },
+    { x: tip.x + across.x * headSize, y: tip.y + across.y * headSize },
+  ];
+  const outline = [...head];
+  const samples = 64;
+  for (let step = 0; step <= samples; step += 1) {
+    const angle = start + ((end - start) * step) / samples;
+    outline.push({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) });
+  }
+  const xs = outline.map(({ x }) => x);
+  const ys = outline.map(({ y }) => y);
+  return {
+    radius,
+    start,
+    end,
+    head,
+    centre: {
+      x: -(Math.min(...xs) + Math.max(...xs)) / 2,
+      y: -(Math.min(...ys) + Math.max(...ys)) / 2,
+    },
+  };
+})();
+
+/**
+ * The rotation handle: a night-blue knob carrying a turning arrow, joined to the
+ * object's top-left corner by a short diagonal stem, so it reads as « tourner »
+ * at a glance.
  * Knob and stem turn with the object; the arrow inside stays upright.
  */
 const drawRotationHandle = (
@@ -1233,45 +1282,38 @@ const drawRotationHandle = (
 ): void => {
   const knob = rotationHandleCenter(object, viewport);
   const radius = ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS;
-  const stemStart = pointAboveObject(object, viewport, 0);
-  const stemEnd = pointAboveObject(object, viewport, ROTATION_HANDLE_GAP_CSS_PIXELS);
+  const stemStart = pointOffTopLeftCorner(object, viewport, 0);
 
   context.save();
   context.lineCap = 'round';
-  context.strokeStyle = ROTATION_HANDLE_COLOUR;
+  context.strokeStyle = SELECTION_COLOUR;
   context.lineWidth = SELECTION_LINE_WIDTH_CSS_PIXELS;
   context.beginPath();
+  // The knob is filled over the stem's far end.
   context.moveTo(stemStart.x, stemStart.y);
-  context.lineTo(stemEnd.x, stemEnd.y);
+  context.lineTo(knob.x, knob.y);
   context.stroke();
 
   context.fillStyle = ROTATION_HANDLE_FILL;
+  context.strokeStyle = ROTATION_HANDLE_RIM;
   context.beginPath();
   context.arc(knob.x, knob.y, radius, 0, 2 * Math.PI);
   context.fill();
   context.stroke();
 
-  // A three-quarter turn ending in an arrowhead, clockwise.
-  const arrowRadius = radius * 0.5;
-  const start = -0.8 * Math.PI;
-  const end = 0.45 * Math.PI;
+  // A three-quarter turn ending in an arrowhead, clockwise, centred in the knob.
+  const arrow = ROTATION_ARROW;
+  const centre = { x: knob.x + arrow.centre.x, y: knob.y + arrow.centre.y };
+  context.strokeStyle = ROTATION_HANDLE_ARROW_COLOUR;
   context.lineWidth = ROTATION_HANDLE_ARROW_WIDTH_CSS_PIXELS;
   context.beginPath();
-  context.arc(knob.x, knob.y, arrowRadius, start, end);
+  context.arc(centre.x, centre.y, arrow.radius, arrow.start, arrow.end);
   context.stroke();
-  const tip = {
-    x: knob.x + arrowRadius * Math.cos(end),
-    y: knob.y + arrowRadius * Math.sin(end),
-  };
-  const head = radius * 0.32;
-  // The tangent at `end`, clockwise, points along (−sin, cos).
-  const along = { x: -Math.sin(end), y: Math.cos(end) };
-  const across = { x: Math.cos(end), y: Math.sin(end) };
-  context.fillStyle = ROTATION_HANDLE_COLOUR;
+  context.fillStyle = ROTATION_HANDLE_ARROW_COLOUR;
   context.beginPath();
-  context.moveTo(tip.x + along.x * head, tip.y + along.y * head);
-  context.lineTo(tip.x - across.x * head, tip.y - across.y * head);
-  context.lineTo(tip.x + across.x * head, tip.y + across.y * head);
+  const [first, ...others] = arrow.head;
+  if (first !== undefined) context.moveTo(centre.x + first.x, centre.y + first.y);
+  for (const point of others) context.lineTo(centre.x + point.x, centre.y + point.y);
   context.fill();
   context.restore();
 };
@@ -1286,7 +1328,7 @@ const drawSelection = (
   // A ghost (U13: a refused move or turn) is framed by its own outline only.
   // A ball's name and properties identify its selection without boxing its sprite.
   if (object.appearance === 'solid' && object.family !== 'ball') {
-    drawFootprintOutline(context, object, viewport, ROTATION_HANDLE_COLOUR);
+    drawFootprintOutline(context, object, viewport, SELECTION_COLOUR);
   }
 
   if (!object.rotatable || !canDrawWires(context)) return;
@@ -1345,6 +1387,9 @@ export const createBoardRenderer = ({
     };
     if (wireContext !== undefined) {
       drawWires(wireContext, projection.wires, toScreen, wireOptions);
+      if (projection.pendingWire !== undefined) {
+        drawPendingWire(wireContext, projection.pendingWire, toScreen);
+      }
     }
 
     if (objectShadows) {

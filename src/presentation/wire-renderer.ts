@@ -1,5 +1,5 @@
 import type { WorldPoint } from '../domain/family-geometry';
-import type { ProjectedWire } from './control-wires';
+import type { ProjectedWire, ProjectedWireSegment } from './control-wires';
 
 type ScreenPoint = WorldPoint;
 
@@ -77,6 +77,19 @@ const emphasisOf = (
   return 'unrelated';
 };
 
+const tracePath = (
+  context: WireCanvas,
+  segment: ProjectedWireSegment,
+  toScreen: (point: WorldPoint) => ScreenPoint,
+): void => {
+  const from = toScreen(segment.from);
+  const to = toScreen(segment.to);
+  const bend = segment.bend === undefined ? undefined : toScreen(segment.bend);
+  context.moveTo(from.x, from.y);
+  if (bend !== undefined) context.lineTo(bend.x, bend.y);
+  context.lineTo(to.x, to.y);
+};
+
 /**
  * Draws every wire as a horizontal/vertical dark casing under a coloured
  * core, with at most one corner (U14b): through `bend` when it exists,
@@ -99,20 +112,40 @@ export const drawWires = (
       [circuitColour(wire.circuitIndex), CORE_WIDTH],
     ] as const) {
       context.beginPath();
-      for (const segment of segments) {
-        const from = toScreen(segment.from);
-        const to = toScreen(segment.to);
-        const bend = segment.bend === undefined ? undefined : toScreen(segment.bend);
-        context.moveTo(from.x, from.y);
-        if (bend !== undefined) context.lineTo(bend.x, bend.y);
-        context.lineTo(to.x, to.y);
-      }
+      for (const segment of segments) tracePath(context, segment, toScreen);
       context.strokeStyle = colour;
       context.lineWidth = width;
       context.stroke();
     }
     context.restore();
   }
+};
+
+/** The wire being laid has no circuit yet: it takes the selection's blue, well visible. */
+const PENDING_WIRE_COLOUR = '#1e88e5';
+const PENDING_WIRE_ALPHA = 0.85;
+
+/** Draws the wire being laid, from the first object to the cursor, like a laid wire. */
+export const drawPendingWire = (
+  context: WireCanvas,
+  segments: readonly ProjectedWireSegment[],
+  toScreen: (point: WorldPoint) => ScreenPoint,
+): void => {
+  if (segments.length === 0) return;
+  context.save();
+  context.globalAlpha = PENDING_WIRE_ALPHA;
+  context.lineCap = 'round';
+  for (const [colour, width] of [
+    [CASING_COLOUR, CASING_WIDTH],
+    [PENDING_WIRE_COLOUR, CORE_WIDTH],
+  ] as const) {
+    context.beginPath();
+    for (const segment of segments) tracePath(context, segment, toScreen);
+    context.strokeStyle = colour;
+    context.lineWidth = width;
+    context.stroke();
+  }
+  context.restore();
 };
 
 /** A point `LABEL_INSET` from `end` towards `towards`, never past half the segment. */

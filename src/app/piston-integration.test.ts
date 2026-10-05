@@ -120,7 +120,7 @@ describe('C9c piston', () => {
       name: 'Piston',
       props: {},
     });
-    expect(objectKinds.find(({ kind }) => kind === 'Piston')?.description).toContain('Propulse');
+    expect(objectKinds.find(({ kind }) => kind === 'Piston')?.description).toContain('Pousse');
 
     const paths: string[] = [];
     const loader = createSpriteLoader({
@@ -149,12 +149,12 @@ describe('C9c piston', () => {
       y: 3,
     });
     expect(closed.find(({ assetKey }) => assetKey === 'piston-plate')?.layer.position).toEqual({
-      x: 3.254,
+      x: 3.3556,
       y: 3,
     });
 
     const extended = projectLevel(document, {
-      bodyPoses: new Map([['piston', { position: { x: 3.668, y: 3 }, rotation: 0 }]]),
+      bodyPoses: new Map([['piston', { position: { x: 3.9352, y: 3 }, rotation: 0 }]]),
       conveyorBelts: new Map(),
       devices: new Map(),
     }).objects.filter(({ id }) => id === 'piston');
@@ -162,7 +162,7 @@ describe('C9c piston', () => {
       3,
     );
     expect(extended.find(({ assetKey }) => assetKey === 'piston-plate')?.layer.position.x).toBe(
-      3.668,
+      3.9352,
     );
   });
 
@@ -176,9 +176,11 @@ describe('C9c piston', () => {
       inventory: [],
       goal: { type: 'basket', ballId: 'ball', basketId: 'basket' },
       objects: [
+        // The enlarged piston (5 October) shoots the ball off the short deck: it
+        // rebounds on the wall and drops into the basket standing below.
         place('ball', 'ball', 1.6, 0.775),
-        place('basket', 'basket', 4, 2.35),
-        place('beam', 'beam', 0.5, 1.2, { size: 'long' }),
+        place('basket', 'basket', 3.5, 3),
+        place('beam', 'beam', 0.5, 1.2, { size: 'medium' }),
         place('wall', 'beam', 4.65, 2, { size: 'long' }, Math.PI / 2),
         { ...place('piston', 'piston', 0.5, 0.4), toPlace: true },
         place('button', 'button', -5, 0),

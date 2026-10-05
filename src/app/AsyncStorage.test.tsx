@@ -382,20 +382,20 @@ describe('C2a — écrans et stockage asynchrone', () => {
         clear: () => pending.promise,
       }),
     });
-    expect(await screen.findByText('Niveaux résolus : 1 sur 5.')).toBeVisible();
+    expect(await screen.findByText('Niveaux résolus : 1 sur 7.')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' }));
     const dialog = screen.getByRole('dialog', { name: 'Remettre la progression à zéro ?' });
     expect(dialog).toHaveTextContent(/constructions/i);
     expect(dialog).toHaveTextContent(/solutions/i);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Remettre à zéro' }));
     expect(screen.queryByText(/Progression remise à zéro :/i)).toBeNull();
-    expect(screen.getByText('Niveaux résolus : 1 sur 5.')).toBeVisible();
+    expect(screen.getByText('Niveaux résolus : 1 sur 7.')).toBeVisible();
     await act(async () => {
       pending.resolve({ status: 'error', code: 'quota-exceeded' });
       await pending.promise;
     });
     expect(await screen.findByRole('alert')).toHaveTextContent(/n’a pas été effacée/i);
-    expect(screen.getByText('Niveaux résolus : 1 sur 5.')).toBeVisible();
+    expect(screen.getByText('Niveaux résolus : 1 sur 7.')).toBeVisible();
   });
 
   it('attend l’insertion libre, sérialise le commit suivant et récupère après un échec de sauvegarde', async () => {

@@ -1,10 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { leverFootprint } from '../src/domain/family-geometry';
-import {
-  ROTATION_HANDLE_GAP_CSS_PIXELS,
-  ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS,
-} from '../src/presentation/rotation-handle-metrics';
+import { ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS } from '../src/presentation/rotation-handle-metrics';
 
 const openWorkshop = async (page: Page): Promise<void> => {
   await page.goto('/');
@@ -289,18 +286,19 @@ test('L17b — tourne le levier de 90° dans chaque sens au tactile', async ({ p
   const undo = page.getByRole('button', { name: 'Annuler', exact: true });
   const redo = page.getByRole('button', { name: 'Rétablir', exact: true });
 
-  // The lever turns only from its round knob, drawn above the footprint;
-  // a drag that starts on the footprint moves the lever instead (G2).
+  // The lever turns only from its round knob, drawn off the footprint's
+  // top-left corner; a drag that starts on the footprint moves the lever
+  // instead (G2). The turn follows the pointer's angle around the centre.
   const zoom = Number(await canvas.getAttribute('data-camera-zoom'));
-  const knobDistance =
-    -leverFootprint('center').y * zoom +
-    ROTATION_HANDLE_GAP_CSS_PIXELS +
-    ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS;
-  const knob = { x: centre.x, y: centre.y - knobDistance };
-  const right = { x: centre.x + knobDistance, y: centre.y };
-  // The angle is read with atan2, which jumps at ±180° on the left
-  // horizontal: stay one pixel above it so the turn reads -90°, not +270°.
-  const left = { x: centre.x - knobDistance, y: centre.y - 1 };
+  const footprint = leverFootprint('center');
+  const knobOffset = {
+    x: footprint.x * zoom - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS,
+    y: footprint.y * zoom - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS,
+  };
+  const knob = { x: centre.x + knobOffset.x, y: centre.y + knobOffset.y };
+  // The knob's own place, a quarter turn clockwise then anticlockwise.
+  const right = { x: centre.x - knobOffset.y, y: centre.y + knobOffset.x };
+  const left = { x: centre.x + knobOffset.y, y: centre.y - knobOffset.x };
   await dragTouchPoints(page, knob, right);
   const positiveRotation = await waitForCanvasToDiffer(canvas, initial);
   await canvas.screenshot({ path: 'test-results/levels/lever-rotation-positive-90deg.png' });

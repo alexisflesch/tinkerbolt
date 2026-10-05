@@ -454,6 +454,16 @@ Pour chacune :
   propriétaire de la donnée persistée et prévoir une migration et des tests si
   le format de niveau évolue. Vérifier les changements visibles aux formats
   desktop concernés.
+- **Lot 1 de cette reprise, fait le 5 octobre** (détail au journal) : deux
+  niveaux intégrés, poignée de rotation au coin supérieur gauche, accroche du
+  fil sur le piston, segment suivant le curseur pendant la pose. **Restent, en
+  attente du choix de l’auteur** sur
+  [les maquettes du 5 octobre](maquettes/complements-desktop/reprise-05-10.html) :
+  barre du splash, style des poignées, taille du piston, cadrage à l’ouverture.
+- **Lot 2, fait le 5 octobre sur les choix de l’auteur** (détail au journal) :
+  ces quatre points sont implémentés, ainsi que le catalogue par catégories
+  (todo § 3) et la pose de fil qui ignore les objets non reliables. **Reste pour
+  clôturer C10 : la recette visuelle de l’auteur.**
 - Rejouer fil direct et liaison contrôleur → minuteur → dispositif (une unité
   de fil, deux segments, transitions retardées), reprise locale, modification
   de poutre, victoire et nouveaux objets dans un niveau partagé.
@@ -956,6 +966,100 @@ captures et validation de l’auteur. Les reports et blocages sont explicites.
   1 340 Vitest (102 fichiers), build (77 entrées de précache, 2 861,52 Kio) et
   97 E2E v1. Le fichier d’essai de l’auteur est restauré avec son SHA-256
   attendu `1113625e…a92907`. Commit local créé ; hash consultable dans `git log`.
+
+### C10 — Reprise du 5 octobre, lot 1 — partiel — 5 octobre 2026
+
+- **Niveaux.** `tuto-6` « L’aimant » et `tuto-7` « Le minuteur » rejoignent
+  « Premiers pas » : copies des exports de `levels/`, titres et descriptions
+  rédigés (à relire par l’auteur). Compteurs de campagne à sept.
+- **Poignées C4.** La poignée de rotation est à 28 px hors du coin supérieur
+  gauche, dans le repère de l’objet, pour toutes les familles ; la poignée de
+  taille perd la bordure native du bouton, qui la faisait paraître carrée.
+  Les deux ont le même disque de 28 px. Le style reste à choisir.
+- **Fils (todo § 2).** Ancrage unique du piston à l’arrière du boîtier ;
+  segment en équerre du premier objet au curseur, puis de la sortie du minuteur
+  au curseur. Corrigé au passage : le toucher qui pose un fil armait l’ouverture
+  des propriétés, qui masquait le plateau au fil suivant sur téléphone.
+  Consigné dans `tinkerbolt_control_wires_v1.md` § Tracé.
+- **Audit des tailles.** Ventilateur 1,20 × 0,94, tremplin 1,00 × 0,93,
+  électroaimant 1,00 × 0,80, piston 1,25 × 0,64 (boîtier 0,78 × 0,43) : seul le
+  piston détonne. Proposition : × 1,4, à valider avant tout changement.
+- **Cadrage.** Le fichier porte déjà la scène, qui fixe le zoom initial (ADR
+  0007) ; l’atelier la laisse à 16 × 9. Trois options sont soumises à l’auteur ;
+  aucune n’est codée.
+- **Gate.** Rouge puis vert sur chaque comportement ; `pnpm check` passe avec
+  1 363 Vitest et 103 E2E v1. Deux échecs E2E antérieurs au lot sont réparés
+  et les tests du splash et de victoire tiennent désormais l’horloge de la page.
+- **Captures** aux deux formats desktop et maquettes :
+  `docs/maquettes/complements-desktop/reprise-05-10.html` et
+  `captures/reprise-05-10/`. Validation visuelle attendue. Pas de commit : à
+  faire sur instruction de l’auteur.
+- **Suite.** Choix de l’auteur sur les quatre maquettes, puis leur
+  implémentation, recette visuelle et clôture de C10. Todo § 3 à § 5
+  (catalogue par catégories, panneau de droite, Bolt) : propositions à préparer ;
+  une première répartition du catalogue figure dans les maquettes.
+
+### C10 — Reprise du 5 octobre, lot 2 — fait, validation visuelle attendue — 5 octobre 2026
+
+Choix de l’auteur sur `maquettes/complements-desktop/reprise-05-10.html` :
+barre A, poignées A, piston × 1,4, cadrage automatique, catalogue accepté, fil
+ignorant les objets non reliables.
+
+- **Splash (C6).** La barre est une planche boulonnée à remplissage ambre, sans
+  panneau sombre ; disposition et crédit inchangés.
+- **Poignées (C4).** Disque bleu nuit, pictogramme ambre, contour de sélection
+  et tiges bleu nuit, pour la rotation (canvas) comme pour la taille (bouton).
+  La flèche de rotation est recentrée : son arc seul était décalé de 0,7 px par
+  la pointe. Écart assumé avec la maquette : le contour de sélection reste
+  plein, les pointillés étant réservés aux objets « à placer » et aux refus.
+- **Piston.** Géométrie et sprites × 1,4 par `art/build-sprites.py` ; ADR 0019
+  amendée. La solution de `tuto-7` gagne toujours. Trois tests calés sur
+  l’ancienne taille sont recalés, dont le petit puzzle, où la course plus longue
+  frappe désormais la balle de plein fouet.
+- **Cadrage.** `frameLevel` cadre un niveau joué sur ses objets et sa solution
+  (marge 0,75, minimum 8 × 5,5, dans la scène) ; l’atelier garde la scène. Rien
+  n’est persisté ; ADR 0007 amendée.
+- **Catalogue (todo § 3).** Quatre groupes — Ce qui bouge, Structures,
+  Appareils, Commandes — dans le catalogue de l’auteur ; l’inventaire du joueur
+  reste à plat. Descriptions réécrites, une par variante de caisse.
+- **Fil.** Le toucher vise d’abord un objet reliable ; consigné dans
+  `tinkerbolt_control_wires_v1.md` § Tracé.
+- **Gate.** `pnpm check` passe : 1 373 Vitest et 103 E2E v1. Captures aux deux
+  formats desktop et à 390 × 844 : `captures/reprise-05-10/final-*.png`.
+- **Suite.** Recette visuelle de l’auteur, puis clôture de C10. Todo § 4
+  (panneau de droite) et § 5 (Bolt) : propositions à préparer ; § 6 après C10.
+  Pas de commit : à faire sur instruction de l’auteur.
+
+### C10 — Reprise du 5 octobre, lot 3 et arrêt — 5 octobre 2026
+
+**Résumé de reprise.** Arrêt demandé par l’auteur, qui cherche d’abord une
+direction artistique ; les ajustements visuels reprendront dans une nouvelle
+conversation.
+
+- **Fait dans ce lot.** La barre du splash est une vraie barre de progression :
+  elle se remplit avec la durée minimale de 1,2 s, plafonne à 90 % tant que
+  l’application n’est pas prête, et expose `aria-valuenow` ; l’ancienne
+  animation de va-et-vient est supprimée. Test E2E dans `e2e/pwa.spec.ts`.
+  L’accueil annonce « Sept niveaux » au lieu de « Cinq ».
+- **Validation.** `pnpm check` passe après le lot 3 : 1 373 Vitest et 103 E2E
+  v1.
+- **Commit.** Les lots 1 à 3 sont commités ensemble sur `main` (« Reprend les
+  demandes du 5 octobre avant la clôture de C10 ») ; rien n’est poussé.
+- **Attend l’auteur.** Recette visuelle des lots 1 à 3 (captures
+  `maquettes/complements-desktop/captures/reprise-05-10/final-*.png`), dont
+  l’écart assumé du contour de sélection plein ; relecture des titres et
+  descriptions de `tuto-6` et `tuto-7`. Ensuite, clôture de C10.
+- **Non commencé.** Todo § 5, Bolt sur l’accueil et dans la modale de victoire :
+  seulement un état des lieux. Bolt y est une vignette carrée de 92 à 108 px sur
+  fond blanc cassé, encadrée ; les dix poses de `art/assets/bolt/` sont des PNG
+  1254 × 1254 **sans transparence**, donc un détourage sera nécessaire pour le
+  sortir de son cadre. Aucune maquette n’est faite : attendre la direction
+  artistique de l’auteur. Todo § 4 (panneau de droite) : reporté par l’auteur.
+  Todo § 6 (téléphone, tablette) : après C10.
+- **Points ouverts.** Le parcours tactile E2E de `tuto-6` et `tuto-7` n’est pas
+  ajouté. `object-family-registry.ts` garde les anciennes descriptions de
+  catalogue, non affichées. Sur cette machine, les captures de pages hors
+  application demandent une police nommée (texte absent sinon).
 
 ## Historique v1 — clôturé, aucune tâche active V0 à V9
 

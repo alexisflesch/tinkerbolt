@@ -8,10 +8,7 @@ import {
   type BoardViewport,
 } from './board-renderer';
 import { hitTestBoard, hitTestRotationHandle } from './board-hit-test';
-import {
-  ROTATION_HANDLE_GAP_CSS_PIXELS,
-  ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS,
-} from './rotation-handle-metrics';
+import { ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS } from './rotation-handle-metrics';
 
 const viewport: BoardViewport = {
   cssWidth: 320,
@@ -129,7 +126,7 @@ describe('hit-test pur du plateau', () => {
     );
   });
 
-  it('accroche la poignée de rotation au-dessus de l’objet, et la fait tourner avec lui', () => {
+  it('accroche la poignée de rotation au coin supérieur gauche de l’objet, et la fait tourner avec lui', () => {
     const selectedBeam = (rotation: number) => {
       const document = createDocument([
         ball('ball-1', { x: 1, y: 1 }),
@@ -146,27 +143,47 @@ describe('hit-test pur du plateau', () => {
       return selected;
     };
 
-    // The beam centre maps to (40, 40). In the beam's own frame, the knob sits a
-    // stem above its top edge; it turns with the beam, never jumping.
+    // The beam centre maps to (40, 40). In the beam's own frame, the knob sits
+    // diagonally off its top-left corner; it turns with the beam, never jumping.
     const { destination } = selectedBeam(0);
-    const offset =
-      -destination.y * 20 + ROTATION_HANDLE_GAP_CSS_PIXELS + ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS;
+    const local = {
+      x: destination.x * 20 - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS,
+      y: destination.y * 20 - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS,
+    };
     const knobAt = (rotation: number) => ({
-      x: 40 + offset * Math.sin(rotation),
-      y: 40 - offset * Math.cos(rotation),
+      x: 40 + local.x * Math.cos(rotation) - local.y * Math.sin(rotation),
+      y: 40 + local.x * Math.sin(rotation) + local.y * Math.cos(rotation),
     });
+
+    // Flat, the knob is left of the beam's left end and above its top edge.
+    expect(knobAt(0).x).toBeLessThan(40 + destination.x * 20);
+    expect(knobAt(0).y).toBeLessThan(40 + destination.y * 20);
+    const flat = rotationHandleBounds(selectedBeam(0), viewport);
+    expect(flat.x + flat.width / 2).toBeCloseTo(knobAt(0).x);
+    expect(flat.y + flat.height / 2).toBeCloseTo(knobAt(0).y);
 
     for (const rotation of [0, Math.PI / 12, Math.PI / 4, Math.PI / 2, -Math.PI / 3]) {
       const turned = selectedBeam(rotation);
       const knob = knobAt(rotation);
       expect(hitTestRotationHandle(knob, turned, viewport)).toBe(true);
       expect(hitTestRotationHandle({ x: 40, y: 40 }, turned, viewport)).toBe(false);
+      // The middle of the top edge no longer carries the handle.
+      expect(
+        hitTestRotationHandle(
+          {
+            x: 40 - (destination.y * 20 - 28) * Math.sin(rotation),
+            y: 40 + (destination.y * 20 - 28) * Math.cos(rotation),
+          },
+          turned,
+          viewport,
+        ),
+      ).toBe(false);
     }
     // Turned a quarter, the knob has left the place it held when flat.
     expect(hitTestRotationHandle(knobAt(0), selectedBeam(Math.PI / 2), viewport)).toBe(false);
-    expect(hitTestRotationHandle({ x: 40, y: knobAt(0).y - 21 }, selectedBeam(0), viewport)).toBe(
-      true,
-    );
+    expect(
+      hitTestRotationHandle({ x: knobAt(0).x, y: knobAt(0).y - 21 }, selectedBeam(0), viewport),
+    ).toBe(true);
   });
 
   it('place l’icône de taille au milieu du bord droit et la fait suivre la rotation', () => {

@@ -69,6 +69,17 @@ dimensions et masses des caisses, la course et la vitesse du piston, ainsi que
 la portée et les forces sont équilibrées dans les scènes de test. Ces valeurs
 ne sont pas extrapolées des images.
 
+## Amendement du 5 octobre 2026 — gabarit du piston
+
+Après un audit côte à côte demandé par l’auteur, le piston est agrandi de 40 % :
+son boîtier faisait la moitié de la hauteur du ventilateur et du tremplin.
+L’empreinte de sélection passe de 1,248 × 0,643 à 1,747 × 0,900 unité monde
+(boîtier 1,095 × 0,601), le décalage de repos de 0,254 à 0,356 et la course de
+0,414 à 0,580 unité. La vitesse de la tête reste de 18 unités monde par seconde.
+Les sprites sont réexportés par `art/build-sprites.py`. La clause « gabarit
+comparable au ventilateur » se lit désormais sur la hauteur ; l’empreinte est
+plus longue, car elle inclut la course. Le fil s’ancre à l’arrière du boîtier.
+
 ## Raccords aux décisions existantes
 
 L’évolution de version et les migrations sont fixées par l’[ADR 0018](0018-level-document-v3.md).

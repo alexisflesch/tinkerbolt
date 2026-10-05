@@ -276,7 +276,7 @@ describe('Paramètres — remettre la progression à zéro (U11, ADR 0010, ADR 0
     await renderSettings();
 
     await waitFor(() => {
-      expect(screen.getByText('Niveaux résolus : 2 sur 5.')).toBeVisible();
+      expect(screen.getByText('Niveaux résolus : 2 sur 7.')).toBeVisible();
     });
     await storageAction(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Remettre la progression à zéro' })),
@@ -314,7 +314,7 @@ describe('Paramètres — remettre la progression à zéro (U11, ADR 0010, ADR 0
       expect(screen.queryByRole('status')).toBeNull();
     });
     await waitFor(() => {
-      expect(screen.getByText('Niveaux résolus : 2 sur 5.')).toBeVisible();
+      expect(screen.getByText('Niveaux résolus : 2 sur 7.')).toBeVisible();
     });
   });
 
@@ -339,7 +339,7 @@ describe('Paramètres — remettre la progression à zéro (U11, ADR 0010, ADR 0
       );
     });
     await waitFor(() => {
-      expect(screen.getByText('Niveaux résolus : 0 sur 5.')).toBeVisible();
+      expect(screen.getByText('Niveaux résolus : 0 sur 7.')).toBeVisible();
     });
     await waitFor(async () => {
       expect(await stored(progressKey)).toBeNull();
@@ -394,7 +394,7 @@ describe('Paramètres — remettre la progression à zéro (U11, ADR 0010, ADR 0
       expect(screen.queryByRole('status')).toBeNull();
     });
     await waitFor(() => {
-      expect(screen.getByText('Niveaux résolus : 1 sur 5.')).toBeVisible();
+      expect(screen.getByText('Niveaux résolus : 1 sur 7.')).toBeVisible();
     });
 
     await openLevelList();

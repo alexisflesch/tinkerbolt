@@ -8,6 +8,7 @@ import {
 } from '../application/editor-session/editor-session';
 import { highlightedBuildZones } from '../app/build-zone-highlight';
 import { placementGhost } from '../app/placement-ghost';
+import { screenPointToWorld } from '../app/screen-point-to-world';
 import type { BoardPointerHandlers } from '../app/use-board-pointers';
 import {
   createBoardRenderer,
@@ -18,12 +19,23 @@ import {
   type BoardSimulationView,
 } from '../presentation/board-renderer';
 import type { Camera } from '../presentation/board-camera';
+import { projectPendingWire, type ProjectedWireSegment } from '../presentation/control-wires';
 import { createSpriteLoader, type SpriteLoader } from '../presentation/sprite-loader';
 import { type SimulationSnapshot } from '../simulation/simulation-session';
 import type { LevelDocument } from '../domain/level-document';
 import { createCanvasContextAdapter, createCanvasSpriteDecoder } from './board-canvas';
 
 const beamLength: Readonly<Record<BeamSize, number>> = { short: 2, medium: 4, long: 6 };
+
+interface BoardPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+interface WiringAnchor {
+  readonly firstId: string;
+  readonly timerId?: string;
+}
 
 interface BeamSizePreview {
   readonly placementId: string;
@@ -116,6 +128,8 @@ interface BoardViewProps {
   readonly boardCanvasRef: RefObject<HTMLCanvasElement | null>;
   readonly boardPointerHandlers: BoardPointerHandlers;
   readonly beamSizeChoices: readonly BeamSizeChoice[] | null;
+  /** The wire being laid: its first object and, once linked, its timer. */
+  readonly wiringAnchor: WiringAnchor | null;
   readonly onBeamSizeChange: (size: BeamSize) => void;
   readonly onZoomIn: () => void;
   readonly onZoomOut: () => void;
@@ -143,6 +157,7 @@ export function BoardView({
   boardCanvasRef,
   boardPointerHandlers,
   beamSizeChoices,
+  wiringAnchor,
   onBeamSizeChange,
   onZoomIn,
   onZoomOut,
@@ -164,6 +179,11 @@ export function BoardView({
   } | null>(null);
   const beamSizePreviewRef = useRef<BeamSizePreview | null>(null);
   const [beamSizePreview, setBeamSizePreview] = useState<BeamSizePreview | null>(null);
+  // Where the pointer last was, in world units, while a wire is being laid.
+  const [wiringCursor, setWiringCursor] = useState<BoardPoint | null>(null);
+  const wiringAnchorRef = useRef(wiringAnchor);
+  wiringAnchorRef.current = wiringAnchor;
+  const pendingWireRef = useRef<readonly ProjectedWireSegment[] | null>(null);
   const spriteLoaderRef = useRef<SpriteLoader | null>(null);
   const boardRenderRef = useRef<(() => void) | null>(null);
   const boardRenderQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -191,6 +211,13 @@ export function BoardView({
   const shownDocument = (session.simulationSnapshot ?? currentEditorAttempt(session)).document;
   const shownProjection = projectLevel(withBeamSize(shownDocument, beamSizePreview));
   const projectedLayers = shownProjection.objects;
+  const pendingWire =
+    wiringAnchor === null || wiringCursor === null || session.phase !== 'construction'
+      ? null
+      : projectPendingWire(shownDocument, wiringAnchor, wiringCursor);
+  pendingWireRef.current = pendingWire;
+  const pendingWireEnds =
+    pendingWire === null ? undefined : [pendingWire[0]?.from, pendingWire.at(-1)?.to];
   const selectedPlacementId = session.selectedPlacementId;
   const selectedPlacement =
     selectedPlacementId === null
@@ -349,7 +376,12 @@ export function BoardView({
                   buildZones: highlightedBuildZones(currentSession),
                 }
               : {};
-          await renderer.render({ ...projectionWithEffectiveCapabilities, ...constructionView });
+          const pending = pendingWireRef.current;
+          await renderer.render({
+            ...projectionWithEffectiveCapabilities,
+            ...constructionView,
+            ...(pending !== null && { pendingWire: pending }),
+          });
         })
         .catch(() => undefined);
     };
@@ -373,7 +405,27 @@ export function BoardView({
 
   useEffect(() => {
     boardRenderRef.current?.();
-  }, [session, simulationState, camera, beamSizePreview]);
+  }, [session, simulationState, camera, beamSizePreview, wiringCursor, wiringAnchor]);
+
+  useEffect(() => {
+    // A finished or cancelled wire leaves no stale cursor for the next one.
+    if (wiringAnchor === null) setWiringCursor(null);
+  }, [wiringAnchor]);
+
+  const trackWiringCursor = (event: { readonly clientX: number; readonly clientY: number }) => {
+    if (wiringAnchorRef.current === null) return;
+    const bounds = boardCanvasRef.current?.getBoundingClientRect();
+    if (bounds === undefined) return;
+    const { origin, pixelsPerWorldUnit } = cameraRef.current;
+    setWiringCursor(
+      screenPointToWorld(
+        { x: event.clientX, y: event.clientY },
+        bounds,
+        pixelsPerWorldUnit,
+        origin,
+      ),
+    );
+  };
 
   return (
     <>
@@ -390,6 +442,10 @@ export function BoardView({
           role="region"
           aria-label="Plateau de jeu"
           {...boardPointerHandlers}
+          onPointerMove={(event) => {
+            trackWiringCursor(event);
+            boardPointerHandlers.onPointerMove(event);
+          }}
         >
           <canvas
             ref={boardCanvasRef}
@@ -409,6 +465,13 @@ export function BoardView({
             data-wires={currentEditorAttempt(session)
               .document.wires.map(({ sourceId, targetId }) => `${sourceId}>${targetId}`)
               .join(' ')}
+            data-pending-wire={
+              pendingWireEnds?.[0] === undefined || pendingWireEnds[1] === undefined
+                ? undefined
+                : `${String(pendingWireEnds[0].x)},${String(pendingWireEnds[0].y)}>${String(
+                    pendingWireEnds[1].x,
+                  )},${String(pendingWireEnds[1].y)}`
+            }
             data-camera-zoom={String(camera.pixelsPerWorldUnit)}
             data-camera-origin={`${String(camera.origin.x)},${String(camera.origin.y)}`}
             data-build-zones={buildZoneCount === 0 ? undefined : String(buildZoneCount)}

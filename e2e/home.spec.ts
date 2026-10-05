@@ -110,7 +110,7 @@ test('reprend la progression enregistrée après rechargement', async ({ page })
     page
       .getByRole('navigation', { name: 'Explorer TinkerBolt' })
       .getByRole('link', { name: /^Campagne/u }),
-  ).toContainText('1 / 5');
+  ).toContainText('1 / 7');
   await expect(
     page.getByRole('progressbar', { name: 'Progression de la campagne' }),
   ).toHaveAttribute('value', '1');

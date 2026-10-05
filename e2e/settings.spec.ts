@@ -154,7 +154,7 @@ test('U11 — au toucher, le pseudo retenu se modifie et s’efface, et la progr
   await expect(progressPanel(page).getByRole('status')).toHaveText(
     'Progression remise à zéro : seul le niveau 1 est ouvert.',
   );
-  await expect(progressPanel(page)).toContainText('Niveaux résolus : 0 sur 5.');
+  await expect(progressPanel(page)).toContainText('Niveaux résolus : 0 sur 7.');
   expect(await stored(page, 'progress:campaign')).toBeNull();
   for (const [key, value] of Object.entries(untouched)) {
     expect(await stored(page, key)).toBe(value);

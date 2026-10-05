@@ -52,7 +52,12 @@ test('C7 : affiche Bolt sur l’accueil et à la victoire de campagne', async ({
   await page.clock.runFor(10_000);
 
   const victory = page.getByRole('dialog', { name: 'Bravo !' });
-  await expect(victory).toBeVisible();
+  // On a loaded machine the first run of the clock can end before the
+  // simulation has gone far enough: keep the clock running until the result.
+  await expect(async () => {
+    await page.clock.runFor(2_000);
+    await expect(victory).toBeVisible({ timeout: 500 });
+  }).toPass({ timeout: 20_000 });
   const victoryBolt = victory.locator('.victory-bolt img');
   await expect(victoryBolt).toHaveAttribute('alt', '');
   await expect

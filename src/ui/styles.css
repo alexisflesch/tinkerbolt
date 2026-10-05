@@ -1482,7 +1482,7 @@ select:focus-visible {
   z-index: 2;
   height: 2px;
   transform-origin: left center;
-  background: #1e88e5;
+  background: var(--night-900);
   pointer-events: none;
 }
 
@@ -1493,9 +1493,10 @@ select:focus-visible {
   width: var(--touch-target);
   height: var(--touch-target);
   padding: 0;
+  border: 0;
   transform: translate(-50%, -50%);
   place-items: center;
-  color: #1e88e5;
+  color: var(--accent);
   background: transparent;
   cursor: grab;
   touch-action: none;
@@ -1510,9 +1511,9 @@ select:focus-visible {
   z-index: 0;
   width: 28px;
   height: 28px;
-  border: 2px solid #1e88e5;
+  border: 2px solid var(--night-950);
   border-radius: 50%;
-  background: #fff;
+  background: var(--night-800);
   content: '';
   pointer-events: none;
 }
@@ -1524,7 +1525,7 @@ select:focus-visible {
 
 .beam-size-handle:hover::before,
 .beam-size-handle:focus-visible::before {
-  background: var(--panel-bg-active);
+  background: var(--night-600);
 }
 
 /* Annonce du fantôme de placement, dessiné par le renderer (C1, U1). */
@@ -2345,6 +2346,28 @@ select:focus-visible {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
+}
+
+/* Catalogue de l'auteur : un groupe par catégorie, sur toute la largeur. */
+.object-group {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  gap: var(--space-2);
+}
+
+.object-group + .object-group {
+  margin-top: var(--space-2);
+}
+
+.object-group-title {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .object-card {

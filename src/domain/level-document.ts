@@ -634,6 +634,10 @@ export const controlWireSourceIssue = (type: PlacementType | undefined): string 
     ? null
     : 'Un fil doit partir d’un levier ou d’un bouton placé.';
 
+/** Whether a wire can end on this family: a controller, a device or a timer. */
+export const isWirable = (type: PlacementType): boolean =>
+  controlSources.has(type) || controlTargets.has(type) || type === 'timer';
+
 /**
  * Why a wire from a `source` controller cannot reach `target`, or `null` when
  * it can. The one-controller rule depends on the other wires: validation and

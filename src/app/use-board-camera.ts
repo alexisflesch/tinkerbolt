@@ -55,13 +55,19 @@ interface BoardCameraController {
  * gestures that happen to move the camera, not camera concerns of their own
  * (plan-remise-en-jeu.md § A5 leaves this boundary to judgment).
  *
- * `getScene` must be referentially stable (e.g. `useEditorSession().currentScene`)
- * so the mount/resize effect below only subscribes once.
+ * `getScene` bounds the zoom and the pan; `getFraming` is the rectangle the
+ * camera fits — the scene by default, the level's useful part when playing
+ * (ADR 0007, amendment of 5 October 2026). Both must be referentially stable
+ * (e.g. `useEditorSession().currentScene`) so the mount/resize effect below
+ * only subscribes once.
  */
-export function useBoardCamera(getScene: () => SceneRect): BoardCameraController {
+export function useBoardCamera(
+  getScene: () => SceneRect,
+  getFraming: () => SceneRect = getScene,
+): BoardCameraController {
   const boardCanvasRef = useRef<HTMLCanvasElement>(null);
   const [camera, setCamera] = useState<Camera>(() =>
-    fitCameraToScene(getScene(), { width: 0, height: 0 }),
+    fitCameraToScene(getFraming(), { width: 0, height: 0 }),
   );
   const cameraRef = useRef(camera);
 
@@ -85,8 +91,8 @@ export function useBoardCamera(getScene: () => SceneRect): BoardCameraController
     const canvasSize = readCanvasSizeInCss();
     if (canvasSize === null) return;
 
-    updateCamera(fitCameraToScene(getScene(), canvasSize));
-  }, [readCanvasSizeInCss, updateCamera, getScene]);
+    updateCamera(fitCameraToScene(getFraming(), canvasSize));
+  }, [readCanvasSizeInCss, updateCamera, getFraming]);
 
   const zoomByButtonFactor = useCallback(
     (factor: number): void => {

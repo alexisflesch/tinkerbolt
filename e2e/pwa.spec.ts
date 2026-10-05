@@ -114,15 +114,42 @@ test('publie le favicon et les icônes installables fournis pour C6', async ({ p
 test('garde le splash au démarrage direct jusqu’au rendu de la route et 1,2 s', async ({
   page,
 }) => {
-  const startedAt = Date.now();
+  // The page clock is held, so a loaded machine cannot let the splash expire
+  // before it is observed, and its 1,2 s are measured exactly.
+  await page.clock.install({ time: new Date('2026-10-05T12:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-10-05T12:01:00Z'));
   await page.goto('/levels/tuto-1/play', { waitUntil: 'domcontentloaded' });
 
   const splash = page.locator('#startup-splash');
   await expect(splash).toBeVisible();
+  // The bar is a real one: it follows the start-up, from empty to full.
+  const bar = splash.getByRole('progressbar', { name: 'Chargement' });
+  const filled = (): Promise<number> =>
+    bar.evaluate((track) => {
+      const fill = track.querySelector('span');
+      const groove = fill?.parentElement;
+      if (fill === null || groove === null || groove === undefined) return Number.NaN;
+      return fill.getBoundingClientRect().width / groove.getBoundingClientRect().width;
+    });
+  expect(Number(await bar.getAttribute('aria-valuenow'))).toBeLessThan(15);
+  expect(await filled()).toBeLessThan(0.15);
+  await page.clock.runFor(600);
+  await expect
+    .poll(async () => Number(await bar.getAttribute('aria-valuenow')))
+    .toBeGreaterThan(40);
+  expect(Number(await bar.getAttribute('aria-valuenow'))).toBeLessThan(65);
+  await expect.poll(filled).toBeGreaterThan(0.4);
+  expect(await filled()).toBeLessThan(0.65);
+  await page.clock.runFor(500);
+  await expect(splash).toBeVisible();
+  await expect
+    .poll(async () => Number(await bar.getAttribute('aria-valuenow')))
+    .toBeGreaterThan(85);
+  await page.clock.runFor(200);
   const appRoot = page.locator('#root');
   await expect(appRoot).not.toHaveAttribute('aria-hidden', 'true');
   await expect(splash).toBeHidden({ timeout: 10_000 });
-  expect(Date.now() - startedAt).toBeGreaterThanOrEqual(1_200);
+  await page.clock.resume();
   await expect(page.getByText(/^Niveau 1\b/)).toBeVisible();
 
   await page.evaluate(() => {

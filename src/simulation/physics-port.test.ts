@@ -1604,8 +1604,9 @@ describe('port physique candidat-neutre', () => {
       [
         piston(),
         placed('timer-1', 'timer', { x: 2, y: 2 }, { delaySeconds: 1 }),
-        placed('button-1', 'button', { x: 0.5, y: 0.45 }),
-        placed('press-ball', 'ball', { x: 0.75, y: -0.1 }),
+        // Clear of the piston's plate, which reaches x = 1,2 when extended.
+        placed('button-1', 'button', { x: 2.5, y: 0.45 }),
+        placed('press-ball', 'ball', { x: 2.75, y: -0.1 }),
       ],
       [{ id: 'wire-1', sourceId: 'button-1', timerId: 'timer-1', targetId: 'piston-1' }],
     );
@@ -2209,7 +2210,7 @@ describe('piston commandé par bouton', () => {
       session.advanceFixedSteps(120);
       expect(device(session.readState(), 'piston-1')).toMatchObject({ extension: 1 });
       expect(body(session.readState(), 'piston-1', 'piston').position.x).toBeCloseTo(0, 3);
-      expect(body(session.readState(), 'piston-1', 'piston').position.y).toBeCloseTo(0.668, 3);
+      expect(body(session.readState(), 'piston-1', 'piston').position.y).toBeCloseTo(0.9352, 3);
     });
   });
 

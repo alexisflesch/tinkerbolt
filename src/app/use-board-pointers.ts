@@ -26,7 +26,7 @@ import {
   type EditorSession,
 } from '../application/editor-session/editor-session';
 import type { Command } from '../application/history';
-import { rotationMode, type LevelDocument } from '../domain/level-document';
+import { isWirable, rotationMode, type LevelDocument } from '../domain/level-document';
 import { hitTestBoard, hitTestRotationHandle } from '../presentation/board-hit-test';
 import {
   projectLevel,
@@ -762,8 +762,19 @@ export function useBoardPointers({
         const localPoint = { x: point.x - boardRect.left, y: point.y - boardRect.top };
         // A finger added to a pan or pinch stays a camera gesture.
         if (isWiringRef.current && boardGesturePointers.current.size === 0) {
-          const wiringTarget = hitTestBoard(localPoint, objects, viewport);
+          // A wire only ends on an object it can link: a beam or a mass lying
+          // over a button's touch target does not take the tap. An object
+          // that cannot be linked still answers alone, to explain the refusal.
+          const wiringTarget =
+            hitTestBoard(
+              localPoint,
+              objects.filter(({ family }) => isWirable(family)),
+              viewport,
+            ) ?? hitTestBoard(localPoint, objects, viewport);
           if (wiringTarget !== null) {
+            // The tap names a wire's end; its click must not also open the
+            // properties once the laid wire has ended the gesture.
+            suppressNextBoardClick.current = true;
             onWiringTap(wiringTarget);
             return;
           }

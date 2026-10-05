@@ -29,7 +29,7 @@ export interface ProjectedWire {
   readonly segments?: readonly ProjectedWireSegment[];
 }
 
-interface ProjectedWireSegment {
+export interface ProjectedWireSegment {
   readonly from: WorldPoint;
   readonly to: WorldPoint;
   readonly bend?: WorldPoint;
@@ -52,8 +52,8 @@ const portOffset = (placement: Placement): WorldPoint | undefined => {
     case 'electro-magnet':
       return { x: 0.5, y: 0.3 };
     case 'piston':
-      // Rear of the housing, clear of the moving rod and plate.
-      return { x: -0.8, y: 0.3 };
+      // Rear face of the housing, its only port: rod and plate move at the front.
+      return { x: -0.504, y: 0.056 };
     case 'timer':
       // One port at each end of the timer's case.
       return { x: 0.75, y: 0 };
@@ -85,6 +85,10 @@ const portFacing = (placement: Placement, towardsX: number): WorldPoint | undefi
   if (offset === undefined) return undefined;
 
   const { position, rotation } = placement.transform;
+  if (placement.type === 'piston') {
+    const rear = rotate(offset, rotation);
+    return { x: position.x + rear.x, y: position.y + rear.y };
+  }
   const [right, left] = [offset, { x: -offset.x, y: offset.y }].map((local) =>
     rotate(local, rotation),
   );
@@ -119,6 +123,43 @@ const segmentOf = (source: Placement, from: WorldPoint, to: WorldPoint): Project
   return { from, to, ...(bend !== undefined ? { bend } : {}) };
 };
 
+/** The timer's output, opposite the port its input takes. */
+const timerOutputOf = (timer: Placement, input: WorldPoint): WorldPoint => ({
+  x: timer.transform.position.x * 2 - input.x,
+  y: timer.transform.position.y * 2 - input.y,
+});
+
+/**
+ * The wire being laid: from the first object chosen — through the timer once
+ * one is linked — to the cursor, routed like a laid wire. Empty when the
+ * first object has no port or is gone. View state only, never a document's.
+ */
+export const projectPendingWire = (
+  document: LevelDocument,
+  anchor: { readonly firstId: string; readonly timerId?: string },
+  cursor: WorldPoint,
+): readonly ProjectedWireSegment[] => {
+  const first = document.objects.find(({ id }) => id === anchor.firstId);
+  if (first === undefined) return [];
+  const timer =
+    anchor.timerId === undefined
+      ? undefined
+      : document.objects.find(({ id }) => id === anchor.timerId);
+
+  if (timer?.type === 'timer') {
+    const from = portFacing(first, timer.transform.position.x);
+    const timerInput = portFacing(timer, first.transform.position.x);
+    if (from === undefined || timerInput === undefined) return [];
+    return [
+      segmentOf(first, from, timerInput),
+      segmentOf(timer, timerOutputOf(timer, timerInput), cursor),
+    ];
+  }
+
+  const from = portFacing(first, cursor.x);
+  return from === undefined ? [] : [segmentOf(first, from, cursor)];
+};
+
 /**
  * Draws every wire of the document as a horizontal/vertical route between
  * the ports of its two objects, drawn behind the objects: it never goes
@@ -150,10 +191,7 @@ export const projectWires = (document: LevelDocument): readonly ProjectedWire[] 
     if (timer?.type === 'timer') {
       const timerInput = portFacing(timer, source.transform.position.x);
       if (timerInput === undefined) return [];
-      const timerOutput = {
-        x: timer.transform.position.x * 2 - timerInput.x,
-        y: timer.transform.position.y * 2 - timerInput.y,
-      };
+      const timerOutput = timerOutputOf(timer, timerInput);
       const segments = [segmentOf(source, from, timerInput), segmentOf(timer, timerOutput, to)];
       return [
         {

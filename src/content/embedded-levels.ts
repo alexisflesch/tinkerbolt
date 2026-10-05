@@ -3,6 +3,8 @@ import tutorial2 from './levels/tuto-2.json';
 import tutorial3 from './levels/tuto-3.json';
 import tutorial4 from './levels/tuto-4.json';
 import tutorial5 from './levels/tuto-5.json';
+import tutorial6 from './levels/tuto-6.json';
+import tutorial7 from './levels/tuto-7.json';
 import workshop from './levels/workshop.json';
 
 import { levelDocumentSchema, type LevelDocument } from '../domain/level-document';
@@ -54,6 +56,8 @@ export const campaignChapters = createCampaign([
       parseEmbeddedLevel(tutorial3),
       parseEmbeddedLevel(tutorial4),
       parseEmbeddedLevel(tutorial5),
+      parseEmbeddedLevel(tutorial6),
+      parseEmbeddedLevel(tutorial7),
     ],
   },
 ]);

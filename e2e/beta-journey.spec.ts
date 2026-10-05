@@ -92,6 +92,8 @@ test('V8 : joue, crée, partage, reçoit et remixe un vrai puzzle depuis un appa
   await dialog.getByRole('button', { name: 'Fermer l’export' }).click();
   await chooseBeam(page, 'Poutre moyenne');
   await clickWorld(page, point);
+  // C4a : la pose laisse le panneau fermé ; on l’ouvre pour régler la poutre.
+  await page.getByRole('button', { name: 'Ouvrir les propriétés' }).click();
   await page.getByRole('combobox', { name: 'Longueur de la poutre' }).selectOption('short');
   await expect(page.getByRole('combobox', { name: 'Longueur de la poutre' })).toHaveValue('short');
   await page.getByRole('button', { name: 'À placer', exact: true }).click();

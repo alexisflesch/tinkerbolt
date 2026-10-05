@@ -35,55 +35,58 @@ export const boxGeometry = { footprint: centeredRect(0.8, 0.8) } as const;
 /** C9b gameplay footprint and radial field; independent of source pixels. */
 export const electroMagnetGeometry = { footprint: centeredRect(1, 0.8), range: 2.8 } as const;
 
-/** C9c piston: a fixed horizontal housing and a button-driven sliding assembly. */
+/**
+ * C9c piston: a fixed horizontal housing and a button-driven sliding assembly.
+ * Enlarged by 40 % on 5 October 2026 to sit with the fan and the springboard.
+ */
 export const pistonGeometry = {
   footprint: {
-    x: -0.391,
-    y: -0.32145858761987794,
-    width: 1.2478526591107235,
-    height: 0.6429171752397559,
+    x: -0.5474,
+    y: -0.4500420226678291,
+    width: 1.7469937227550132,
+    height: 0.9000840453356582,
   },
   housing: {
-    footprint: { x: -0.391, y: -0.2148, width: 0.782, height: 0.4295 },
+    footprint: { x: -0.5474, y: -0.3007, width: 1.0948, height: 0.6013 },
     polygon: polygon([
-      [-0.3624, -0.0348],
-      [-0.2492, -0.1636],
-      [-0.0262, -0.2148],
-      [0.2921, -0.2148],
-      [0.3815, -0.0791],
-      [0.2901, 0.2141],
-      [-0.2471, 0.2052],
-      [-0.3658, 0.1159],
+      [-0.5073, -0.0487],
+      [-0.3489, -0.2291],
+      [-0.0367, -0.3007],
+      [0.409, -0.3007],
+      [0.534, -0.1107],
+      [0.4061, 0.2997],
+      [-0.346, 0.2873],
+      [-0.5121, 0.1623],
     ]),
   },
   plate: {
     footprint: {
-      x: -0.18885265911072363,
-      y: -0.32145858761987794,
-      width: 0.37770531822144726,
-      height: 0.6429171752397559,
+      x: -0.26439372275501305,
+      y: -0.4500420226678291,
+      width: 0.5287874455100261,
+      height: 0.9000840453356582,
     },
     polygon: polygon([
-      [-0.1868, -0.1326],
-      [-0.0457, -0.3208],
-      [0.1452, -0.3187],
-      [0.1875, -0.2731],
-      [0.1882, 0.2744],
-      [0.1432, 0.3208],
-      [-0.043, 0.3208],
-      [-0.1889, 0.1278],
+      [-0.2615, -0.1856],
+      [-0.064, -0.4491],
+      [0.2033, -0.4462],
+      [0.2625, -0.3823],
+      [0.2634, 0.3842],
+      [0.2004, 0.4491],
+      [-0.0601, 0.4491],
+      [-0.2644, 0.179],
     ]),
   },
   rod: {
     footprint: {
-      x: -0.6256,
-      y: -0.031831267765776015,
-      width: 0.6256,
-      height: 0.06366253553155203,
+      x: -0.8758,
+      y: -0.044561739624786816,
+      width: 0.8758,
+      height: 0.08912347924957363,
     },
   },
-  homeOffset: { x: 0.254, y: 0 },
-  travel: 0.414,
+  homeOffset: { x: 0.3556, y: 0 },
+  travel: 0.5796,
 } as const;
 
 const BALL_RADIUS = 0.3;

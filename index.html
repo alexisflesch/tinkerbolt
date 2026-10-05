@@ -86,38 +86,63 @@
         left: 20px;
         width: min(380px, calc(100% - 40px));
         margin: auto;
-        padding: 10px 13px 5px;
-        border: 1px solid rgb(255 231 181 / 48%);
-        border-radius: 12px;
-        background: rgb(11 24 38 / 82%);
-        box-shadow: 0 7px 24px rgb(0 0 0 / 42%);
-        backdrop-filter: blur(7px);
       }
+      /* A bolted wooden plank, like the logo's sign, with an amber fill. */
       #startup-splash .progress-track {
-        height: 11px;
-        overflow: hidden;
-        border: 1px solid #192a3b;
-        border-radius: 999px;
-        background: #08121e;
-        box-shadow: inset 0 2px 4px rgb(0 0 0 / 48%);
+        position: relative;
+        height: 22px;
+        padding: 4px 16px;
+        border: 2px solid #4a2a12;
+        border-radius: 7px;
+        background: linear-gradient(180deg, #b9712c, #8f5220);
+        box-shadow:
+          inset 0 1px 0 rgb(255 221 160 / 55%),
+          0 5px 14px rgb(0 0 0 / 45%);
       }
-      #startup-splash .progress-track span {
+      #startup-splash .progress-track::before,
+      #startup-splash .progress-track::after {
+        position: absolute;
+        top: 50%;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #d9dde2;
+        box-shadow: inset -1px -1px 0 #6b7078;
+        content: '';
+        transform: translateY(-50%);
+      }
+      #startup-splash .progress-track::before {
+        left: 5px;
+      }
+      #startup-splash .progress-track::after {
+        right: 5px;
+      }
+      #startup-splash .progress-groove {
+        height: 100%;
+        overflow: hidden;
+        border-radius: 4px;
+        background: #3b210f;
+        box-shadow: inset 0 2px 3px rgb(0 0 0 / 55%);
+      }
+      #startup-splash .progress-groove span {
         display: block;
-        width: 68%;
+        width: 0;
         height: 100%;
         border-radius: inherit;
-        background: linear-gradient(90deg, #f2a524, #ffd45f 65%, #fff0ab);
-        box-shadow: 0 0 12px rgb(255 188 51 / 55%);
-        animation: startup-progress 1.4s ease-in-out infinite alternate;
+        background: linear-gradient(180deg, #ffe07a, #ffb52e 55%, #f08a14);
       }
       #startup-splash .credit {
         display: block;
         min-height: 14px;
         margin-top: 5px;
-        color: #eee3cb;
+        color: #fff8e9;
         font-size: 11px;
+        font-weight: 700;
         line-height: 14px;
         text-align: center;
+        text-shadow:
+          0 1px 2px rgb(0 0 0 / 90%),
+          0 0 8px rgb(0 0 0 / 70%);
       }
       #startup-error {
         position: fixed;
@@ -155,21 +180,13 @@
         font-weight: 800;
         cursor: pointer;
       }
-      @keyframes startup-progress {
-        from {
-          transform: translateX(-14%);
-        }
-        to {
-          transform: translateX(42%);
-        }
-      }
       @media (max-height: 520px) {
         #startup-splash .loading {
           bottom: 14px;
-          padding-top: 7px;
         }
         #startup-splash .progress-track {
-          height: 8px;
+          height: 18px;
+          padding-block: 3px;
         }
         #startup-splash .credit {
           margin-top: 3px;
@@ -178,10 +195,8 @@
         }
       }
       @media (prefers-reduced-motion: reduce) {
-        #startup-splash,
-        #startup-splash .progress-track span {
+        #startup-splash {
           transition: none;
-          animation: none;
         }
       }
     </style>
@@ -235,8 +250,9 @@
           aria-label="Chargement"
           aria-valuemin="0"
           aria-valuemax="100"
+          aria-valuenow="0"
         >
-          <span></span>
+          <div class="progress-groove"><span></span></div>
         </div>
         <div class="credit">Créé par Alexis Flesch</div>
       </section>
@@ -253,8 +269,25 @@
         const root = document.getElementById('root');
         if (splash === null || error === null || root === null) return;
 
+        const MINIMUM_MS = 1200;
         let state = 'loading';
         let minimumElapsed = false;
+
+        // The bar follows the start-up itself: it fills with the minimum
+        // display time, holds at 90 % while the application is not ready,
+        // and is full when the splash leaves.
+        const bar = splash.querySelector('[role="progressbar"]');
+        const fill = splash.querySelector('.progress-groove span');
+        const startedAt = performance.now();
+        const showProgress = () => {
+          if (bar === null || fill === null || !splash.isConnected) return;
+          const elapsed = Math.min((performance.now() - startedAt) / MINIMUM_MS, 1);
+          const progress = state === 'ready' ? elapsed : Math.min(elapsed, 1) * 0.9;
+          fill.style.width = `${String(progress * 100)}%`;
+          bar.setAttribute('aria-valuenow', String(Math.round(progress * 100)));
+          if (progress < 1) window.requestAnimationFrame(showProgress);
+        };
+        showProgress();
         const reveal = () => {
           if (!minimumElapsed || state === 'loading') return;
           if (state === 'ready') {
@@ -299,7 +332,7 @@
         window.setTimeout(() => {
           minimumElapsed = true;
           reveal();
-        }, 1200);
+        }, MINIMUM_MS);
         if (window.__tinkerBoltStartupModuleFailed === true) fail();
       })();
     </script>

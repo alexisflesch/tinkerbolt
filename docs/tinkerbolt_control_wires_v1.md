@@ -168,6 +168,17 @@ bouts de chaque fil.
 
 - Ancrages : aux deux extrémités du socle du levier et du bouton, aux deux
   bouts du convoyeur, au pied du ventilateur et du poteau de la barrière. Chaque fil part du côté qui regarde l'autre objet.
+- Le piston n'a qu'un ancrage, à l'arrière de son boîtier : la tige et le
+  plateau bougent à l'avant (reprise du 5 octobre).
+- Pendant la pose, dès le premier objet choisi, un segment suit le curseur
+  depuis son ancrage, avec le même tracé en équerre. Une fois un minuteur relié,
+  le premier segment reste affiché et le second part de la sortie du minuteur
+  vers le curseur, jusqu'à la pose de l'appareil. C'est un état de la vue :
+  rien n'est écrit dans le document avant la pose.
+- Pendant la pose, un toucher vise d'abord les objets qu'un fil peut relier
+  (levier, bouton, minuteur, appareils) : une poutre ou une masse dont la cible
+  tactile recouvre un bouton ne capte pas le toucher. Seul sous le doigt, un
+  objet non reliable répond encore, pour expliquer le refus.
 - D'un ancrage à l'autre, uniquement horizontal ou vertical, avec au plus un
   coude (U14b) : il ne contourne pas les objets et passe sous eux. Le fil part
   dans l'axe du port de la source, puis tourne une fois vers la cible ; si les

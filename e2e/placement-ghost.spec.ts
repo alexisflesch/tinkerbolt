@@ -258,23 +258,18 @@ test('U1 — le fantôme de placement est l’objet, translucide, valide puis in
   await expect(canvas).not.toHaveAttribute('data-placement-ghost');
   await expect(page.getByRole('button', { name: 'Annuler', exact: true })).toBeEnabled();
   // The placed beam is drawn over the ghost's box: same place, same size.
+  // Only the beam's own rows are measured: the selected beam's rotation
+  // handle hangs off its top-left corner, above the footprint.
+  const beamRows = { ...band, y: expected.y + 1, height: expected.height - 2 };
   await expect
     .poll(async () => {
-      const placedBox = await changedBox(canvas, {
-        ...band,
-        y: expected.y - 3,
-        height: expected.height + 6,
-      });
+      const placedBox = await changedBox(canvas, beamRows);
       return placedBox === null
         ? Number.POSITIVE_INFINITY
         : Math.abs(placedBox.width - expected.width);
     })
     .toBeLessThanOrEqual(3);
-  const placedBox = await changedBox(canvas, {
-    ...band,
-    y: expected.y - 3,
-    height: expected.height + 6,
-  });
+  const placedBox = await changedBox(canvas, beamRows);
   expect(placedBox).not.toBeNull();
   if (placedBox !== null && ghostBox !== null) {
     expect(Math.abs(placedBox.x - ghostBox.x)).toBeLessThanOrEqual(3);

@@ -351,7 +351,7 @@ describe('C9b électroaimant', () => {
       props: { state: 'on' },
     });
     expect(objectKinds.find(({ kind }) => kind === 'Électroaimant')?.description).toBe(
-      'Attire les caisses métalliques lorsqu’il est en marche',
+      'Attire les caisses métalliques quand il est en marche',
     );
     const view: BoardSimulationView = {
       bodyPoses: new Map(),

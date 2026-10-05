@@ -294,3 +294,28 @@ une zone visible du plateau.
   gravité la ramène, et la limite de 20 s simulées met fin à la tentative si elle
   ne revient pas. Le comportement est porté par `isOutOfScene` dans
   `src/domain/attempt-failure-evaluator.ts`.
+
+## Amendement du 5 octobre 2026 — cadrage sur la zone utile en jeu
+
+À la demande de l'auteur (`todo.05.10.md` § Taille de la scène), un niveau ne
+s'ouvre plus cadré sur toute sa scène lorsqu'on y joue. L'atelier laisse la scène
+à 16 × 9 même quand la machine n'en occupe qu'un coin : sur téléphone, le niveau
+s'ouvrait trop petit pour être lisible.
+
+- **Cadrage en jeu.** Le cadrage initial, celui que restaure « Ajuster à la
+  scène » et celui d'un redimensionnement sont un `contain` de la **zone utile**
+  du niveau, avec la même marge de 4 %. La zone utile est la boîte englobante des
+  empreintes des objets du niveau et des poses de sa solution de référence, plus
+  0,75 unité de marge, jamais plus petite que 8 × 5,5 unités, jamais hors de la
+  scène. Elle est calculée sur le niveau tel qu'il est livré, pas sur la
+  tentative en cours : elle ne bouge pas quand le joueur pose un objet.
+- **Rien n'est persisté.** C'est un calcul pur (`src/presentation/level-framing.ts`)
+  sur un document déjà validé ; le format de niveau ne change pas, et les niveaux
+  et liens déjà partagés en bénéficient. La phrase « aucun état de caméra n'est
+  persisté » reste vraie.
+- **Rôle de la scène.** Elle garde la règle de perte, les limites de pose et les
+  bornes de la caméra : les bornes de zoom restent `[0,6 × ajusté à la scène,
+  4 × ajusté à la scène]`, donc un dézoom montre toujours la scène entière.
+- **Atelier.** En création, le cadrage reste celui de la scène : l'auteur
+  construit dans tout le rectangle.
+

@@ -99,12 +99,43 @@ describe('ObjectDrawer', () => {
     expect(within(drawer).getByText('15 objets')).toBeTruthy();
   });
 
+  it('range le catalogue de l’auteur en quatre catégories, chaque carte avec sa description', () => {
+    const drawer = renderDrawer('creation');
+
+    const groups = within(drawer)
+      .getAllByRole('group')
+      .map((group) => [
+        group.getAttribute('aria-label'),
+        within(group)
+          .getAllByRole('button')
+          .map((card) => card.getAttribute('aria-label')),
+      ]);
+    expect(groups).toEqual([
+      ['Ce qui bouge', ['Balle', 'Masse', 'Caisse en bois', 'Caisse métallique']],
+      ['Structures', ['Poutre moyenne', 'Bascule', 'Tremplin']],
+      ['Appareils', ['Convoyeur', 'Ventilateur', 'Électroaimant', 'Piston', 'Barrière']],
+      ['Commandes', ['Levier', 'Bouton', 'Minuteur', 'Fil de commande']],
+    ]);
+    expect(within(drawer).getByRole('button', { name: 'Caisse métallique' }).textContent).toContain(
+      'Une caisse que l’électroaimant attire',
+    );
+    expect(within(drawer).getByRole('button', { name: 'Caisse en bois' }).textContent).toContain(
+      'Une caisse à pousser ou à transporter',
+    );
+  });
+
+  it('laisse l’inventaire du joueur sans catégories', () => {
+    const drawer = renderDrawer('resolution');
+
+    expect(within(drawer).queryAllByRole('group')).toHaveLength(0);
+  });
+
   it('propose à l’auteur la carte Fil, qui lance le câblage (U15)', () => {
     const onSelectWire = vi.fn();
     const drawer = renderDrawer('creation', onSelectWire);
 
     const wire = within(drawer).getByRole('button', { name: 'Fil de commande' });
-    expect(wire.textContent).toContain('Relie un levier ou un bouton à un appareil');
+    expect(wire.textContent).toContain('Relie une commande à un appareil');
     expect(wire.querySelector('svg')).not.toBeNull();
     fireEvent.click(wire);
     expect(onSelectWire).toHaveBeenCalledOnce();

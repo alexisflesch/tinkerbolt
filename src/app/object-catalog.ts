@@ -18,30 +18,69 @@ export type ObjectKind =
   | 'Barrière'
   | 'Tremplin';
 
+/** The catalogue's groups, in the order the author reads them. */
+export const catalogueCategories = [
+  'Ce qui bouge',
+  'Structures',
+  'Appareils',
+  'Commandes',
+] as const;
+export type CatalogueCategory = (typeof catalogueCategories)[number];
+
 interface ObjectCatalogEntry {
   readonly kind: ObjectKind;
+  readonly category: CatalogueCategory;
   readonly description: string;
 }
 
 export const objectKinds: readonly ObjectCatalogEntry[] = [
-  { kind: 'Balle', description: 'Un corps libre entraîné par la gravité' },
-  { kind: 'Panier', description: 'La cible finale de la scène' },
-  { kind: 'Poutre', description: 'Trois longueurs pour guider la balle' },
-  { kind: 'Bascule', description: 'Une bascule préassemblée' },
-  { kind: 'Caisse', description: 'Un corps libre en bois ou en métal' },
-  { kind: 'Masse', description: 'Un poids lourd qui fait basculer' },
-  { kind: 'Levier', description: 'Commande un appareil : gauche, arrêt, droite' },
-  { kind: 'Convoyeur', description: 'Un tapis qui entraîne ce qu’il porte' },
-  { kind: 'Bouton', description: 'Actif tant qu’un objet appuie dessus' },
+  { kind: 'Balle', category: 'Ce qui bouge', description: 'Roule, tombe et rebondit' },
+  { kind: 'Panier', category: 'Ce qui bouge', description: 'La cible finale de la scène' },
+  {
+    kind: 'Masse',
+    category: 'Ce qui bouge',
+    description: 'Un poids de 10 kg pour appuyer ou faire basculer',
+  },
+  {
+    kind: 'Caisse',
+    category: 'Ce qui bouge',
+    description: 'Une caisse à pousser ou à transporter',
+  },
+  { kind: 'Poutre', category: 'Structures', description: 'Un support fixe, en trois longueurs' },
+  { kind: 'Bascule', category: 'Structures', description: 'Une planche qui pivote sous le poids' },
+  { kind: 'Tremplin', category: 'Structures', description: 'Fait rebondir ce qui tombe dessus' },
+  {
+    kind: 'Convoyeur',
+    category: 'Appareils',
+    description: 'Un tapis roulant, vers la gauche ou la droite',
+  },
+  {
+    kind: 'Ventilateur',
+    category: 'Appareils',
+    description: 'Souffle devant lui quand il est en marche',
+  },
   {
     kind: 'Électroaimant',
-    description: 'Attire les caisses métalliques lorsqu’il est en marche',
+    category: 'Appareils',
+    description: 'Attire les caisses métalliques quand il est en marche',
   },
-  { kind: 'Piston', description: 'Propulse les objets devant lui lorsqu’un bouton appuie' },
-  { kind: 'Minuteur', description: 'Retarde les changements du signal électrique' },
-  { kind: 'Ventilateur', description: 'Souffle sur ce qui passe devant lui' },
-  { kind: 'Barrière', description: 'Une barre qui rentre dans son poteau' },
-  { kind: 'Tremplin', description: 'Renvoie vers le haut ce qui tombe dessus' },
+  { kind: 'Piston', category: 'Appareils', description: 'Pousse d’un coup ce qui est devant lui' },
+  {
+    kind: 'Barrière',
+    category: 'Appareils',
+    description: 'Une barre qui s’ouvre ou se ferme sur commande',
+  },
+  {
+    kind: 'Levier',
+    category: 'Commandes',
+    description: 'Trois positions pour commander un appareil',
+  },
+  { kind: 'Bouton', category: 'Commandes', description: 'Actif tant qu’un objet appuie dessus' },
+  {
+    kind: 'Minuteur',
+    category: 'Commandes',
+    description: 'Retarde le signal de quelques secondes',
+  },
 ];
 
 export const inventoryTypeByObjectKind = {
@@ -74,6 +113,7 @@ interface AuthorCatalogueMetadata {
   readonly name: string;
   /** Spoken name when it says more than the card title. */
   readonly accessibleName: string;
+  readonly category: CatalogueCategory;
   readonly description: string;
 }
 export type AuthorCatalogueEntry = AuthorCatalogueMetadata &
@@ -86,7 +126,10 @@ const authorEntry = (
   type: Placement['type'],
   props: Placement['props'] = {},
 ): AuthorCatalogueEntry => {
-  const { description } = objectKinds.find((entry) => entry.kind === kind) ?? { description: '' };
+  const { category, description } = objectKinds.find((entry) => entry.kind === kind) ?? {
+    category: 'Ce qui bouge',
+    description: '',
+  };
   const definition = levelDocumentSchema.shape.objects.element.parse({
     id: 'catalogue',
     type,
@@ -100,6 +143,7 @@ const authorEntry = (
     kind,
     name: kind,
     accessibleName: kind,
+    category,
     description,
   };
 };
@@ -107,15 +151,10 @@ const authorEntry = (
 /**
  * The goal's red ball and its basket are unique and already on the board
  * (LevelDocument v2 has a single goal): the author only adds blue balls,
- * listed simply as « Balle ».
+ * listed simply as « Balle ». Entries follow `catalogueCategories`.
  */
 export const authorCatalogue: readonly AuthorCatalogueEntry[] = [
-  {
-    ...authorEntry('Balle', 'ball'),
-    description: 'Une pièce de la machine',
-  },
-  { ...authorEntry('Poutre', 'beam', { size: 'medium' }), accessibleName: 'Poutre moyenne' },
-  authorEntry('Bascule', 'seesaw'),
+  authorEntry('Balle', 'ball'),
   authorEntry('Masse', 'mass', { weight: '10kg' }),
   {
     ...authorEntry('Caisse', 'box', { material: 'wood' }),
@@ -128,14 +167,17 @@ export const authorCatalogue: readonly AuthorCatalogueEntry[] = [
     key: 'box-metal',
     name: 'Caisse métallique',
     accessibleName: 'Caisse métallique',
+    description: 'Une caisse que l’électroaimant attire',
   },
-  authorEntry('Levier', 'lever', { position: 'center' }),
+  { ...authorEntry('Poutre', 'beam', { size: 'medium' }), accessibleName: 'Poutre moyenne' },
+  authorEntry('Bascule', 'seesaw'),
+  authorEntry('Tremplin', 'springboard'),
   authorEntry('Convoyeur', 'conveyor', { direction: 'stopped' }),
-  authorEntry('Bouton', 'button'),
+  authorEntry('Ventilateur', 'fan', { state: 'on' }),
   authorEntry('Électroaimant', 'electro-magnet', { state: 'on' }),
   authorEntry('Piston', 'piston'),
-  authorEntry('Minuteur', 'timer', { delaySeconds: 3 }),
-  authorEntry('Ventilateur', 'fan', { state: 'on' }),
   authorEntry('Barrière', 'barrier', { state: 'closed' }),
-  authorEntry('Tremplin', 'springboard'),
+  authorEntry('Levier', 'lever', { position: 'center' }),
+  authorEntry('Bouton', 'button'),
+  authorEntry('Minuteur', 'timer', { delaySeconds: 3 }),
 ];

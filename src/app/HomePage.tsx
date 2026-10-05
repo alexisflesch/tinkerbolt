@@ -91,7 +91,7 @@ export function HomePage() {
           <Place
             to="/levels"
             title="Campagne"
-            text="Cinq niveaux pour découvrir chaque pièce."
+            text="Sept niveaux pour découvrir chaque pièce."
             sprite="basket"
           >
             <div className="home-meter">

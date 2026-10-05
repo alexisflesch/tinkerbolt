@@ -6,9 +6,11 @@ import {
 } from '../application/editor-session/editor-session';
 import {
   authorCatalogue,
+  catalogueCategories,
   inventoryTypeByObjectKind,
   objectKinds,
   type AuthorCatalogueEntry,
+  type CatalogueCategory,
   type ObjectKind,
 } from '../app/object-catalog';
 import type { PlacementSource } from '../app/use-board-pointers';
@@ -32,6 +34,8 @@ interface DrawerCard {
   readonly name: string;
   readonly accessibleName: string;
   readonly detail: string;
+  /** The author's catalogue is grouped; the player's inventory is not. */
+  readonly category?: CatalogueCategory;
   readonly thumbnail: SpriteThumbnail;
   readonly isDepleted: boolean;
   readonly source: PlacementSource;
@@ -45,6 +49,7 @@ const authorCard = (entry: AuthorCatalogueEntry): DrawerCard => ({
   name: entry.name,
   accessibleName: entry.accessibleName,
   detail: entry.description,
+  category: entry.category,
   // The red ball is the goal's and never in the catalogue: a ball added here is blue.
   thumbnail:
     entry.type === 'box'
@@ -220,6 +225,39 @@ export function ObjectDrawer({
       : `${String(entryCount)} ${entryCount === 1 ? 'entrée' : 'entrées'}`;
   const isConstruction = session.phase === 'construction';
 
+  const renderCard = (card: DrawerCard) => {
+    const isSelected = selectedObject === card.kind && selectedEntryKey === card.key;
+
+    return (
+      <button
+        className={`object-card${isSelected ? ' object-card-selected' : ''}`}
+        key={card.key}
+        type="button"
+        disabled={session.phase !== 'construction' || card.isDepleted}
+        aria-label={card.accessibleName}
+        aria-pressed={isSelected}
+        onClick={() => {
+          onSelectKind(card.kind, card.source);
+        }}
+      >
+        <span className="object-thumb" aria-hidden="true">
+          <img src={spriteThumbnailPath(card.thumbnail)} alt="" draggable={false} />
+        </span>
+        <span className="object-card-copy">
+          <strong>{card.name}</strong>
+          <span>{card.detail}</span>
+        </span>
+        <span className="object-card-action" aria-hidden="true">
+          {isSelected ? (
+            <Check size={18} aria-hidden="true" />
+          ) : (
+            <Plus size={18} aria-hidden="true" />
+          )}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <>
       {isDrawerOpen && !isSideLayout && !isPlacementActive && (
@@ -272,49 +310,25 @@ export function ObjectDrawer({
 
         <div className="drawer-content">
           <div className="object-list" id="object-list" hidden={!drawerIsExpanded}>
-            {drawerCards.map((card) => {
-              const isSelected = selectedObject === card.kind && selectedEntryKey === card.key;
-
-              return (
-                <button
-                  className={`object-card${isSelected ? ' object-card-selected' : ''}`}
-                  key={card.key}
-                  type="button"
-                  disabled={session.phase !== 'construction' || card.isDepleted}
-                  aria-label={card.accessibleName}
-                  aria-pressed={isSelected}
-                  onClick={() => {
-                    onSelectKind(card.kind, card.source);
-                  }}
-                >
-                  <span className="object-thumb" aria-hidden="true">
-                    <img src={spriteThumbnailPath(card.thumbnail)} alt="" draggable={false} />
-                  </span>
-                  <span className="object-card-copy">
-                    <strong>{card.name}</strong>
-                    <span>{card.detail}</span>
-                  </span>
-                  <span className="object-card-action" aria-hidden="true">
-                    {isSelected ? (
-                      <Check size={18} aria-hidden="true" />
-                    ) : (
-                      <Plus size={18} aria-hidden="true" />
+            {inventory === null
+              ? catalogueCategories.map((category) => (
+                  <div className="object-group" key={category} role="group" aria-label={category}>
+                    <h3 className="object-group-title">{category}</h3>
+                    {drawerCards.filter((card) => card.category === category).map(renderCard)}
+                    {category === 'Commandes' && (
+                      <WireCard
+                        accessibleName="Fil de commande"
+                        detail="Relie une commande à un appareil"
+                        isActive={isWiringActive}
+                        isDisabled={!isConstruction}
+                        onSelect={() => {
+                          onSelectWire();
+                        }}
+                      />
                     )}
-                  </span>
-                </button>
-              );
-            })}
-            {inventory === null && (
-              <WireCard
-                accessibleName="Fil de commande"
-                detail="Relie un levier ou un bouton à un appareil"
-                isActive={isWiringActive}
-                isDisabled={!isConstruction}
-                onSelect={() => {
-                  onSelectWire();
-                }}
-              />
-            )}
+                  </div>
+                ))
+              : drawerCards.map(renderCard)}
             {wireEntries.map((entry) => (
               <WireCard
                 key={entry.id}

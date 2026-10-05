@@ -123,7 +123,7 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
       expect(within(destinations()).getAllByRole('link')).toHaveLength(3);
     });
     await waitFor(() => {
-      expect(screen.getByText('Cinq niveaux pour découvrir chaque pièce.')).toBeVisible();
+      expect(screen.getByText('Sept niveaux pour découvrir chaque pièce.')).toBeVisible();
     });
     await waitFor(() => {
       expect(
@@ -186,26 +186,26 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
 
     const campaign = within(destinations()).getByRole('link', { name: /^Campagne/u });
     await waitFor(() => {
-      expect(within(campaign).getByText('2 / 5')).toBeVisible();
+      expect(within(campaign).getByText('2 / 7')).toBeVisible();
     });
     await waitFor(() => {
       expect(campaignProgress()).toHaveAttribute('value', '2');
     });
     await waitFor(() => {
-      expect(campaignProgress()).toHaveAttribute('max', '5');
+      expect(campaignProgress()).toHaveAttribute('max', '7');
     });
     await waitFor(() => {
       expect(campaign).toContainElement(campaignProgress());
     });
   });
 
-  it('commence à 0 / 5 et mène toujours à la campagne quand tout est résolu', async () => {
+  it('commence à 0 / 7 et mène toujours à la campagne quand tout est résolu', async () => {
     await renderStorageReady(<App progressRepository={createRepository()} />);
     await waitFor(() => {
       expect(campaignProgress()).toHaveAttribute('value', '0');
     });
     await waitFor(() => {
-      expect(within(destinations()).getByText('0 / 5')).toBeVisible();
+      expect(within(destinations()).getByText('0 / 7')).toBeVisible();
     });
     cleanup();
 
@@ -218,10 +218,10 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
       expect(screen.getByRole('link', { name: 'Jouer' })).toHaveAttribute('href', '/levels');
     });
     await waitFor(() => {
-      expect(campaignProgress()).toHaveAttribute('value', '5');
+      expect(campaignProgress()).toHaveAttribute('value', '7');
     });
     await waitFor(() => {
-      expect(within(destinations()).getByText('5 / 5')).toBeVisible();
+      expect(within(destinations()).getByText('7 / 7')).toBeVisible();
     });
   });
 

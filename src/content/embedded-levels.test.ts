@@ -13,15 +13,15 @@ import { playSolution } from '../application/puzzle/puzzle-workshop';
 import { runLevel } from './level-regression';
 import { createSimulationSession } from '../simulation/simulation-session';
 
-const expectedIds = ['tuto-1', 'tuto-2', 'tuto-3', 'tuto-4', 'tuto-5'] as const;
+const expectedIds = ['tuto-1', 'tuto-2', 'tuto-3', 'tuto-4', 'tuto-5', 'tuto-6', 'tuto-7'] as const;
 
 describe('campagne embarquée', () => {
-  it('publie les cinq tutoriels de Bolt dans leur ordre, à la place des esquisses (N2)', () => {
+  it('publie les sept tutoriels de Bolt dans leur ordre, à la place des esquisses (N2)', () => {
     expect(campaignChapters.map(({ id, title }) => ({ id, title }))).toEqual([
       { id: 'tutoriels', title: 'Premiers pas' },
     ]);
     expect(embeddedLevels.map(({ id }) => id)).toEqual(expectedIds);
-    expect(campaignChapters.map(({ levels }) => levels.length)).toEqual([5]);
+    expect(campaignChapters.map(({ levels }) => levels.length)).toEqual([7]);
     expect(flattenCampaignLevels(campaignChapters)).toEqual(embeddedLevels);
   });
 

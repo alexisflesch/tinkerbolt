@@ -24,10 +24,7 @@ import { levelFingerprint } from '../infrastructure/level-file/level-fingerprint
 import { encodeShareFragment } from '../infrastructure/level-share/level-share-codec';
 import { selfSolvingLevel } from '../../test/fixtures/self-solving-level';
 import { fitCameraToScene } from '../presentation/board-camera';
-import {
-  ROTATION_HANDLE_GAP_CSS_PIXELS,
-  ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS,
-} from '../presentation/rotation-handle-metrics';
+import { ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS } from '../presentation/rotation-handle-metrics';
 import styles from '../ui/styles.css?raw';
 
 import {
@@ -3141,6 +3138,95 @@ describe('coque TinkerBolt', () => {
     });
   });
 
+  it('tire un segment du premier objet choisi jusqu’au curseur, jusqu’à la pose du fil', async () => {
+    await renderStorageReady(<App />);
+    await openEmbeddedWorkshop();
+    // Atelier 16 × 9 ajusté au canvas 800 × 450 : 50 px par unité monde.
+    const board = await placeFromCatalogue('Convoyeur', 600, 225);
+    await placeFromCatalogue('Levier', 200, 225);
+    const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
+
+    await selectWireCard();
+    firePointerEvent(board, 'pointermove', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: 400,
+      clientY: 100,
+    });
+    // Aucun objet choisi : rien à tirer.
+    expect(canvas).not.toHaveAttribute('data-pending-wire');
+
+    tapBoard(board, 600, 225);
+    firePointerEvent(board, 'pointermove', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: 400,
+      clientY: 100,
+    });
+    // Le canvas 800 × 450 montre 16 × 9 avec 4 % de marge : 48 px par unité.
+    // Du port du convoyeur tourné vers le curseur jusqu’au curseur lui-même.
+    await waitFor(() => {
+      expect(canvas).toHaveAttribute('data-pending-wire');
+    });
+    const [from, to] = (canvas.getAttribute('data-pending-wire') ?? '')
+      .split('>')
+      .map((point) => point.split(',').map(Number));
+    expect(from?.[0]).toBeCloseTo(12.5 + 1 / 6 - 1.5 - 0.5);
+    expect(from?.[1]).toBeCloseTo(4.5);
+    expect(to?.[0]).toBeCloseTo(8);
+    expect(to?.[1]).toBeCloseTo(4.5 - 125 / 48);
+
+    tapBoard(board, 200, 225);
+    await waitFor(() => {
+      expect(screen.getByText('Fil posé.')).toBeVisible();
+    });
+    expect(canvas).not.toHaveAttribute('data-pending-wire');
+  });
+
+  it('en posant un fil, vise le bouton même sous la cible tactile d’une masse posée après lui', async () => {
+    await renderStorageReady(<App />);
+    await openEmbeddedWorkshop();
+    const board = await placeFromCatalogue('Ventilateur', 600, 225);
+    await placeFromCatalogue('Bouton', 200, 225);
+    // La masse, posée après, recouvre le bouton de sa cible tactile de 44 px.
+    await placeFromCatalogue('Masse', 200, 190);
+    const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
+
+    await selectWireCard();
+    tapBoard(board, 200, 212);
+    await waitFor(() => {
+      expect(screen.getByText('Choisis le minuteur ou l’appareil à commander')).toBeVisible();
+    });
+    tapBoard(board, 600, 225);
+    await waitFor(() => {
+      expect(canvas.getAttribute('data-wires')).toMatch(/^placement-\d+>placement-\d+$/u);
+    });
+  });
+
+  it('n’ouvre pas les propriétés du premier objet d’un second fil après une pose', async () => {
+    await renderStorageReady(<App />);
+    await openEmbeddedWorkshop();
+    const board = await placeFromCatalogue('Ventilateur', 600, 225);
+    await placeFromCatalogue('Barrière', 600, 350);
+    await placeFromCatalogue('Bouton', 200, 225);
+
+    await selectWireCard();
+    tapBoard(board, 200, 225);
+    tapBoard(board, 600, 225);
+    await waitFor(() => {
+      expect(screen.getByText('Fil posé.')).toBeVisible();
+    });
+
+    // Le toucher qui pose le fil n’est pas aussi un clic d’ouverture : le
+    // panneau reste fermé quand le second fil sélectionne son premier objet.
+    await selectWireCard();
+    tapBoard(board, 200, 225);
+    await waitFor(() => {
+      expect(screen.getByText('Choisis le minuteur ou l’appareil à commander')).toBeVisible();
+    });
+    expect(screen.queryByRole('region', { name: /^Propriétés de /u })).toBeNull();
+  });
+
   it('enchaîne les fils d’un bouton, jamais vers un convoyeur, et un seul contrôleur par appareil (U15)', async () => {
     await renderStorageReady(<App />);
     await openEmbeddedWorkshop();
@@ -3570,31 +3656,32 @@ describe('coque TinkerBolt', () => {
     fireEvent.click(board, { detail: 1, clientX: 384, clientY: 384 });
 
     const undoButton = screen.getByRole('button', { name: 'Annuler' });
-    // The knob sits a stem above the floor's top edge (y = 8 − 0.125 in the world).
+    // The knob sits diagonally off the floor's top-left corner, at
+    // (8 − 3, 8 − 0.125) in the world; pulling it up turns the floor a notch.
     const canvas = within(board).getByRole('img', { name: 'Rendu du plateau' });
-    const originY = Number((canvas.getAttribute('data-camera-origin') ?? '').split(',')[1]);
+    const [originX, originY] = (canvas.getAttribute('data-camera-origin') ?? '')
+      .split(',')
+      .map(Number);
     const zoom = Number(canvas.getAttribute('data-camera-zoom'));
-    const handleY =
-      (8 - 0.125 - originY) * zoom -
-      ROTATION_HANDLE_GAP_CSS_PIXELS -
-      ROTATION_HANDLE_KNOB_RADIUS_CSS_PIXELS;
+    const handleX = (8 - 3 - (originX ?? 0)) * zoom - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS;
+    const handleY = (8 - 0.125 - (originY ?? 0)) * zoom - ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS;
     firePointerEvent(board, 'pointerdown', {
       pointerId: 2,
       pointerType: 'touch',
-      clientX: 384,
+      clientX: handleX,
       clientY: handleY,
     });
     firePointerEvent(board, 'pointermove', {
       pointerId: 2,
       pointerType: 'touch',
-      clientX: 400,
-      clientY: handleY,
+      clientX: handleX,
+      clientY: handleY - 80,
     });
     firePointerEvent(board, 'pointerup', {
       pointerId: 2,
       pointerType: 'touch',
-      clientX: 400,
-      clientY: handleY,
+      clientX: handleX,
+      clientY: handleY - 80,
     });
 
     await waitFor(() => {
@@ -3608,17 +3695,18 @@ describe('coque TinkerBolt', () => {
 
   it('ne réagit qu’à la poignée de l’objet sélectionné : une masse posée dessus reste saisissable', async () => {
     await renderStorageReady(<App />);
-    // Atelier 16 × 9 ajusté au canvas 800 × 450 : 50 px par unité monde.
+    // Atelier 16 × 9 ajusté au canvas 800 × 450 avec 4 % de marge : 48 px par unité monde.
     const board = await placeWorkshopBeam();
-    // La masse se pose là où serait la poignée de la poutre, juste au-dessus d’elle.
-    await placeFromCatalogue('Masse', 400, 190);
+    // La masse se pose là où serait la poignée de la poutre, hors de son coin
+    // supérieur gauche : (400 − 96 − 28 ; 225 − 6 − 28).
+    await placeFromCatalogue('Masse', 276, 191);
     // Rien n’est plus sélectionné.
     tapBoard(board, 700, 60);
     await waitFor(() => {
       expect(screen.queryByRole('region', { name: /Propriétés de/ })).toBeNull();
     });
 
-    tapBoard(board, 400, 190);
+    tapBoard(board, 276, 191);
 
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Propriétés de Masse' })).toBeInTheDocument();
@@ -4084,25 +4172,25 @@ describe('coque TinkerBolt', () => {
     const board = await placeWorkshopBeam();
     const undoButton = screen.getByRole('button', { name: 'Annuler' });
 
-    // The handle is 32 CSS px above the beam centre (400, 225), as defined by
-    // the renderer's fixed-distance handle contract.
+    // The handle sits 28 CSS px off the top-left corner of the beam centred at
+    // (400, 225): (400 − 96 − 28, 225 − 6 − 28). Pulling it up turns the beam.
     firePointerEvent(board, 'pointerdown', {
       pointerId: 2,
       pointerType: 'touch',
-      clientX: 400,
-      clientY: 193,
+      clientX: 276,
+      clientY: 191,
     });
     firePointerEvent(board, 'pointermove', {
       pointerId: 2,
       pointerType: 'touch',
-      clientX: 420,
-      clientY: 193,
+      clientX: 276,
+      clientY: 131,
     });
     firePointerEvent(board, 'pointerup', {
       pointerId: 2,
       pointerType: 'touch',
-      clientX: 420,
-      clientY: 193,
+      clientX: 276,
+      clientY: 131,
     });
 
     // One rotation command: undo leaves the placed beam selected, and the
@@ -4115,20 +4203,20 @@ describe('coque TinkerBolt', () => {
     firePointerEvent(board, 'pointerdown', {
       pointerId: 3,
       pointerType: 'touch',
-      clientX: 400,
-      clientY: 193,
+      clientX: 276,
+      clientY: 191,
     });
     firePointerEvent(board, 'pointermove', {
       pointerId: 3,
       pointerType: 'touch',
-      clientX: 420,
-      clientY: 193,
+      clientX: 276,
+      clientY: 131,
     });
     firePointerEvent(board, 'pointercancel', {
       pointerId: 3,
       pointerType: 'touch',
-      clientX: 420,
-      clientY: 193,
+      clientX: 276,
+      clientY: 131,
     });
 
     await storageAction(() => fireEvent.click(undoButton));

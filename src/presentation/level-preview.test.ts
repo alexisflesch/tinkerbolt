@@ -235,7 +235,7 @@ describe('renderLevelPreview — aperçu d’un document (V5)', () => {
     expect(new Set(requested)).toEqual(new Set(level.objects.map(({ type }) => type)));
   });
 
-  it('dessine les cinq tutoriels sans lever d’erreur', async () => {
+  it('dessine les sept tutoriels sans lever d’erreur', async () => {
     for (const index of [0, 1, 2, 3, 4]) {
       const { operations } = await render(tutorial(index));
       expect(operations.some((operation) => operation.kind === 'drawImage')).toBe(true);

@@ -126,6 +126,16 @@ export const wiringGuide = (
   return { prompt, exitLabel: 'Annuler le fil' };
 };
 
+/** The objects the wire being laid already holds: the board draws it from them to the cursor. */
+export const wiringAnchor = (
+  step: WiringStep | null,
+): { readonly firstId: string; readonly timerId?: string } | null => {
+  if (step === null || step.kind === 'first') return null;
+  return step.kind === 'second'
+    ? { firstId: step.firstId }
+    : { firstId: step.sourceId, timerId: step.timerId };
+};
+
 /** Wire ids stay apart from object ids: an attempt's provenance keys both (U21). */
 const nextWireId = (document: LevelDocument): string => {
   const used = new Set([...document.wires, ...document.objects].map(({ id }) => id));

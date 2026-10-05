@@ -1475,6 +1475,57 @@ describe('renderer Canvas 2D du plateau', () => {
 
     expect(operations.some(isRotationKnob)).toBe(true);
   });
+
+  it('centre la flèche de rotation dans son bouton bleu nuit (reprise du 5 octobre)', async () => {
+    const { context, operations } = createContext();
+    const spriteLoader = createPendingSpriteLoader();
+    spriteLoader.setReady();
+    const renderer = createBoardRenderer({
+      canvas: { width: 0, height: 0 },
+      context,
+      viewport,
+      spriteLoader: spriteLoader.loader,
+    });
+    const sourceProjection = projectLevel(embeddedWorkshopDocument);
+    await renderer.render({
+      ...sourceProjection,
+      objects: sourceProjection.objects.map((object) =>
+        object.family === 'beam' ? { ...object, rotatable: true } : object,
+      ),
+      selectedPlacementId: 'workshop-floor',
+    });
+
+    const knobIndex = operations.findIndex(isRotationKnob);
+    const knob = operations[knobIndex];
+    if (knob?.kind !== 'arc') throw new Error('Bouton de rotation absent.');
+    const [knobX = 0, knobY = 0] = knob.values;
+    // After the knob: the arrow's arc, then its three-point head.
+    const after = operations.slice(knobIndex + 1);
+    const arrow = after.find((operation) => operation.kind === 'arc');
+    if (arrow?.kind !== 'arc') throw new Error('Flèche de rotation absente.');
+    const [arcX = 0, arcY = 0, radius = 0, start = 0, end = 0] = arrow.values;
+    const points: [number, number][] = [];
+    for (let step = 0; step <= 64; step += 1) {
+      const angle = start + ((end - start) * step) / 64;
+      points.push([arcX + radius * Math.cos(angle), arcY + radius * Math.sin(angle)]);
+    }
+    const head = after
+      .slice(after.indexOf(arrow) + 1)
+      .filter((operation) => operation.kind === 'moveTo' || operation.kind === 'lineTo')
+      .slice(0, 3);
+    for (const operation of head) {
+      points.push([operation.values[0] ?? 0, operation.values[1] ?? 0]);
+    }
+    const xs = points.map(([x]) => x);
+    const ys = points.map(([, y]) => y);
+    expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(knobX, 1);
+    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(knobY, 1);
+
+    const styles = replay(operations);
+    const knobFill = styles.find(({ operation }) => operation === knob);
+    expect(knobFill?.state.strokeStyle).toBe('#0a1426');
+    expect(operations).toContainEqual({ kind: 'strokeStyle', values: ['#ffc53d'] });
+  });
 });
 
 /** Canvas state at one drawing operation, replayed from the recorded operations. */
@@ -1815,10 +1866,10 @@ describe('balle cible sans surcharge (R1, décision auteur)', () => {
     },
   );
 
-  it('définit explicitement le bleu du contour des autres objets sélectionnés', async () => {
+  it('définit explicitement le bleu nuit du contour des autres objets sélectionnés (style du 5 octobre)', async () => {
     const { drawn } = await renderBalls(levelDocument, undefined, 40, 'beam-1');
     const outline = drawn.find(({ operation }) => operation.kind === 'strokeRect');
-    expect(outline?.state.strokeStyle).toBe('#1e88e5');
+    expect(outline?.state.strokeStyle).toBe('#0f1d36');
   });
 });
 

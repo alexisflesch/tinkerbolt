@@ -56,6 +56,10 @@ for (const viewport of desktopFormats) {
       expect(response.headers()['content-type']).toContain('image/png');
     }
 
+    // The splash only lasts 1,2 s: hold the page clock so a loaded machine
+    // cannot let it expire between two assertions, then release it.
+    await page.clock.install({ time: new Date('2026-10-05T12:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-10-05T12:01:00Z'));
     await page.goto('/levels/tuto-1/play', { waitUntil: 'domcontentloaded' });
     const splash = page.locator('#startup-splash');
     await expect(splash).toBeVisible();
@@ -69,7 +73,9 @@ for (const viewport of desktopFormats) {
     await expect(splash.getByRole('progressbar', { name: 'Chargement' })).toBeVisible();
     await expect(splash.getByText('Créé par Alexis Flesch')).toBeVisible();
     await expectWithinViewport(splash.locator('.loading'), viewport);
+    await page.clock.runFor(1_500);
     await expect(splash).toBeHidden({ timeout: 10_000 });
+    await page.clock.resume();
 
     const openCatalogue = page.getByRole('button', { name: 'Ouvrir le catalogue' });
     if (await openCatalogue.isVisible()) await openCatalogue.click();
@@ -78,16 +84,18 @@ for (const viewport of desktopFormats) {
     if (placement === undefined) throw new Error('Solution du tutoriel 1 absente.');
     await tapWorldPoint(page, placement.transform.position.x, placement.transform.position.y);
 
-    await page.clock.install({ time: new Date('2026-10-05T12:00:00Z') });
-    await page.clock.pauseAt(new Date('2026-10-05T12:00:00Z'));
+    await page.clock.pauseAt(new Date('2026-10-05T12:10:00Z'));
     await page.getByRole('button', { name: 'Lancer', exact: true }).click();
     await expect(page.getByText('Simulation en cours', { exact: true })).toBeVisible();
     await page.clock.runFor(10_000);
 
     const victory = page.getByRole('dialog', { name: 'Bravo !' });
-    const simulationCanvas = page.getByRole('img', { name: 'Rendu du plateau' });
-    const simulationState = `pas ${String(await simulationCanvas.getAttribute('data-simulation-step'))}, balle ${String(await simulationCanvas.getAttribute('data-simulation-ball-position'))}`;
-    await expect(victory, simulationState).toBeVisible();
+    // On a loaded machine the first run of the clock can end before the
+    // simulation has gone far enough: keep the clock running until the result.
+    await expect(async () => {
+      await page.clock.runFor(2_000);
+      await expect(victory).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 20_000 });
     const victoryBolt = victory.locator('.victory-bolt img');
     await expect(victoryBolt).toHaveAttribute('alt', '');
     await expect

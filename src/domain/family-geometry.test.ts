@@ -115,14 +115,16 @@ describe('géométrie des familles', () => {
     expectPolygonToFillFootprint(fanGeometry.body.polygon, fanGeometry.body.footprint);
   });
 
-  it('garde le piston à une taille proche du ventilateur', () => {
-    const pistonArea = pistonGeometry.footprint.width * pistonGeometry.footprint.height;
-    const fanArea = fanGeometry.body.footprint.width * fanGeometry.body.footprint.height;
+  it('donne au piston la hauteur du ventilateur et du tremplin (ADR 0019, amendement du 5 octobre)', () => {
+    const { height } = pistonGeometry.footprint;
 
-    expect(pistonGeometry.footprint.width).toBeLessThan(fanGeometry.body.footprint.width * 1.05);
-    expect(pistonGeometry.footprint.height).toBeLessThan(fanGeometry.body.footprint.height * 1.2);
-    expect(pistonArea).toBeGreaterThan(fanArea * 0.7);
-    expect(pistonArea).toBeLessThan(fanArea * 1.25);
+    // Its footprint is longer than theirs: it includes the plate's stroke.
+    for (const neighbour of [fanGeometry.body.footprint, springboardGeometry.footprint]) {
+      expect(height).toBeGreaterThan(neighbour.height * 0.9);
+      expect(height).toBeLessThan(neighbour.height * 1.1);
+    }
+    expect(pistonGeometry.housing.footprint.width).toBeGreaterThan(1);
+    expect(pistonGeometry.housing.footprint.width).toBeLessThan(fanGeometry.body.footprint.width);
   });
 
   it('pose le capuchon du bouton et le plateau du tremplin au sommet de leur empreinte', () => {

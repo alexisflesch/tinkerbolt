@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Maquettes — reprise du 5 octobre</title>
+    <style>
+      @font-face {
+        font-family: 'Nunito';
+        src: url('../../../public/fonts/Nunito.woff2') format('woff2');
+        font-weight: 200 1000;
+      }
+      :root {
+        --night-950: #0a1426;
+        --night-900: #0f1d36;
+        --night-800: #152a4b;
+        --night-700: #1d3a66;
+        --night-line: #34568c;
+        --panel: #fbf5e9;
+        --paper: #f6ead3;
+        --ink: #2b2521;
+        --accent: #ffc53d;
+        --blue: #1e88e5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 24px 64px;
+        color: #f4ead6;
+        background: var(--night-900);
+        font:
+          15px/1.5 Nunito,
+          'Trebuchet MS',
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 26px;
+      }
+      h2 {
+        margin: 48px 0 6px;
+        padding-top: 20px;
+        border-top: 1px solid var(--night-line);
+        font-size: 20px;
+      }
+      p {
+        max-width: 76ch;
+        margin: 0 0 14px;
+        color: #cfd8ea;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      }
+      figure {
+        margin: 0;
+        padding: 12px;
+        border: 1px solid var(--night-line);
+        border-radius: 12px;
+        background: var(--night-800);
+      }
+      figcaption {
+        margin-top: 10px;
+        color: #cfd8ea;
+        font-size: 13px;
+      }
+      figcaption b {
+        color: #fff;
+        font-size: 15px;
+      }
+      .reco {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        color: var(--night-950);
+        background: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      /* 1. Barre du splash : bas de l’image réelle, à l’échelle 1. */
+      .splash {
+        position: relative;
+        height: 150px;
+        overflow: hidden;
+        border-radius: 8px;
+        background: url('../../../public/assets/splash/splash-screen-desktop.webp') center bottom /
+          cover;
+      }
+      .splash .slot {
+        position: absolute;
+        right: 0;
+        bottom: 16px;
+        left: 0;
+        width: min(380px, calc(100% - 32px));
+        margin: auto;
+        text-align: center;
+      }
+      .credit {
+        margin-top: 5px;
+        font-size: 11px;
+        line-height: 14px;
+      }
+      @keyframes fill {
+        from {
+          width: 12%;
+        }
+        to {
+          width: 96%;
+        }
+      }
+      @keyframes belt {
+        to {
+          background-position: 28px 0;
+        }
+      }
+      /* Actuelle */
+      .bar-now {
+        padding: 10px 13px 5px;
+        border: 1px solid rgb(255 231 181 / 48%);
+        border-radius: 12px;
+        background: rgb(11 24 38 / 82%);
+        box-shadow: 0 7px 24px rgb(0 0 0 / 42%);
+      }
+      .bar-now .track {
+        height: 11px;
+        overflow: hidden;
+        border: 1px solid #192a3b;
+        border-radius: 999px;
+        background: #08121e;
+      }
+      .bar-now .track span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #f2a524, #ffd45f 65%, #fff0ab);
+        animation: fill 1.4s ease-in-out infinite alternate;
+      }
+      .bar-now .credit {
+        color: #eee3cb;
+      }
+      /* A — Enseigne : reprend la planche boulonnée du logo. */
+      .bar-a .track {
+        position: relative;
+        height: 22px;
+        padding: 4px 16px;
+        border: 2px solid #4a2a12;
+        border-radius: 7px;
+        background: linear-gradient(180deg, #b9712c, #8f5220);
+        box-shadow:
+          inset 0 1px 0 rgb(255 221 160 / 55%),
+          0 5px 14px rgb(0 0 0 / 45%);
+      }
+      .bar-a .track::before,
+      .bar-a .track::after {
+        position: absolute;
+        top: 7px;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #d9dde2;
+        box-shadow: inset -1px -1px 0 #6b7078;
+        content: '';
+      }
+      .bar-a .track::before {
+        left: 5px;
+      }
+      .bar-a .track::after {
+        right: 5px;
+      }
+      .bar-a .groove {
+        height: 100%;
+        overflow: hidden;
+        border-radius: 4px;
+        background: #3b210f;
+        box-shadow: inset 0 2px 3px rgb(0 0 0 / 55%);
+      }
+      .bar-a .groove span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(180deg, #ffe07a, #ffb52e 55%, #f08a14);
+        animation: fill 1.4s ease-in-out infinite alternate;
+      }
+      .bar-a .credit,
+      .bar-b .credit,
+      .bar-c .credit {
+        color: #fff8e9;
+        font-weight: 700;
+        text-shadow:
+          0 1px 2px rgb(0 0 0 / 90%),
+          0 0 8px rgb(0 0 0 / 70%);
+      }
+      /* B — Épurée : plus de panneau sombre, la barre seule sur l’image. */
+      .bar-b .track {
+        height: 10px;
+        overflow: hidden;
+        border: 2px solid #fff8e9;
+        border-radius: 999px;
+        background: rgb(10 20 38 / 55%);
+        box-shadow: 0 2px 10px rgb(0 0 0 / 55%);
+      }
+      .bar-b .track span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--accent);
+        animation: fill 1.4s ease-in-out infinite alternate;
+      }
+      /* C — Convoyeur : le tapis à chevrons du jeu avance pendant le chargement. */
+      .bar-c .track {
+        height: 18px;
+        overflow: hidden;
+        border: 2px solid #15181d;
+        border-radius: 999px;
+        background: #2a2e35;
+        box-shadow:
+          inset 0 2px 3px rgb(0 0 0 / 60%),
+          0 5px 14px rgb(0 0 0 / 45%);
+      }
+      .bar-c .track span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: repeating-linear-gradient(
+            115deg,
+            #ffc53d 0 9px,
+            #1d2026 9px 14px,
+            #ffc53d 14px 23px,
+            #1d2026 23px 28px
+          )
+          0 0 / 28px 100%;
+        animation:
+          fill 1.4s ease-in-out infinite alternate,
+          belt 0.6s linear infinite;
+      }
+
+      /* 2. Poignées : poutre sur le papier du plateau, à l’échelle 2. */
+      .board {
+        position: relative;
+        height: 190px;
+        border-radius: 8px;
+        background:
+          linear-gradient(rgb(120 90 40 / 10%) 1px, transparent 1px) 0 0 / 48px 48px,
+          linear-gradient(90deg, rgb(120 90 40 / 10%) 1px, transparent 1px) 0 0 / 48px 48px,
+          var(--paper);
+      }
+      .board svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* 3. Tailles */
+      .sizes img {
+        display: block;
+        width: 100%;
+        border-radius: 8px;
+      }
+      table {
+        width: 100%;
+        margin-top: 14px;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--night-line);
+        text-align: left;
+      }
+      th {
+        color: #fff;
+      }
+
+      /* 4. Cadrage : téléphone portrait, tuto-6. */
+      .phone {
+        position: relative;
+        width: 195px;
+        height: 300px;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 6px solid #05090f;
+        border-radius: 22px;
+        background: var(--night-900);
+      }
+      .phone .view {
+        position: absolute;
+        top: 70px;
+        right: 6px;
+        left: 6px;
+        height: 160px;
+        overflow: hidden;
+        border-radius: 6px;
+        background: var(--paper);
+      }
+      .dot {
+        position: absolute;
+        border-radius: 3px;
+        background: #8f5220;
+      }
+
+      /* 5. Catalogue */
+      .catalogue {
+        padding: 10px;
+        border-radius: 10px;
+        color: var(--ink);
+        background: var(--panel);
+      }
+      .catalogue h3 {
+        margin: 12px 4px 6px;
+        color: #7a5a22;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .catalogue h3:first-child {
+        margin-top: 2px;
+      }
+      .catalogue dl {
+        display: grid;
+        margin: 0;
+        gap: 6px;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      }
+      .catalogue div {
+        padding: 7px 10px;
+        border: 1px solid #e3d5b6;
+        border-radius: 8px;
+        background: #fffdf8;
+      }
+      .catalogue dt {
+        font-weight: 800;
+      }
+      .catalogue dd {
+        margin: 0;
+        color: #5c5148;
+        font-size: 12.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Reprise du 5 octobre — propositions à valider</h1>
+      <p>
+        Maquettes des choix visuels de <code>todo.05.10.md</code>. Rien ici n’est implémenté tant
+        que l’auteur n’a pas choisi. Les éléments déjà corrigés (poignée de rotation au coin, fil
+        qui suit le curseur, accroche du piston) sont en captures dans
+        <code>captures/reprise-05-10/</code>.
+      </p>
+
+      <h2>1. Barre de chargement du splash</h2>
+      <p>
+        Le bas de l’image réelle, à l’échelle 1 ; la disposition validée (barre et crédit centrés en
+        bas) ne change pas. Le panneau sombre translucide actuel fait « interface système » posée
+        sur une illustration chaleureuse : les trois pistes le retirent.
+      </p>
+      <div class="grid">
+        <figure>
+          <div class="splash">
+            <div class="slot bar-now">
+              <div class="track"><span></span></div>
+              <div class="credit">Créé par Alexis Flesch</div>
+            </div>
+          </div>
+          <figcaption><b>Actuelle</b><br />Panneau sombre, barre dorée.</figcaption>
+        </figure>
+        <figure>
+          <div class="splash">
+            <div class="slot bar-a">
+              <div class="track">
+                <div class="groove"><span></span></div>
+              </div>
+              <div class="credit">Créé par Alexis Flesch</div>
+            </div>
+          </div>
+          <figcaption>
+            <b>A — Enseigne</b><span class="reco">conseillée</span><br />Planche de bois boulonnée,
+            comme le logo ; remplissage ambre.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="splash">
+            <div class="slot bar-b">
+              <div class="track"><span></span></div>
+              <div class="credit">Créé par Alexis Flesch</div>
+            </div>
+          </div>
+          <figcaption>
+            <b>B — Épurée</b><br />Barre fine seule, liseré crème ; l’illustration reste entière.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="splash">
+            <div class="slot bar-c">
+              <div class="track"><span></span></div>
+              <div class="credit">Créé par Alexis Flesch</div>
+            </div>
+          </div>
+          <figcaption>
+            <b>C — Convoyeur</b><br />Le tapis à chevrons du jeu, qui défile en se remplissant.
+          </figcaption>
+        </figure>
+      </div>
+
+      <h2>2. Style des poignées de rotation et de taille</h2>
+      <p>
+        Position déjà corrigée dans l’application : rotation hors du coin supérieur gauche, taille
+        au milieu du bord droit, même diamètre (28 px, cible 44 px). Reste le style. À l’échelle 2.
+      </p>
+      <div class="grid">
+        <figure>
+          <div class="board">
+            <svg viewBox="0 0 340 190">
+              <g fill="none" stroke="#1e88e5" stroke-width="4">
+                <rect x="96" y="100" width="150" height="20" />
+                <path d="M96 100 L56 60 M246 110 L262 110" />
+              </g>
+              <rect x="98" y="102" width="146" height="16" fill="#c9791f" />
+              <g fill="#fff" stroke="#1e88e5" stroke-width="4">
+                <circle cx="46" cy="50" r="26" />
+                <circle cx="290" cy="110" r="26" />
+              </g>
+              <g fill="none" stroke="#1e88e5" stroke-width="5" stroke-linecap="round">
+                <path d="M36 44 A13 13 0 1 1 44 62" />
+                <path d="M278 110 H302 M284 104 L278 110 L284 116 M296 104 L302 110 L296 116" />
+              </g>
+            </svg>
+          </div>
+          <figcaption>
+            <b>Actuel</b><br />Disque blanc, liseré et pictogramme bleus, contour de sélection bleu.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="board">
+            <svg viewBox="0 0 340 190">
+              <g fill="none" stroke="#0f1d36" stroke-width="3" stroke-dasharray="7 5">
+                <rect x="94" y="98" width="154" height="24" rx="4" />
+              </g>
+              <path d="M96 100 L62 66 M248 110 L264 110" stroke="#0f1d36" stroke-width="3" />
+              <rect x="98" y="102" width="146" height="16" fill="#c9791f" />
+              <g fill="#152a4b" stroke="#0a1426" stroke-width="3">
+                <circle cx="46" cy="50" r="26" />
+                <circle cx="290" cy="110" r="26" />
+              </g>
+              <g fill="none" stroke="#ffc53d" stroke-width="5" stroke-linecap="round">
+                <path d="M36 44 A13 13 0 1 1 44 62" />
+                <path d="M278 110 H302 M284 104 L278 110 L284 116 M296 104 L302 110 L296 116" />
+              </g>
+            </svg>
+          </div>
+          <figcaption>
+            <b>A — Boutons de l’interface</b><span class="reco">conseillée</span><br />Bleu nuit et
+            pictogramme ambre, comme les boutons de la barre du haut ; sélection en pointillés nuit.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="board">
+            <svg viewBox="0 0 340 190">
+              <g fill="none" stroke="#1e88e5" stroke-width="3">
+                <rect x="96" y="100" width="150" height="20" rx="3" />
+                <path d="M96 100 L62 66 M246 110 L264 110" />
+              </g>
+              <rect x="98" y="102" width="146" height="16" fill="#c9791f" />
+              <g fill="#1e88e5" stroke="#fff" stroke-width="3">
+                <circle cx="46" cy="50" r="26" />
+                <circle cx="290" cy="110" r="26" />
+              </g>
+              <g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round">
+                <path d="M36 44 A13 13 0 1 1 44 62" />
+                <path d="M278 110 H302 M284 104 L278 110 L284 116 M296 104 L302 110 L296 116" />
+              </g>
+            </svg>
+          </div>
+          <figcaption>
+            <b>B — Bleu plein</b><br />Disque bleu, pictogramme blanc (le style de la maquette C4
+            validée), liseré blanc pour se détacher des sprites.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="board">
+            <svg viewBox="0 0 340 190">
+              <g fill="none" stroke="#b36b00" stroke-width="3">
+                <rect x="96" y="100" width="150" height="20" rx="3" />
+                <path d="M96 100 L62 66 M246 110 L264 110" />
+              </g>
+              <rect x="98" y="102" width="146" height="16" fill="#c9791f" />
+              <g fill="#ffc53d" stroke="#4a2a12" stroke-width="3">
+                <circle cx="46" cy="50" r="26" />
+                <circle cx="290" cy="110" r="26" />
+              </g>
+              <g fill="none" stroke="#2b2521" stroke-width="5" stroke-linecap="round">
+                <path d="M36 44 A13 13 0 1 1 44 62" />
+                <path d="M278 110 H302 M284 104 L278 110 L284 116 M296 104 L302 110 L296 116" />
+              </g>
+            </svg>
+          </div>
+          <figcaption>
+            <b>C — Laiton</b><br />Pastille ambre cerclée de brun, dans la matière de l’atelier ;
+            plus discrète sur le papier, moins lisible sur les poutres.
+          </figcaption>
+        </figure>
+      </div>
+
+      <h2>3. Tailles des objets</h2>
+      <p>
+        Les quatre appareils cités, côte à côte dans l’atelier au cadrage par défaut. Le piston est
+        le seul qui détonne : son boîtier fait la moitié de la hauteur des trois autres.
+      </p>
+      <div class="grid sizes">
+        <figure>
+          <img src="captures/reprise-05-10/tailles-actuelles.png" alt="" />
+          <figcaption><b>Actuel</b><br />Ventilateur, électroaimant, piston, tremplin.</figcaption>
+        </figure>
+        <figure>
+          <img src="captures/reprise-05-10/tailles-piston-x1.4.png" alt="" />
+          <figcaption>
+            <b>Proposé</b><span class="reco">conseillée</span><br />Piston agrandi de 40 %
+            (photomontage) ; les trois autres inchangés.
+          </figcaption>
+        </figure>
+      </div>
+      <table>
+        <tr>
+          <th>Objet</th>
+          <th>Emprise actuelle (unités)</th>
+          <th>Proposition</th>
+        </tr>
+        <tr>
+          <td>Ventilateur</td>
+          <td>1,20 × 0,94</td>
+          <td>inchangé</td>
+        </tr>
+        <tr>
+          <td>Tremplin</td>
+          <td>1,00 × 0,93</td>
+          <td>inchangé</td>
+        </tr>
+        <tr>
+          <td>Électroaimant</td>
+          <td>1,00 × 0,80</td>
+          <td>inchangé</td>
+        </tr>
+        <tr>
+          <td>Piston</td>
+          <td>1,25 × 0,64 (boîtier 0,78 × 0,43)</td>
+          <td>× 1,4 → 1,75 × 0,90 (boîtier 1,09 × 0,60), course 0,41 → 0,58</td>
+        </tr>
+      </table>
+      <p style="margin-top: 14px">
+        Conséquence : le piston de <code>tuto-7</code> grossit aussi ; sa solution est rejouée par
+        les tests et le niveau sera retouché si elle ne passe plus.
+      </p>
+
+      <h2>4. Cadrage à l’ouverture d’un niveau</h2>
+      <p>
+        Le fichier contient déjà un rectangle de scène, et c’est lui qui fixe le zoom initial ; mais
+        l’atelier le laisse toujours à 16 × 9, même quand le niveau n’en occupe qu’un coin. Exemple
+        : <code>tuto-6</code> sur un téléphone en portrait.
+      </p>
+      <div class="grid">
+        <figure>
+          <div class="phone">
+            <div class="view">
+              <!-- 16 × 9 sur 183 px : 11,4 px par unité. -->
+              <div class="dot" style="left: 6px; top: 62px; width: 72px; height: 3px"></div>
+              <div
+                class="dot"
+                style="
+                  left: 38px;
+                  top: 50px;
+                  width: 6px;
+                  height: 6px;
+                  background: #d11;
+                  border-radius: 50%;
+                "
+              ></div>
+              <div class="dot" style="left: 72px; top: 60px; width: 14px; height: 10px"></div>
+              <div
+                class="dot"
+                style="left: 58px; top: 28px; width: 10px; height: 8px; background: #e2761b"
+              ></div>
+            </div>
+          </div>
+          <figcaption>
+            <b>Aujourd’hui</b><br />Toute la scène 16 × 9 : la machine tient dans un timbre-poste.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="view">
+              <!-- Contenu 8 × 5,5 sur 183 px : 22,9 px par unité. -->
+              <div class="dot" style="left: 10px; top: 96px; width: 150px; height: 6px"></div>
+              <div
+                class="dot"
+                style="
+                  left: 78px;
+                  top: 70px;
+                  width: 13px;
+                  height: 13px;
+                  background: #d11;
+                  border-radius: 50%;
+                "
+              ></div>
+              <div class="dot" style="left: 144px; top: 92px; width: 30px; height: 22px"></div>
+              <div
+                class="dot"
+                style="left: 116px; top: 26px; width: 22px; height: 17px; background: #e2761b"
+              ></div>
+            </div>
+          </div>
+          <figcaption>
+            <b>Cadré sur la machine</b><br />Même niveau, zoom initial sur la zone utile ; « Ajuster
+            » y revient, le dézoom montre toujours le reste.
+          </figcaption>
+        </figure>
+      </div>
+      <table>
+        <tr>
+          <th>Option</th>
+          <th>Principe</th>
+          <th>Format de fichier</th>
+        </tr>
+        <tr>
+          <td><b>A — Automatique</b> <span class="reco">conseillée</span></td>
+          <td>
+            À l’ouverture, cadrer sur les objets du niveau et ceux de la solution, avec une marge et
+            un minimum de 8 × 5,5. Rien à faire pour l’auteur ; vaut aussi pour les niveaux et liens
+            déjà partagés.
+          </td>
+          <td>Inchangé.</td>
+        </tr>
+        <tr>
+          <td><b>B — Vue de l’auteur</b></td>
+          <td>
+            À l’enregistrement, noter dans le fichier la zone visible à l’écran de l’auteur ; elle
+            sert de cadrage à l’ouverture. Maîtrise totale, mais il faut penser à bien cadrer avant
+            d’enregistrer.
+          </td>
+          <td>Nouveau champ optionnel, ADR et tests de migration.</td>
+        </tr>
+        <tr>
+          <td><b>C — Scène resserrée</b></td>
+          <td>
+            À l’enregistrement, réduire la scène elle-même autour de la machine. Change aussi les
+            limites du jeu (sortie de scène, zone de pose).
+          </td>
+          <td>Inchangé, mais règles du niveau modifiées.</td>
+        </tr>
+      </table>
+
+      <h2>5. Catalogue par catégories (section 3 du todo)</h2>
+      <p>Quatre groupes, et une description par objet réécrite sur le même modèle.</p>
+      <div class="catalogue">
+        <h3>Ce qui bouge</h3>
+        <dl>
+          <div>
+            <dt>Balle</dt>
+            <dd>Roule, tombe et rebondit.</dd>
+          </div>
+          <div>
+            <dt>Masse</dt>
+            <dd>Un poids de 10 kg pour appuyer ou faire basculer.</dd>
+          </div>
+          <div>
+            <dt>Caisse en bois</dt>
+            <dd>Une caisse à pousser ou à transporter.</dd>
+          </div>
+          <div>
+            <dt>Caisse métallique</dt>
+            <dd>Une caisse que l’électroaimant attire.</dd>
+          </div>
+        </dl>
+        <h3>Structures</h3>
+        <dl>
+          <div>
+            <dt>Poutre</dt>
+            <dd>Un support fixe, en trois longueurs.</dd>
+          </div>
+          <div>
+            <dt>Bascule</dt>
+            <dd>Une planche qui pivote sous le poids.</dd>
+          </div>
+          <div>
+            <dt>Tremplin</dt>
+            <dd>Fait rebondir ce qui tombe dessus.</dd>
+          </div>
+        </dl>
+        <h3>Appareils</h3>
+        <dl>
+          <div>
+            <dt>Convoyeur</dt>
+            <dd>Un tapis roulant, vers la gauche ou la droite.</dd>
+          </div>
+          <div>
+            <dt>Ventilateur</dt>
+            <dd>Souffle devant lui quand il est en marche.</dd>
+          </div>
+          <div>
+            <dt>Électroaimant</dt>
+            <dd>Attire les caisses métalliques quand il est en marche.</dd>
+          </div>
+          <div>
+            <dt>Piston</dt>
+            <dd>Pousse d’un coup ce qui est devant lui.</dd>
+          </div>
+          <div>
+            <dt>Barrière</dt>
+            <dd>Une barre qui s’ouvre ou se ferme sur commande.</dd>
+          </div>
+        </dl>
+        <h3>Commandes</h3>
+        <dl>
+          <div>
+            <dt>Levier</dt>
+            <dd>Trois positions pour commander un appareil.</dd>
+          </div>
+          <div>
+            <dt>Bouton</dt>
+            <dd>Actif tant qu’un objet appuie dessus.</dd>
+          </div>
+          <div>
+            <dt>Minuteur</dt>
+            <dd>Retarde le signal de quelques secondes.</dd>
+          </div>
+          <div>
+            <dt>Fil de commande</dt>
+            <dd>Relie une commande à un appareil.</dd>
+          </div>
+        </dl>
+      </div>
+    </main>
+  </body>
+</html>

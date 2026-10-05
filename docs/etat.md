@@ -6,13 +6,24 @@ C3.2, C4, C4a, C8, C9a à C9d, C7 et C6 implémentés**. L’auteur demande une
 reprise visuelle de C4 (poignées) et de C6 (barre du splash) avant la clôture
 de C10, et demande aussi de conserver le cadrage à la sauvegarde, d’intégrer
 deux niveaux et d’harmoniser la taille de quatre objets. C5 est implémenté ; sa
-recette visuelle reste différée. `pnpm check:fast` passe avec 1 353 tests
-Vitest et le build passe. Les 2 E2E C4a et les 4 nouveaux E2E C10 passent aux
-deux formats desktop ; 16 E2E ciblés C3/C4a/C10, fils et PWA passent sans
-captures ni traces. Le scénario de victoire attend le lancement après la
-sauvegarde asynchrone. C10 reste en cours : `pnpm check` complet et recette
-visuelle restent à faire, car ils produisent des captures interdites par
-l’instruction active. U3 reste abandonnée.
+recette visuelle reste différée. Reprise du 5 octobre, lot 1 : les deux
+niveaux `tuto-6` et `tuto-7` sont dans la campagne (sept tutoriels) ; la poignée
+de rotation est hors du coin supérieur gauche de l’objet, la poignée de taille
+n’a plus sa bordure native ; le fil s’accroche à l’arrière du boîtier du piston
+et un segment suit le curseur pendant la pose, y compris après un minuteur ; le
+toucher qui pose un fil n’arme plus l’ouverture des propriétés. Lot 2, sur les
+choix de l’auteur : barre du splash en enseigne de bois ; poignées bleu nuit à
+pictogramme ambre, flèche de rotation centrée ; piston agrandi de 40 % (ADR
+0019 amendée) ; niveau ouvert cadré sur sa zone utile en jeu, sans changement de
+format (ADR 0007 amendée) ; catalogue de l’auteur en quatre catégories avec
+descriptions réécrites ; pose de fil qui vise d’abord les objets reliables.
+Lot 3 : la barre du splash suit réellement le démarrage et l’accueil annonce
+sept niveaux. `pnpm check` passe après ce lot : 1 373 tests Vitest et 103 E2E v1.
+Les trois lots sont commités, non poussés. Bolt (todo § 5) n’est pas commencé.
+C10 reste en cours :
+la recette visuelle de l’auteur reste à faire sur les captures
+`maquettes/complements-desktop/captures/reprise-05-10/final-*.png`. U3 reste
+abandonnée.
 
 Ce fichier décrit l’état réel du dépôt : ce qui est livré, les dettes connues et
 la dernière exécution de la gate globale. Il est réécrit à chaque fin de tâche
@@ -851,6 +862,11 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
 
 ### Contenu
 
+- **Reprise du 5 octobre : sept tutoriels.** `tuto-6` « L’aimant » et `tuto-7`
+  « Le minuteur » sont des copies des exports de l’auteur dans `levels/`, avec
+  titre et description rédigés ; sources intactes. Leurs solutions de référence
+  gagnent avec la simulation actuelle. Leur parcours tactile à 390 px n’est pas
+  en E2E : le bouton y est sous la cible tactile d’un objet voisin.
 - **N2 — livrée (V1), cinq tutoriels de Bolt** : `tuto-1` à `tuto-5`, dans le chapitre
   « Premiers pas », remplacent les 17 esquisses. Titres et descriptions courts ;
   scènes 16 × 9 entièrement constructibles, décors verrouillés, pas de défi
@@ -1018,6 +1034,25 @@ Les marques M1 à M14b renvoient aux tâches de la phase 1 « Mes niveaux »
   pas lié aux pairs Workbox installés en L28.
 
 ## Dernière exécution de la gate
+
+`pnpm check` après le lot 3 de la reprise du 5 octobre (5 octobre 2026) :
+**passe**, mêmes chiffres que le lot 2 ci-dessous.
+
+`pnpm check` après le lot 2 de la reprise du 5 octobre (5 octobre 2026) :
+**passe** — typecheck, lint, formatage, Knip, contenu (8 documents), 1 373 tests
+Vitest (104 fichiers), build (77 entrées de précache) et 103 E2E v1. Le fichier
+d’essai de l’auteur a été restauré avec son SHA-256 attendu `1113625e…a92907`.
+
+`pnpm check` après le lot 1 de la reprise du 5 octobre (5 octobre 2026) :
+**passe** — typecheck, lint, formatage, Knip, contenu (8 documents), 1 363 tests
+Vitest (102 fichiers), build (77 entrées de précache) et 103 E2E v1. C’est la
+première gate complète depuis C4a : elle a révélé deux échecs antérieurs à ce
+lot (`beta-journey`, qui supposait les propriétés ouvertes après la pose, et
+`tuto-5`, où le toucher posant un fil armait l’ouverture du panneau au fil
+suivant — corrigé dans le code), et des courses d’horloge sous charge dans les
+tests du splash et de victoire (C7, C10, PWA, tutoriels), désormais tenus par
+l’horloge de la page. Le fichier d’essai de l’auteur a été restauré avec son
+SHA-256 attendu `1113625e…a92907`.
 
 `pnpm check` après C4 (4 octobre 2026) : **passe** — typecheck, lint,
 formatage, Knip, contenu (6 documents), 1 349 tests Vitest (102 fichiers),

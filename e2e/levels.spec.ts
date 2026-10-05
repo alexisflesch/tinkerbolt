@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-const campaignIds = ['tuto-1', 'tuto-2', 'tuto-3', 'tuto-4', 'tuto-5'] as const;
+const campaignIds = ['tuto-1', 'tuto-2', 'tuto-3', 'tuto-4', 'tuto-5', 'tuto-6', 'tuto-7'] as const;
 
-test('présente les cinq tutoriels de Bolt dans un chapitre', async ({ page }) => {
+test('présente les sept tutoriels de Bolt dans un chapitre', async ({ page }) => {
   await page.goto('/levels');
 
   const levelList = page.getByRole('region', { name: 'Campagne' });
@@ -21,7 +21,7 @@ test('présente les cinq tutoriels de Bolt dans un chapitre', async ({ page }) =
     else await expect(launch).toBeDisabled();
   }
   await expect(levelList.getByText('Esquisse non calibrée.')).toHaveCount(0);
-  await expect(levelList.getByRole('region', { name: 'Niveau 6', exact: true })).toHaveCount(0);
+  await expect(levelList.getByRole('region', { name: 'Niveau 8', exact: true })).toHaveCount(0);
 });
 
 test('ouvre le premier tutoriel jouable avec son inventaire tactile', async ({

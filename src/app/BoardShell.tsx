@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CircleQuestionMark, Eye, Gamepad2, Upload } from 'lucide-react';
 
@@ -20,6 +20,7 @@ import { puzzleFromWorkshop } from '../application/puzzle/puzzle-workshop';
 import type { LevelDocument } from '../domain/level-document';
 import type { AttemptOutcome } from '../domain/attempt-failure-evaluator';
 import { AppFrame } from '../ui/AppFrame';
+import { frameLevel } from '../presentation/level-framing';
 import { BoardView } from '../ui/BoardView';
 import { ContextPanel } from '../ui/ContextPanel';
 import { CampaignVictoryDialog, type CampaignVictory } from '../ui/CampaignVictoryDialog';
@@ -38,7 +39,7 @@ import { useBoardCamera } from './use-board-camera';
 import { placementSourceKey, useBoardPointers } from './use-board-pointers';
 import { LevelExportDialog } from './LevelExportDialog';
 import { puzzleRefusalMessage } from './level-export';
-import { useWiringTool, wiringGuide } from './use-wiring-tool';
+import { useWiringTool, wiringAnchor, wiringGuide } from './use-wiring-tool';
 import { useEditorSession } from './use-editor-session';
 import { useIsSideLayout } from './use-side-layout';
 import { useVictoryDialog } from './use-victory-dialog';
@@ -153,7 +154,13 @@ export function BoardShell({
       onAttemptCommitted?.(attempt);
     },
   );
-  const boardCamera = useBoardCamera(currentScene);
+  // A level opens framed on its machine; the author keeps the whole scene.
+  const levelFraming = useMemo(() => frameLevel(initialDocument), [initialDocument]);
+  const currentFraming = useCallback(() => levelFraming, [levelFraming]);
+  const boardCamera = useBoardCamera(
+    currentScene,
+    mode === 'resolution' ? currentFraming : currentScene,
+  );
   const clearSelection = useCallback((): void => {
     updateSession(selectEditorPlacement(sessionRef.current, null));
   }, [updateSession, sessionRef]);
@@ -260,6 +267,7 @@ export function BoardShell({
     mode === 'creation' || currentEditorAttempt(session).document.inventory.length > 0;
 
   const hasSelection = session.selectedPlacementId !== null && session.phase === 'construction';
+  const pendingWireAnchor = useMemo(() => wiringAnchor(wiring.wiringStep), [wiring.wiringStep]);
   const beamSizeChoices =
     hasSelection && pointers.placementTool === null && wiring.wiringStep === null
       ? beamSizeChoicesFor(
@@ -609,6 +617,7 @@ export function BoardShell({
           boardCanvasRef={boardCamera.boardCanvasRef}
           boardPointerHandlers={pointers.boardPointerHandlers}
           beamSizeChoices={beamSizeChoices}
+          wiringAnchor={pendingWireAnchor}
           onBeamSizeChange={changeSelectedBeamSize}
           onZoomIn={boardCamera.zoomIn}
           onZoomOut={boardCamera.zoomOut}
