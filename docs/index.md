@@ -1,129 +1,104 @@
 # Carte de lecture du dépôt
 
-Ce fichier est le point d'entrée des agents. Il ne contient aucune règle : il dit
-**quel document fait autorité sur quoi**, et **quoi lire pour quel type de tâche**.
-
-Un agent ne lit jamais `docs/` en entier. Il commence ici, puis lit
-`feuille-de-route.md` pour une reprise d’implémentation, et `AGENTS.md` ; il suit
-ensuite exactement la ligne de routage qui correspond à sa tâche.
-
-L'état réellement livré et les dettes sont dans `etat.md`. Le découpage en
-tranches est dans `backlog.md`. **Le travail restant, tâche par tâche et dans
-l'ordre, est dans `feuille-de-route.md`** : c’est la **seule séquence active**
-après la clôture V0–V9, compléments desktop C0–C10, téléphone M0–M4,
-Forge/Grist F0–F3. Son journal v1 est conservé comme historique. Le
-`plan-implementation.03.10.26.md` conserve la préparation de cette séquence,
-sans faire autorité sur son ordre ou ses contrats ; `todo.03.10.26.md` garde la
-demande initiale de l’auteur et `todo.05.10.md` ses demandes du 5 octobre. Ces
-todos expriment des demandes à intégrer, pas d’autres feuilles de route actives.
-`audit-assets-c8.md` rapproche les assets et raccords pour C8. Les contrats
-confirmés par l’auteur sont dans les ADR 0018/0019 et l’amendement de l’ADR 0009 ;
-la feuille de route active reste seule propriétaire de l’ordre des tâches.
-`feuille-de-route-mes-niveaux.md` (journal G1 à N2) et `feuille-de-route-luna.md`
-(journal L1 à U29) sont les historiques des reprises précédentes ; on n'y lit que
-l'entrée citée. `plan-remise-en-jeu.md` est l'historique de la remise en jeu
-(phases A à F) ; on n'y lit que la section qu'une tâche cite. `docs/archives/`
-contient des propositions d'idées, pas des décisions : on ne les lit pas pour
-implémenter.
+Lire ce fichier avant tout autre document. Pour une implémentation, lire ensuite
+le point de reprise, les règles et la tâche utile dans `feuille-de-route.md`,
+puis `AGENTS.md`. Suivre le routage ci-dessous ; ne pas lire tout `docs/`.
 
 ## Autorité
 
-Une information a un seul propriétaire. En cas de divergence, le propriétaire
-gagne et l'autre document doit être corrigé, pas arbitré au cas par cas.
+Le code, les schémas et les tests exécutables priment sur la prose. Une
+information a un seul propriétaire : corriger les autres documents en cas de
+divergence, sans compromis silencieux. Une ADR proposée n’est pas une décision.
 
-| Document                                                       | ~lignes | Fait autorité sur                                                                                                      |
-| -------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `AGENTS.md`                                                    | 103     | règles applicables à tout changement, invariants non négociables                                                       |
-| `CHANGELOG.md`                                                 | —       | notes des changements publiés et référence initiale du suivi des versions                                            |
-| `docs/backlog.md`                                              | 138     | découpage des tranches, dépendances, tranche courante                                                                  |
-| `docs/cahier-des-charges.md`                                   | 436     | vision produit, périmètre, hors-périmètre                                                                              |
-| `docs/etat.md`                                                 | 849     | ce qui est livré, les dettes, la dernière gate                                                                         |
-| `docs/feuille-de-route.md`                                     | —       | seule séquence active C/M/F, ordre et journal ; historique v1 clôturé                                                  |
-| `docs/plan-implementation.03.10.26.md`                         | —       | préparation du 3 octobre, décisions confirmées et avis ; tâches reprises dans la feuille de route                      |
-| `docs/todo.03.10.26.md`                                        | —       | demande de l’auteur du 3 octobre, conservée intacte                                                                    |
-| `docs/todo.05.10.md`                                            | —       | demandes de reprise de l’auteur du 5 octobre ; ne définit pas un ordre d’exécution                                    |
-| `docs/feuille-de-route-mes-niveaux.md`                         | 3034    | historique de la phase « Mes niveaux » (journal G1 à N2)                                                               |
-| `docs/feuille-de-route-luna.md`                                | 2633    | historique de la reprise précédente (journal L1 à U29)                                                                 |
-| `docs/plan-remise-en-jeu.md`                                   | 1208    | historique A–F ; spécifications détaillées de C1, C2, D3                                                               |
-| `docs/release-process.md`                                      | —       | procédure opérationnelle pour préparer une release                                                                    |
-| `docs/architecture.md`                                         | 223     | couches, dépendances, états distincts, modèle d'objet                                                                  |
-| `docs/qualite.md`                                              | 149     | stratégie de test, niveaux de test, gates                                                                              |
-| `docs/catalogue-initial.md`                                    | 377     | contrats des familles initiales et ajouts C9a–C9c                                                                        |
-| `docs/tinkerbolt_control_wires_v1.md`                          | 125     | spécification fonctionnelle des fils de commande                                                                       |
-| `docs/mobile-editor-interactions.md`                           | 595     | gestes, états d'interface, scénarios tactiles (v2 : hors v1)                                                           |
-| `docs/levels/nouveaux-niveaux.md`                              | —       | campagne esquissée : 18 propositions, niveau 15 différé                                                                |
-| `docs/levels/conception-niveaux.md`                            | 156     | concevoir un niveau : règles du jeu, objets, physique, méthode                                                         |
-| `docs/decisions/0001-product-foundations.md`                   | 33      | fondations produit (accepté)                                                                                           |
-| `docs/decisions/0002-physics-engine-selection.md`              | 126     | choix du moteur physique, Planck.js (accepté)                                                                          |
-| `docs/decisions/0003-project-bootstrap.md`                     | —       | outillage, scripts, gates, politique de dépendances, versions et releases (accepté)                                    |
-| `docs/decisions/0004-level-document-v1.md`                     | 103     | contrat `LevelDocument` v1 (accepté ; v2 : ADR 0007, code)                                                             |
-| `docs/decisions/0005-construction-attempt.md`                  | 51      | provenance éphémère d'une tentative (accepté)                                                                          |
-| `docs/decisions/0006-board-renderer.md`                        | 101     | renderer du plateau et pipeline de sprites (accepté)                                                                   |
-| `docs/decisions/0007-world-scale-and-camera.md`                | 269     | repère du monde, scène, caméra, échelle des sprites (accepté)                                                          |
-| `docs/decisions/0008-client-side-routing.md`                   | 99      | routage côté client, schéma d'URL (accepté)                                                                            |
-| `docs/decisions/0009-control-wires.md`                         | 209     | fils de commande : modèle, rendu, câblage et minuteur en série (accepté, amendé)                                       |
-| `docs/decisions/0010-object-challenge-and-progression.md`      | 92      | défi d'objets ✅/⭐/🏆, ouverture des niveaux (accepté)                                                                |
-| `docs/decisions/0011-local-storage-and-url-sharing.md`         | —       | IndexedDB/Dexie asynchrone, sans reprise `localStorage` ; codecs et partage URL (accepté, amendé C0)                   |
-| `docs/decisions/0012-pwa-service-worker.md`                    | 47      | PWA, service worker, mises à jour (accepté)                                                                            |
-| `docs/decisions/0013-puzzle-workshop-solution.md`              | 95      | objets à placer, solution de référence, export vérifié (accepté)                                                       |
-| `docs/decisions/0014-icon-library.md`                          | —       | bibliothèque d’icônes de l’interface (accepté)                                                                         |
-| `docs/decisions/0015-mes-niveaux.md`                           | —       | « Mes niveaux », niveaux reçus, créations, solution cachée ; reprise automatique avant simulation (accepté, amendé C0) |
-| `docs/decisions/0016-attribution-licence-niveaux.md`           | 95      | auteur, sources, licence CC BY 4.0 des niveaux (accepté)                                                               |
-| `docs/decisions/0017-player-construction-and-async-storage.md` | —       | contrat détaillé de stockage/reprise C2 (**accepté** ; C2a/C3 livrés)                                                  |
-| `docs/decisions/0018-level-document-v3.md`                     | —       | passage accepté au format de niveau v3 et migrations des documents persistés                                           |
-| `docs/decisions/0019-c9-object-contracts.md`                   | —       | contrats C9 et ordre acceptés ; constantes physiques à équilibrer pendant l’intégration                                |
-| `LICENSE`                                                      | 661     | conditions de licence du code du logiciel (GNU AGPL-3.0-or-later)                                                      |
+| Source | Autorité |
+| --- | --- |
+| `AGENTS.md` | Règles de développement et invariants du dépôt. |
+| `docs/cahier-des-charges.md` | Vision, périmètre et intentions produit. |
+| `docs/architecture.md` | Couches, dépendances, état applicatif et frontières. |
+| `docs/backlog.md` | Étapes et dépendances entre tranches. |
+| `docs/feuille-de-route.md` | Seul ordre actif, contrats des tâches à venir et journal courant. |
+| `docs/etat.md` | État réellement livré, limites et dernière gate. |
+| `docs/qualite.md` | Stratégie de tests, déterminisme et gates. |
+| `docs/catalogue-initial.md` | Contrats des familles d’objets. |
+| `docs/tinkerbolt_control_wires_v1.md` | Spécification fonctionnelle des fils. |
+| `docs/mobile-editor-interactions.md` | Interactions tactiles ; à amender en M0 avant la nouvelle UI v2. |
+| `docs/levels/conception-niveaux.md` | Guide de création d’un niveau ; les valeurs viennent du code. |
+| `CHANGELOG.md` | Notes des versions et changements non publiés. |
+| `docs/release-process.md` | Procédure opérationnelle des releases ; politique : ADR 0003. |
+| `LICENSE` et licences de `public/fonts/` | Conditions applicables au code et aux polices. |
 
-Sources de vérité exécutables, prioritaires sur toute prose :
+Les idées de `docs/levels/` (`idees-niveaux.md`, `idee-prototype-aiguillage.md`,
+`nouveaux-niveaux.md`, `propositions-evolution-astra.md`) sont des propositions
+non validées, pas une campagne livrée ni des contrats. La maquette
+`docs/maquettes/identite/` reste une référence visuelle pour C7d ; les captures
+et maquettes des lots clos ont été supprimées. Les propositions d’évolution
+Gemini, Astra et Canary restent dans `docs/archives/` pour mémoire et réflexion
+future, sans faire autorité sur l’implémentation. Les anciens plans, todos et
+journaux sont consultables dans Git avant le commit de nettoyage du 5 octobre
+2026, et ne doivent pas être remis dans la séquence active.
 
-| Sujet                  | Fichier                                                |
-| ---------------------- | ------------------------------------------------------ |
-| Schéma de niveau       | `src/domain/level-document.ts`                         |
-| Registre des familles  | `src/domain/object-family-registry.ts`                 |
+### Décisions techniques
+
+| ADR | Sujet |
+| --- | --- |
+| `docs/decisions/0001-product-foundations.md` | fondations produit (accepté) |
+| `docs/decisions/0002-physics-engine-selection.md` | choix du moteur physique, Planck.js (accepté) |
+| `docs/decisions/0003-project-bootstrap.md` | outillage, scripts, gates, politique de dépendances, versions et releases (accepté) |
+| `docs/decisions/0004-level-document-v1.md` | contrat `LevelDocument` v1 (accepté ; v2 : ADR 0007, code) |
+| `docs/decisions/0005-construction-attempt.md` | provenance éphémère d'une tentative (accepté) |
+| `docs/decisions/0006-board-renderer.md` | renderer du plateau et pipeline de sprites (accepté) |
+| `docs/decisions/0007-world-scale-and-camera.md` | repère du monde, scène, caméra, échelle des sprites (accepté) |
+| `docs/decisions/0008-client-side-routing.md` | routage côté client, schéma d'URL (accepté) |
+| `docs/decisions/0009-control-wires.md` | fils de commande : modèle, rendu, câblage et minuteur en série (accepté, amendé) |
+| `docs/decisions/0010-object-challenge-and-progression.md` | défi d'objets ✅/⭐/🏆, ouverture des niveaux (accepté) |
+| `docs/decisions/0011-local-storage-and-url-sharing.md` | IndexedDB/Dexie asynchrone, sans reprise `localStorage` ; codecs et partage URL (accepté, amendé C0) |
+| `docs/decisions/0012-pwa-service-worker.md` | PWA, service worker, mises à jour (accepté) |
+| `docs/decisions/0013-puzzle-workshop-solution.md` | objets à placer, solution de référence, export vérifié (accepté) |
+| `docs/decisions/0014-icon-library.md` | bibliothèque d’icônes de l’interface (accepté) |
+| `docs/decisions/0015-mes-niveaux.md` | « Mes niveaux », niveaux reçus, créations, solution cachée ; reprise automatique avant simulation (accepté, amendé C0) |
+| `docs/decisions/0016-attribution-licence-niveaux.md` | auteur, sources, licence CC BY 4.0 des niveaux (accepté) |
+| `docs/decisions/0017-player-construction-and-async-storage.md` | contrat détaillé de stockage/reprise C2 (**accepté** ; C2a/C3 livrés) |
+| `docs/decisions/0018-level-document-v3.md` | passage accepté au format de niveau v3 et migrations des documents persistés |
+| `docs/decisions/0019-c9-object-contracts.md` | contrats C9 et ordre acceptés ; constantes physiques à équilibrer pendant l’intégration |
+
+### Sources exécutables
+
+| Sujet | Source |
+| --- | --- |
+| Schéma et migrations de niveau | `src/domain/level-document.ts` |
+| Registre des familles | `src/domain/object-family-registry.ts` |
+| Géométrie | `src/domain/family-geometry.ts` |
 | Commandes de tentative | `src/application/construction/construction-attempt.ts` |
-| Historique undo/redo   | `src/application/history/history.ts`                   |
-| Frontières de couches  | `src/architecture/layer-boundaries.test.ts`            |
-| Scripts et gates       | `package.json`                                         |
-| Niveaux embarqués      | `src/content/levels/*.json`                            |
-| Géométrie des familles | `src/domain/family-geometry.ts`                        |
-| Export des sprites     | `art/build-sprites.py`                                 |
+| Undo/redo | `src/application/history/history.ts` |
+| Frontières de couches | `src/architecture/layer-boundaries.test.ts` |
+| Scripts et dépendances | `package.json`, `pnpm-lock.yaml` |
+| Campagne livrée | `src/content/levels/*.json`, `src/content/embedded-levels.ts` |
+| Sources auteur des tutoriels | `levels/` |
+| Export des sprites | `art/build-sprites.py` |
 
 ## Routage par tâche
 
-Colonne « lire » = lecture obligatoire et suffisante. Ne pas élargir sans raison
-écrite dans le rapport.
+Lire les sections utiles des documents nommés. Une inspection supplémentaire
+nécessaire à l’audit ou au nettoyage est expliquée dans le rapport de lot.
 
-| Tâche                                          | Lire                                                                                                                                                                                 | Écrire dans                                                      |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| Raccord de reprise C0                          | Point de reprise de `feuille-de-route.md`, `etat.md` § Arrêt et reprise / Stockage / Dettes, `backlog.md`, plan du 3 octobre, ADR 0011/0015, `architecture.md` § Stockage et partage | feuille de route, index, backlog, ADR concernées, architecture   |
-| Format de niveau, schéma Zod, migration        | ADR 0004/0007/0013/0016/0018, `architecture.md` § Enveloppe de niveau, `level-document.ts`                                                                                           | `src/domain/`                                                    |
-| Commande, historique, undo/redo, tentative     | ADR 0005, `architecture.md` § Commandes et historique                                                                                                                                | `src/application/`                                               |
-| Nouvelle famille d'objet                       | `catalogue-initial.md`, `architecture.md` § Modèle d'objet, ADR 0004/0018/0019                                                                                                       | `src/domain/`, `src/simulation/`                                 |
-| Audit des assets C8                            | `feuille-de-route.md` § C8/C9, `audit-assets-c8.md`, `catalogue-initial.md`, `architecture.md` § Modèle d’objet, ADR 0004/0018/0019                                                  | `docs/audit-assets-c8.md`, ADR propriétaires et feuille de route |
-| Port physique, boucle à pas fixe, déterminisme | ADR 0002, `qualite.md` § Déterminisme, `architecture.md` § Simulation                                                                                                                | `src/simulation/`, `test/conformance/`                           |
-| Conformité physique, arbitrage moteur          | ADR 0002, `catalogue-initial.md` § Tests contractuels                                                                                                                                | `test/conformance/`                                              |
-| Rendu du plateau, cadrage, projection          | ADR 0007, ADR 0006, `architecture.md` § Rendu et interface                                                                                                                           | `src/presentation/`                                              |
-| Assets, sprites, export depuis `art/`          | ADR 0007 § Amendement du 25 septembre 2026, `art/build-sprites.py`                                                                                                                   | `art/`, `public/assets/`                                         |
-| Fils de commande, minuteur, levier, convoyeur  | ADR 0009/0019, `tinkerbolt_control_wires_v1.md`, `catalogue-initial.md` § Levier, § Convoyeur                                                                                        | `src/domain/`, `src/presentation/`                               |
-| Interface tactile, tiroir, gestes (v2)         | `mobile-editor-interactions.md`, `cahier-des-charges.md` § Interaction mobile                                                                                                        | `src/ui/`, `src/app/`                                            |
-| Routage, navigation, schéma d'URL              | ADR 0008                                                                                                                                                                             | `src/app/`                                                       |
-| Conception d'un nouveau niveau                 | `levels/conception-niveaux.md` (se suffit à lui-même)                                                                                                                                | `src/content/levels/`                                            |
-| Contenu d'un niveau                            | Tâche explicite dans `feuille-de-route.md`, `levels/nouveaux-niveaux.md`, ADR 0007 § Scène d'un niveau (deux nouveaux niveaux demandés dans `todo.05.10.md`)                           | `src/content/levels/`                                            |
-| Parcours end-to-end (v1 : desktop)             | `qualite.md` § Tests end-to-end ; `mobile-editor-interactions.md` § Scénarios d'acceptation (parcours, v2 pour les gestes)                                                           | `e2e/`                                                           |
-| Contrat de reprise et stockage asynchrone C2   | ADR 0011/0015 amendées C0, ADR 0005, ADR 0017 (acceptée), `architecture.md` § Stockage et partage                                                                                    | ADR 0017 et renvois ciblés                                       |
-| Stockage, import/export, codec URL             | ADR 0011, ADR 0015, ADR 0017, ADR 0018 (v3 et migrations), `architecture.md` § Stockage et partage                                                                                   | `src/infrastructure/`, `src/application/`                        |
-| Défi d'objets, progression de campagne         | ADR 0010, ADR 0011 § Amendement du 3 octobre 2026 (stockage cible ; `etat.md` pour l’implémentation livrée)                                                                          | `src/application/progression/`, `src/content/`                   |
-| PWA, service worker                            | ADR 0012, ADR 0003                                                                                                                                                                   | racine, `src/app/`                                               |
-| Outillage, scripts, configuration, CI, versionnement et releases | ADR 0003 (politique), `package.json`, `CHANGELOG.md`, `docs/release-process.md` (procédure), `README.md`                                                                    | racine, `docs/`                                                   |
-| Licence du logiciel                            | `LICENSE`, `README.md`, `package.json`                                                                                                                                               | racine                                                           |
-| Décision structurante, nouvelle ADR            | `cahier-des-charges.md` § Décisions ouvertes, ADR concernée                                                                                                                          | `docs/decisions/`                                                |
-
-## Règles de lecture
-
-- `cahier-des-charges.md` n'est jamais la source d'un contrat technique : il
-  renvoie vers l'ADR ou le code qui fait autorité. Le lire pour comprendre
-  l'intention, pas pour implémenter.
-- Une ADR au statut `proposé` décrit une méthode, pas une décision. Ne pas
-  l'appliquer comme un fait acquis.
-- Un exemple narratif qui contredit un schéma exécutable est un bug de
-  documentation : le signaler, ne pas coder d'après lui.
+| Tâche | Lire | Écrire |
+| --- | --- | --- |
+| Format persistant, schéma et migration | ADR 0004/0007/0013/0016/0018 ; architecture § Enveloppe de niveau ; schéma exécutable | `src/domain/`, codecs, tests de migration |
+| Commandes, historique et tentative | ADR 0005 ; architecture § Commandes et historique | `src/application/` |
+| Famille d’objet | Catalogue ; architecture § Modèle d’objet ; ADR 0004/0018/0019 | Domaine, simulation, édition et tests |
+| Physique, pas fixe et conformité | ADR 0002 ; qualité § Déterminisme ; architecture § Simulation ; catalogue § Tests contractuels | `src/simulation/`, `test/conformance/` |
+| Plateau, caméra et projection | ADR 0006/0007 ; architecture § Rendu et interface | `src/presentation/` |
+| Sprites et assets | ADR 0007 § Amendement sprites ; scripts d’export concernés | `art/`, `public/assets/` (sauf protection explicite de l’auteur) |
+| Fils et appareils | ADR 0009/0019 ; spécification des fils ; catalogue | Domaine, simulation et présentation |
+| Interfaces tactiles | Tâche M0–M4 ; interactions mobiles ; cahier des charges § Interaction mobile | `src/ui/`, `src/app/` |
+| UI desktop et recherche | Tâche C7d/C10 ; maquette d’identité utile | `src/ui/`, `src/app/` |
+| Navigation et URL | ADR 0008 | `src/app/` |
+| Nouveau niveau | Guide de conception, qui se suffit ; tâche active s’il s’agit d’intégration à la campagne | `src/content/levels/` |
+| E2E | Qualité § Tests end-to-end ; contrat du parcours | `e2e/` |
+| Stockage, reprise, import/export et partage | ADR 0011/0015/0017/0018 ; architecture § Stockage et partage | Infrastructure, application et codecs |
+| Défi et progression | ADR 0010/0011 ; état livré | Application et contenu |
+| PWA | ADR 0012/0003 | Configuration et application |
+| Outillage, CI et releases | ADR 0003 ; `package.json` ; procédure de release ; changelog ; README | Racine, `scripts/`, documentation |
+| Décision structurante | Intention produit et ADR concernée | `docs/decisions/` |
+| Nettoyage documentaire | Cette carte ; état, roadmap et références des fichiers concernés ; préserver les demandes encore ouvertes | Documentation et commentaires de référence |
+| Licence | `LICENSE`, README et `package.json` | Racine |

@@ -60,7 +60,7 @@ interface UseSimulationRunnerOptions {
 interface SimulationRunnerController {
   readonly simulationState: SimulationSnapshot | null;
   /**
-   * How the last attempt ended, and why. B2 (plan-remise-en-jeu.md § 4)
+   * How the last attempt ended, and why. The outcome model
    * replaces the previous `hasWon` boolean: `completeSimulation` moves to
    * `phase: 'result'` for any outcome on purpose, so remembering which one
    * happened belongs to this hook.

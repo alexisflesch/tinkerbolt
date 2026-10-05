@@ -38,8 +38,8 @@ fois qu'il veut.
 ## 2. Ce qu'on attend d'un niveau
 
 Un niveau qui se résout en posant une poutre puis en cliquant sur Lancer est un
-échec, même s'il est « pédagogique ». Les niveaux 1 à 14 actuels sont des
-prototypes et ne servent pas de modèle.
+échec, même s'il est « pédagogique ». Les anciennes esquisses de 14 niveaux
+étaient des prototypes ; la campagne livrée contient sept tutoriels.
 
 - **Une machine, pas un trou à combler.** Une chaîne de 5 à 8 étapes est déjà
   en place, et elle est cassée à 3 ou 4 endroits. Le joueur doit la comprendre
@@ -119,9 +119,9 @@ sourceId, targetId }` de `applyPlayerSteps` pose un fil ; `searchSolutions`
 
 **Conséquences utiles pour concevoir :**
 
-- Le ventilateur est le seul objet qui peut faire monter la balle plus haut que
-  son point de départ. Dans un souffle vertical, une balle lévite à environ
-  1,5 unité au-dessus de la bouche.
+- Le ventilateur et le piston peuvent faire monter une balle au-dessus de son
+  point de départ. Mesurer la trajectoire dans la simulation réelle : les
+  valeurs physiques et la géométrie des familles viennent du code.
 - Le vent est arrêté par les solides : un objet n'est poussé que si rien de
   solide (poutre, masse, autre balle…) ne coupe le segment qui va de la bouche
   du ventilateur à son centre. Un solide placé devant abrite ce qui est
@@ -132,29 +132,26 @@ sourceId, targetId }` de `applyPlayerSteps` pose un fil ; `searchSolutions`
 - Un bouton rend une information continue (une position) binaire. C'est ce qui
   rend une longue chaîne robuste.
 
-## 5. Évolutions décidées, pas encore implémentées
+## 5. Familles intégrées et idées futures
 
-Ne pas les utiliser dans un niveau avant qu'elles existent dans le code.
+Les caisses en bois/métal, l’électroaimant, le piston et le minuteur sont
+intégrés (ADR 0019 et 0009). Le minuteur est intermédiaire sur un fil logique :
+il retarde les transitions de la source de 1 à 10 secondes, sans démarrage
+autonome. Les props et règles de câblage exactes sont celles du schéma et du
+registre de familles, pas celles des anciennes esquisses.
 
-- **Plusieurs objectifs.** Plusieurs balles rouges pour plusieurs paniers,
-  puis, plus tard, d'autres types d'objectifs. Cela exige une version 3 du
-  format de niveau, avec migration.
-- **Objets à créer**, choisis pour les réactions en chaîne :
-  - retardateur (un petit réveil) : reçoit un fil et émet à son tour après une
-    durée fixée par le niveau, ou démarre seul au lancement ;
-  - dominos ;
-  - piston : cible d'un fil, il pousse d'un coup ce qui se trouve devant lui ;
-  - goulotte courbe : redirige une trajectoire de façon fiable ;
-  - boîte en bois ou en métal (déjà dessinée dans `art/assets/boxes/`) ;
-  - masse de 1 kg.
+Restent des propositions, à décider et implémenter avant usage : plusieurs
+objectifs/balles/paniers, dominos, goulotte courbe et masse de 1 kg. Une évolution
+incompatible du format actuel v3 exigera une nouvelle version et des migrations
+testées ; v3 n’implémente pas les objectifs multiples.
 
 ## 6. Méthode
 
 1. **Esquisser** la chaîne sur papier : qui déclenche quoi, dans quel ordre, et
    où elle est cassée.
 2. **Écrire le document** JSON dans `src/content/levels/<id>.json`, en prenant
-   `campaign-17-la-grande-machine.json` comme exemple de format. `id` est en kebab-case ;
-   `schemaVersion: 2` ; les objets de départ ont leurs permissions à `false` ;
+   un tutoriel courant de `src/content/levels/` comme exemple de format.
+   `id` est en kebab-case ; `schemaVersion: 3` ; les objets de départ ont leurs permissions à `false` ;
    l'inventaire donne `{ move: true, rotate: <selon le type>, remove: true }`.
 3. **Mesurer au banc**, dans un test Vitest à côté du niveau
    (`<id>.test.ts`) : `applyPlayerSteps` et `runLevel` de

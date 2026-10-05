@@ -8,7 +8,7 @@
  *   4. Coque, en-tête, menu (`AppFrame.tsx`, `AppHeader.tsx`)
  *   5. Pages de contenu (liste des niveaux, paramètres)
  *   6. Écran plateau : barre d'actions, plateau, cadrage, dock, catalogue, feuilles
- *   7. Compositions responsives (plan-remise-en-jeu.md § 2.6 et D4) :
+ *   7. Compositions responsives (docs/mobile-editor-interactions.md) :
  *        - par défaut : portrait compact (téléphone et tablette portrait) ;
  *        - paysage compact (téléphone paysage, petite hauteur) ;
  *        - grand format (≥ 1000 × 700), trois rails.
@@ -1649,7 +1649,7 @@ select:focus-visible {
 }
 
 /*
- * B1 (plan-remise-en-jeu.md § 4) : sans inventaire (niveau 1), le tiroir
+ * Commandes disponibles : sans inventaire (niveau 1), le tiroir
  * n'est pas rendu ; l'espace réservé à sa hauteur repliée revient au plateau.
  */
 .workspace-no-drawer {

@@ -486,7 +486,7 @@ const leverPositionFromAngle = (angle: number): LeverPosition =>
  */
 const BASKET_GOAL_HOLD_DURATION_IN_FIXED_STEPS = 30;
 /**
- * Global game rule (B2, plan-remise-en-jeu.md § 4): the attempt is lost as
+ * Global game rule (docs/levels/conception-niveaux.md § 1): the attempt is lost as
  * soon as the target ball's centre leaves the level's scene rectangle widened
  * by this margin on every side. The world has no implicit walls — a level that
  * wants a floor lays a static beam — so this is what ends a fall into nothing.

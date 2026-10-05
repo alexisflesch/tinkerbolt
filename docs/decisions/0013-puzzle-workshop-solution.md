@@ -7,7 +7,7 @@ Date : 2026-09-27
 ## Contexte
 
 L'atelier produit une machine complète qui gagne seule. Décision de l'auteur du
-27 septembre 2026 (U22, `feuille-de-route-luna.md` § 6) : il doit produire un
+27 septembre 2026 (U22, historique Git) : il doit produire un
 puzzle. Chaque objet posé est « fixe » ou « à placer » ; l'export donne un
 document dont le décor est l'ensemble des objets fixes, l'inventaire les objets
 à placer, et qui contient une **solution de référence** visible. Le document

@@ -28,7 +28,7 @@ Baloo 2 (© 2019 The Baloo 2 Project Authors), l’est sous la même licence
 
 La v1 desktop est validée pour le fonctionnement du core de l’application.
 Les détails visuels seront réévalués avec l’auteur lors d’une prochaine reprise.
-La campagne contient cinq tutoriels conçus par Bolt, avec leurs solutions
+La campagne contient sept tutoriels conçus par Bolt, avec leurs solutions
 vérifiées ; l’Atelier permet de créer, essayer, modifier, sauvegarder et
 partager des niveaux localement. L’interface téléphone sera reprise en v2.
 
@@ -82,6 +82,10 @@ documentés dans [`docs/`](docs/), notamment [`docs/etat.md`](docs/etat.md) et
 
 Le suivi des versions, le changelog et la procédure de release sont décrits dans
 le [`CHANGELOG.md`](CHANGELOG.md) et [`docs/release-process.md`](docs/release-process.md).
+
+Après avoir renseigné « Non publié » dans le changelog et commité les changements,
+préparer un aperçu avec `pnpm release 0.2.0 --dry-run`, puis publier avec
+`pnpm release 0.2.0`. La publication demande `main` propre et GitHub CLI connecté.
 
 ## Déploiement
 

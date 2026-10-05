@@ -6,6 +6,12 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 ## [Non publié]
 
 - Les paramètres affichent la version de l’application et le SHA court du build.
+- La commande `pnpm release X.Y.Z` prépare, vérifie et publie une release ;
+  `--dry-run` affiche un aperçu sans modification ni publication.
+- La documentation du dépôt est consolidée : anciens plans, todos, journaux,
+  maquettes terminées et captures de travail retirés ; contrats, tâches encore
+  ouvertes, propositions d’évolution, maquette d’identité utile et sources
+  artistiques conservés.
 
 ## Référence initiale — 0.1.0
 

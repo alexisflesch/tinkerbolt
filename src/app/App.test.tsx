@@ -355,7 +355,7 @@ const levelOneScene = (() => {
 })();
 
 /**
- * B1 (plan-remise-en-jeu.md § 4) moved the free-creation workshop off the
+ * Routing (ADR 0008) moved the free-creation workshop off the
  * home screen: it is reachable only through ☰ → « Atelier ».
  * Every test below that exercises editor/catalogue behaviour starts here.
  */
@@ -428,7 +428,7 @@ const advanceSimulationToResult = (
 };
 
 /**
- * B2 (plan-remise-en-jeu.md § 4) : le budget d'une tentative vaut vingt
+ * Game rules (docs/levels/conception-niveaux.md § 1) : le budget d'une tentative vaut vingt
  * secondes simulées, soit 1200 pas fixes à 60 Hz, et le plafond de rattrapage
  * n'accorde que cinq pas par frame. Il faut donc 240 frames suffisamment
  * espacées pour atteindre le temps écoulé. Les frames suivantes sont sans
@@ -1652,7 +1652,7 @@ describe('coque TinkerBolt', () => {
   });
 
   it('annonce l’échec sans recouvrir le plateau quand le temps de la tentative est écoulé', async () => {
-    // B2 (plan-remise-en-jeu.md § 4) : la balle de l'atelier se pose sur la
+    // Game rules (docs/levels/conception-niveaux.md § 1) : la balle de l'atelier se pose sur la
     // poutre du sol et n'atteindra jamais le panier. Sans issue d'échec, la
     // tentative ne se terminait pas.
     const animationFrames = createAnimationFrameHarness();
@@ -2468,7 +2468,7 @@ describe('coque TinkerBolt', () => {
   });
 
   it('garde le statut du plateau stable pendant la simulation et la victoire', async () => {
-    // B5 (plan-remise-en-jeu.md § 4 bis): the ResizeObserver B1 added (see
+    // Stable framing (ADR 0007): the ResizeObserver B1 added (see
     // the test above) refits the camera on *any* CSS size change of the
     // canvas — including the reflow the victory/failure banner used to cause
     // by mounting as a brand new flex sibling under `.scene-frame` right when

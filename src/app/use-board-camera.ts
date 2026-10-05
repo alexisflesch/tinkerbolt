@@ -53,7 +53,7 @@ interface BoardCameraController {
  * the effect that fits the camera on mount and on every resize/orientation
  * change. Pan and pinch stay in `use-board-pointers.ts` — they are pointer
  * gestures that happen to move the camera, not camera concerns of their own
- * (plan-remise-en-jeu.md § A5 leaves this boundary to judgment).
+ * (their lifecycle belongs to the pointer handler).
  *
  * `getScene` bounds the zoom and the pan; `getFraming` is the rectangle the
  * camera fits — the scene by default, the level's useful part when playing

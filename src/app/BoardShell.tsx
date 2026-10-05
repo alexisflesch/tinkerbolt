@@ -300,7 +300,7 @@ export function BoardShell({
     simulation.attemptOutcome?.outcome === 'won' ? campaignVictory : null;
   const victoryDialog = useVictoryDialog(shownCampaignVictory !== null);
 
-  // B1 (plan-remise-en-jeu.md § 4, `initial-progression.md` § Niveau 1):
+  // The player command model:
   // level 1 declares `inventory: []`, so the catalogue drawer must not
   // appear at all — not collapsed, not empty — for it. Read from the
   // current attempt rather than special-casing the level id, so this stays

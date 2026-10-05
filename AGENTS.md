@@ -18,8 +18,8 @@ Le travail restant est ordonné, tâche par tâche, dans
 `docs/feuille-de-route.md`. Un agent d'implémentation qui reprend le dépôt
 lit ce fichier juste après `docs/index.md`, suit ses tâches dans l'ordre et tient
 son journal. L'état réellement livré est dans `docs/etat.md`.
-`docs/feuille-de-route-luna.md` est l'historique de la reprise précédente : on
-n'y lit que l'entrée qu'une tâche cite.
+Les anciens journaux et plans sont accessibles dans l'historique Git avant le
+nettoyage documentaire du 5 octobre 2026 ; ils ne définissent aucune tâche active.
 
 Le découpage en tranches est dans `docs/backlog.md`. Codex Sol 6.1 conduit
 la reprise et reste responsable du résultat. Un seul sous-agent est actif à la

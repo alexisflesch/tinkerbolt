@@ -421,41 +421,24 @@ tranche. Le découpage des tranches est dans [`backlog.md`](backlog.md) et
 l’ordre du travail restant dans
 [`feuille-de-route.md`](feuille-de-route.md).
 
-### Avancement
-
-Vue d’ensemble pour l’auteur, mise à jour à chaque tâche livrée (une ligne par
-phase ; le détail reste dans `etat.md` et le journal de la feuille de route).
-
-| Phase de la feuille de route      | État au 2 octobre 2026                                                                                                                              |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 — Gate verte                    | faite (G1, G2)                                                                                                                                      |
-| 1 — « Mes niveaux » et communauté | faite (M1 à M15 ; M14b : description modifiable à l’export ; M15 : documentation)                                                                   |
-| 2 — Interface en attente          | en cours (U12, U1, U13, U7, U8, U10, U11 et U2 implémentées, validation visuelle attendue ; U3 abandonnée par l’auteur, code conservé mais désactivé ; R1 retire l’anneau U7 et le cadre des balles ; inspecteur compact reporté avec le chantier mobile) |
-| 3 — Atelier complet               | hors priorités de livraison v1 : A1 reportée, A2 hors v1, A3 secondaire ; A4 livrée par M14b                                                                                      |
-| 4 — Outillage et mesures          | à faire                                                                                                                                             |
-| 5 — Décisions de l’auteur         | en attente (minuteur et niveau 15, bouton Grist, tri des propositions)                                                                              |
-| Niveaux de la campagne            | N2 en cours, non commitée : cinq tutoriels de Bolt, descriptions et solutions ciblées vérifiées ; gate Knip et validation finale restantes |
-
 ## Décisions réellement encore ouvertes
 
-- masses, frictions, rebonds et limites de la bascule ;
-- volume du panier et durée exacte de maintien validant la réussite ;
+- direction et volume de la prochaine campagne au-delà des sept tutoriels ;
 - seuils tactiles et dimensions finales du tiroir à mesurer sur appareil, sans
   rouvrir le principe du bottom sheet ;
-- identité graphique finale, apparence de la balle et du panier, animations et
-  direction audio ;
+- recette de l’identité graphique actuelle, animations et direction audio ;
 - matrice de navigateurs et téléphones, budgets de bundle, mémoire et performance ;
-- nombre final de chapitres et de niveaux de la version 1 au-delà des deux
-  chapitres spécifiés ;
+- hébergement de la Forge et mécanisme de soumission Grist (Q8 de la feuille
+  de route) ;
 - objectifs composés et indices, uniquement lorsqu’un besoin de game design les
   rend nécessaires, avec les conditions génériques et migrations de format qui les
   accompagnent ;
-- première famille active ou réactive, son comportement déterministe et les faits
-  de simulation qu’elle émet, lorsqu’un chapitre de campagne concret le justifie.
+- nouvelles familles lorsqu’un besoin de game design réel le justifie.
 
 React, Zod, `LevelDocument` et ses versions, les permissions explicites, la provenance
-éphémère, le catalogue initial et le véritable tiroir mobile ne sont plus des
-questions ouvertes.
+éphémère, les familles intégrées, les règles physiques actuelles et la victoire
+au panier ne sont plus des questions ouvertes : leurs propriétaires sont les
+ADR et le code. La mise en page téléphone sera conçue en M0–M4.
 
 ## Carte des documents de référence
 

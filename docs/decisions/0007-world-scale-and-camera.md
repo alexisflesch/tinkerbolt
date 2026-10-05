@@ -6,8 +6,8 @@ Date : 2 septembre 2026
 
 ## Contexte
 
-Un essai complet de l'application dans un navigateur, consigné par
-[le plan de remise en jeu](../plan-remise-en-jeu.md) § 1, a montré une situation
+Un essai complet de l'application dans un navigateur, conservé dans l'historique
+Git du prototype, a montré une situation
 qu'aucune gate ne détectait : l'application démarre, ne lève aucune erreur
 console, `pnpm check` passe, et pourtant rien de ce que le jeu promet n'est
 visible à l'écran.
@@ -231,7 +231,7 @@ dette, pas une livraison.
 
 ## Références
 
-- [Plan de remise en jeu](../plan-remise-en-jeu.md) §§ 1 et 2
+- Les constats historiques du prototype sont résumés dans le contexte ci-dessus.
 - [ADR 0004 - Contrat persistant `LevelDocument v1`](0004-level-document-v1.md)
 - [ADR 0006 - Renderer du plateau et pipeline de sprites](0006-board-renderer.md)
 - [Interactions mobiles](../mobile-editor-interactions.md) § Navigation du plateau
@@ -297,7 +297,7 @@ une zone visible du plateau.
 
 ## Amendement du 5 octobre 2026 — cadrage sur la zone utile en jeu
 
-À la demande de l'auteur (`todo.05.10.md` § Taille de la scène), un niveau ne
+À la demande de l'auteur du 5 octobre 2026 sur le cadrage, un niveau ne
 s'ouvre plus cadré sur toute sa scène lorsqu'on y joue. L'atelier laisse la scène
 à 16 × 9 même quand la machine n'en occupe qu'un coin : sur téléphone, le niveau
 s'ouvrait trop petit pour être lisible.
@@ -318,4 +318,3 @@ s'ouvrait trop petit pour être lisible.
   4 × ajusté à la scène]`, donc un dézoom montre toujours la scène entière.
 - **Atelier.** En création, le cadrage reste celui de la scène : l'auteur
   construit dans tout le rectangle.
-

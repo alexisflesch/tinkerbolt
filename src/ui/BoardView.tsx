@@ -163,7 +163,7 @@ const FLOATING_BAR_CLEARANCE = { height: 140, side: 120, edge: 8 } as const;
  * The board itself: the canvas and its sprite-pipeline rendering (ADR 0006,
  * ADR 0007), including the placement ghost (C1, U1), and the camera zoom
  * controls.
- * B1 (plan-remise-en-jeu.md § 4) removed the debug "scene objects" pip list
+ * The player-facing board removed the debug "scene objects" pip list
  * that used to sit under the canvas — a leftover pre-A5 inspection layer, not
  * part of the player-facing UI. Tests that need to read or select a placed
  * object now go through the canvas's own `data-*` attributes; on-canvas
@@ -485,7 +485,7 @@ export function BoardView({
   return (
     <>
       {/*
-        D4 (plan-remise-en-jeu.md § 6, arbitrated by the product owner): the
+        The layout (arbitrated by the product owner): the
         frame fills all the space the surrounding chrome leaves, so no dead
         zone is left around the board; the camera's own `fitCameraToScene`
         "contain" keeps the whole scene visible and centred inside it.

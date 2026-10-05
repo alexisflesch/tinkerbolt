@@ -59,7 +59,7 @@ interface SimulationControlsProps {
 }
 
 /**
- * B2 (plan-remise-en-jeu.md § 4): the two reasons an attempt can be lost, in
+ * Game rules (docs/levels/conception-niveaux.md § 1): the two reasons an attempt can be lost, in
  * the player's words, said in the bar rather than in an error panel.
  */
 const failureExplanations: Record<AttemptFailureReason, string> = {
@@ -89,10 +89,9 @@ export function SimulationControls({
   onResetDocument,
   desk,
 }: SimulationControlsProps) {
-  // A session with no inventory (level 1: `initial-progression.md` § Niveau 1,
-  // "Aucune action d'édition") has nothing a command could ever undo or redo:
+  // A player session with no inventory has no construction command to undo or redo:
   // hiding these buttons outright, rather than just disabling them, keeps the
-  // action bar limited to what B1 (plan-remise-en-jeu.md § 4) allows.
+  // action bar focused on the available commands.
   // The author always edits, even a creation without inventory (ADR 0015).
   const canEdit = isCreation || currentEditorAttempt(session).document.inventory.length > 0;
 

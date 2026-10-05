@@ -44,7 +44,7 @@ const CONTACT_TOLERANCE = 0.02;
 /** Assez de pas pour qu'une chute d'environ trois unités se stabilise complètement. */
 const SETTLING_FIXED_STEPS = 300;
 /**
- * B2 (plan-remise-en-jeu.md § 4) : budget par défaut d'une tentative, vingt
+ * Game rules (docs/levels/conception-niveaux.md § 1) : budget par défaut d'une tentative, vingt
  * secondes simulées. Recalculé ici depuis le pas fixe, comme la simulation
  * doit le faire, plutôt que lu dans une constante de production.
  */
@@ -397,7 +397,7 @@ const createBeamImpactLevelDocument = (beamX: number): LevelDocument =>
   });
 
 /**
- * B2 (plan-remise-en-jeu.md § 4) : la balle tombe à côté du panier, dans le
+ * Game rules (docs/levels/conception-niveaux.md § 1) : la balle tombe à côté du panier, dans le
  * vide. Aucun mur implicite ne la retient — un niveau qui veut un sol le pose
  * avec une poutre statique — donc elle finit par franchir le rectangle de
  * scène élargi.

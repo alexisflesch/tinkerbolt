@@ -1,6 +1,9 @@
 # Nouvelle campagne — descriptifs de niveaux
 
 Esquisses **à peu près**, prêtes à générer en JSON puis à ajuster dans l'éditeur.
+Ces propositions ne décrivent pas la campagne actuelle de sept tutoriels ; les
+constats du bilan portent sur les anciens prototypes. Les schémas, familles et
+contraintes du code courant priment sur leurs exemples.
 Positions en unités du monde, `y` vers le bas, scène `(0,0)`–`(L,H)`. Toutes les
 valeurs sont indicatives (« ≈ »). Seules les familles existantes sont utilisées.
 Règles de conception : [conception-niveaux.md](conception-niveaux.md).

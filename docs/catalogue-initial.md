@@ -388,8 +388,10 @@ et la bascule peuvent être placés par l'auteur avec leurs trois permissions à
 
 ## Progression
 
-La progression de la campagne et la géométrie mesurée de chaque niveau sont dans
-[`levels/initial-progression.md`](levels/initial-progression.md).
+La campagne livrée et ses géométries sont dans `src/content/levels/` ; ses
+solutions sont vérifiées par les régressions de contenu. Les intentions de
+conception et propositions sont dans `docs/levels/`, pas dans une ancienne
+progression de prototype.
 
 ## Tests contractuels minimaux
 

@@ -59,7 +59,7 @@ interface InspectorDrawerProps {
 
 /**
  * The home of the selected object's properties and of the attempt result
- * (plan-remise-en-jeu.md § 2.6 and D4). The objective is not here: it opens
+ * (docs/mobile-editor-interactions.md). The objective is not here: it opens
  * on demand in a dialog from the header (`BoardShell`), so it never takes
  * board space.
  *

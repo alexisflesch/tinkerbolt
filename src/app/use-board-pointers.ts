@@ -193,8 +193,7 @@ interface BoardPointersController {
  * and panning/pinch-zooming the camera from an empty area of the board
  * (mobile-editor-interactions.md § Navigation, § Zoom). Pan/pinch necessarily
  * also touch camera state (`cameraRef`/`updateCamera`, from
- * `use-board-camera.ts`): plan-remise-en-jeu.md § A5 leaves this exact
- * boundary to judgment rather than prescribing it.
+ * `use-board-camera.ts`); this boundary follows the pointer lifecycle.
  */
 export function useBoardPointers({
   sessionRef,
