@@ -5,6 +5,10 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 
 ## [Non publié]
 
+Aucun changement notable pour le moment.
+
+## [0.3.1] - 2026-10-06
+
 - Les convoyeurs utilisent le nouveau visuel sans pieds, avec flèches et roues
   animées. Leur courroie entraîne aussi sur les extrémités arrondies ; le dessous
   va dans le sens opposé au dessus. Le sens suit la rotation du convoyeur.
