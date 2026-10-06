@@ -108,8 +108,8 @@ interface UpdateLevelGoalInput {
 
 /**
  * An object the author places from the catalogue, outside the player's
- * inventory. It never becomes the goal: the goal's ball and basket are unique
- * and already placed.
+ * inventory. With `goalRole` it is the goal's red ball or its basket (ADR
+ * 0020): the goal names it, and each exists once at most.
  */
 interface AddAuthoredPlacementInput {
   readonly context: ConstructionContext;
@@ -117,6 +117,7 @@ interface AddAuthoredPlacementInput {
   readonly type: Placement['type'];
   readonly props: Placement['props'];
   readonly transform: Placement['transform'];
+  readonly goalRole?: 'ball' | 'basket';
 }
 
 /** An object present at the start of a level is locked for the player. */
@@ -427,7 +428,7 @@ export const setPlacementToPlace = (input: SetPlacementToPlaceInput): AuthoringC
     const placement = placementAt(state.document, input.placementId);
     if (placement === undefined) return { status: 'rejected', reason: 'placement-not-found' };
     const { goal } = state.document;
-    if (placement.id === goal.ballId || placement.id === goal.basketId) {
+    if (placement.id === goal?.ballId || placement.id === goal?.basketId) {
       return { status: 'rejected', reason: 'goal-object-protected' };
     }
     const { toPlace, ...fixed } = placement;
@@ -484,11 +485,33 @@ export const addAuthoredPlacement = (input: AddAuthoredPlacementInput): Authorin
       },
       permissions: startingObjectPermissions,
     };
+    const { goalRole } = input;
+    if (goalRole !== undefined) {
+      const expectedType = goalRole === 'ball' ? 'ball' : 'basket';
+      if (input.type !== expectedType) return { status: 'rejected', reason: 'goal-role-mismatch' };
+      const existing =
+        goalRole === 'ball' ? state.document.goal?.ballId : state.document.goal?.basketId;
+      if (existing !== undefined) return { status: 'rejected', reason: 'goal-role-taken' };
+    }
     // The author's board has no edge: the scene grows to take the object.
     const document = withSceneIncluding(state.document, input.transform.position);
     return {
       status: 'candidate',
-      document: { ...document, objects: [...document.objects, placement] },
+      document: {
+        ...document,
+        objects: [...document.objects, placement],
+        ...(goalRole === undefined
+          ? {}
+          : {
+              goal: {
+                type: 'basket',
+                ...document.goal,
+                ...(goalRole === 'ball'
+                  ? { ballId: input.placementId }
+                  : { basketId: input.placementId }),
+              },
+            }),
+      },
     };
   });
 
@@ -499,7 +522,7 @@ export const updateLevelGoal = (input: UpdateLevelGoalInput): AuthoringCommand =
     const basket = placementAt(state.document, input.basketId);
     if (basket?.type !== 'basket') return { status: 'rejected', reason: 'goal-basket-not-found' };
     if (
-      state.document.goal.ballId === input.ballId &&
+      state.document.goal?.ballId === input.ballId &&
       state.document.goal.basketId === input.basketId
     ) {
       return { status: 'unchanged' };

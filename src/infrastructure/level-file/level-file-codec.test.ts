@@ -268,4 +268,31 @@ describe('codec de fichier de niveau', () => {
       ]),
     );
   });
+
+  it('fait l’aller-retour d’une machine sans objectif, ou à objectif partiel (ADR 0020)', () => {
+    const { goal: ignoredGoal, ...rest } = selfSolvingLevel;
+    void ignoredGoal;
+    const bare = levelDocumentSchema.parse({ ...rest, inventory: [], solution: undefined });
+    const partial = levelDocumentSchema.parse({
+      ...bare,
+      goal: { type: 'basket', ballId: selfSolvingLevel.goal?.ballId },
+    });
+
+    for (const machine of [bare, partial]) {
+      expect(decodeLevelFile(encodeLevelFile(machine))).toEqual({
+        status: 'ok',
+        document: machine,
+      });
+    }
+  });
+
+  it('refuse un fichier dont l’objectif ne désigne rien', () => {
+    const { goal: ignoredGoal, ...rest } = selfSolvingLevel;
+    void ignoredGoal;
+    const result = decodeLevelFile(
+      JSON.stringify({ ...rest, inventory: [], goal: { type: 'basket' } }),
+    );
+
+    expect(result.status).toBe('error');
+  });
 });

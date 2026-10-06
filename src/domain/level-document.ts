@@ -280,6 +280,20 @@ const basketGoalSchema = z.strictObject({
   basketId: identifierSchema,
 });
 
+/**
+ * ADR 0020: from v3 on, each identifier is optional (the goal may be missing
+ * altogether). A goal with neither identifier says nothing: `goal` is omitted.
+ */
+const partialBasketGoalSchema = z
+  .strictObject({
+    type: z.literal('basket'),
+    ballId: identifierSchema.optional(),
+    basketId: identifierSchema.optional(),
+  })
+  .refine(({ ballId, basketId }) => ballId !== undefined || basketId !== undefined, {
+    message: 'Un objectif désigne une balle ou un panier ; sinon, omets l’objectif.',
+  });
+
 const challengeObjectCountSchema = z.int().min(1).max(MAX_CHALLENGE_OBJECT_COUNT);
 
 /**
@@ -472,6 +486,8 @@ const levelDocumentV3StructureSchema = z.strictObject({
   schemaVersion: z.literal(LEVEL_DOCUMENT_SCHEMA_VERSION),
   objects: z.array(objectPlacementSchema).max(MAX_OBJECTS),
   inventory: z.array(inventoryEntrySchema).max(MAX_INVENTORY_ENTRIES),
+  /** Optional since ADR 0020: a document without a complete goal can still be a machine. */
+  goal: partialBasketGoalSchema.optional(),
   wires: z.array(controlWireSchema).max(MAX_WIRES).default([]),
   solution: solutionSchema.optional(),
 });
@@ -490,6 +506,35 @@ export type LevelDocumentV1 = z.infer<typeof levelDocumentV1StructureSchema>;
 /** The legacy v2 contract, kept strict as migration input (ADR 0018). */
 type LevelDocumentV2 = z.infer<typeof levelDocumentV2StructureSchema>;
 export type LevelDocument = z.infer<typeof levelDocumentV3StructureSchema>;
+
+/** ADR 0020: both identifiers of a goal that names the red ball and the basket. */
+interface CompleteGoal {
+  readonly ballId: string;
+  readonly basketId: string;
+}
+
+/** The goal when it names both the red ball and the basket, `null` otherwise (ADR 0020). */
+export const completeGoalOf = (document: Pick<LevelDocument, 'goal'>): CompleteGoal | null => {
+  const { goal } = document;
+  if (goal?.ballId === undefined || goal.basketId === undefined) return null;
+  return { ballId: goal.ballId, basketId: goal.basketId };
+};
+
+/** ADR 0020: the document names both the red ball and the basket. */
+export const hasCompleteGoal = (document: Pick<LevelDocument, 'goal'>): boolean =>
+  completeGoalOf(document) !== null;
+
+/**
+ * ADR 0020: a level where the player has nothing to place: no inventory, no
+ * reference solution, no challenge, and nothing marked « à placer ». It may or
+ * may not have a goal.
+ */
+export const isMachine = (document: LevelDocument): boolean =>
+  document.inventory.length === 0 &&
+  document.solution === undefined &&
+  document.challenge === undefined &&
+  !document.objects.some(({ toPlace }) => toPlace === true) &&
+  !document.wires.some(({ toPlace }) => toPlace === true);
 
 interface LevelDocumentValidationIssue {
   readonly path: readonly (string | number)[];
@@ -717,10 +762,15 @@ const addControlWireIssues = (
   });
 };
 
+interface GoalReferences {
+  readonly ballId?: string | undefined;
+  readonly basketId?: string | undefined;
+}
+
 interface DocumentRelationsInput {
   readonly objects: readonly ObjectPlacement[];
   readonly inventory: readonly InventoryEntry[];
-  readonly goal: { readonly ballId: string; readonly basketId: string };
+  readonly goal?: GoalReferences | undefined;
   readonly challenge?: Challenge | undefined;
 }
 
@@ -740,16 +790,15 @@ const addLevelDocumentRelationIssues = (
   addRotationPermissionIssues(document.inventory, 'inventory', issues);
 
   const placementsById = new Map(document.objects.map((placement) => [placement.id, placement]));
-  const ball = placementsById.get(document.goal.ballId);
-  if (ball?.type !== 'ball') {
+  const { ballId, basketId } = document.goal ?? {};
+  if (ballId !== undefined && placementsById.get(ballId)?.type !== 'ball') {
     issues.push({
       path: ['goal', 'ballId'],
       message: 'L’objectif doit référencer une balle déjà placée.',
     });
   }
 
-  const basket = placementsById.get(document.goal.basketId);
-  if (basket?.type !== 'basket') {
+  if (basketId !== undefined && placementsById.get(basketId)?.type !== 'basket') {
     issues.push({
       path: ['goal', 'basketId'],
       message: 'L’objectif doit référencer un panier déjà placé.',
@@ -785,12 +834,34 @@ interface PuzzleRelationsInput {
   readonly objects: readonly ObjectPlacement[];
   readonly inventory: readonly InventoryEntry[];
   readonly wires: readonly ControlWire[];
-  readonly goal: { readonly ballId: string; readonly basketId: string };
+  readonly goal?: GoalReferences | undefined;
+  readonly challenge?: Challenge | undefined;
   readonly solution?: Solution | undefined;
 }
 
 const isInsideRange = (value: number, min: number, max: number): boolean =>
   value >= min && value <= max;
+
+/**
+ * ADR 0020: whatever asks the player to play for a result (an inventory, a
+ * reference solution, a challenge) needs the complete goal; a machine does not.
+ */
+const addCompleteGoalIssues = (
+  document: PuzzleRelationsInput & { readonly inventory: readonly InventoryEntry[] },
+  issues: LevelDocumentValidationIssue[],
+): void => {
+  const complete = document.goal?.ballId !== undefined && document.goal.basketId !== undefined;
+  const needsGoal =
+    document.inventory.length > 0 ||
+    document.solution !== undefined ||
+    document.challenge !== undefined;
+  if (needsGoal && !complete) {
+    issues.push({
+      path: ['goal'],
+      message: 'Un niveau avec un inventaire, une solution ou un défi exige un objectif complet.',
+    });
+  }
+};
 
 /**
  * U22 (ADR 0013): the goal is never to be placed; a workshop marking and a
@@ -806,7 +877,8 @@ const addPuzzleIssues = (
   allowSolutionWireInstances = false,
 ): void => {
   document.objects.forEach((placement, index) => {
-    const isGoal = placement.id === document.goal.ballId || placement.id === document.goal.basketId;
+    const isGoal =
+      placement.id === document.goal?.ballId || placement.id === document.goal?.basketId;
     if (placement.toPlace === true && isGoal) {
       issues.push({
         path: ['objects', index, 'toPlace'],
@@ -1057,6 +1129,7 @@ export const levelDocumentSchema = levelDocumentV3StructureSchema.superRefine(
     const issues: LevelDocumentValidationIssue[] = [];
     addLevelDocumentRelationIssues(document, issues);
     addSceneContainmentIssues(document, issues);
+    addCompleteGoalIssues(document, issues);
     addPuzzleIssues(document, issues, true);
     addControlWireIssues(document.objects, document.wires, issues);
     for (const issue of issues)
@@ -1088,6 +1161,7 @@ export const levelDocumentAttemptSchema = levelDocumentV3StructureSchema.superRe
     const issues: LevelDocumentValidationIssue[] = [];
     addLevelDocumentRelationIssues(document, issues, false);
     addSceneContainmentIssues(document, issues);
+    addCompleteGoalIssues(document, issues);
     addPuzzleIssues(document, issues, false, true);
     addControlWireIssues(document.objects, document.wires, issues);
     for (const issue of issues) {

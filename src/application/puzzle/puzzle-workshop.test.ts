@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { levelDocumentSchema, type LevelDocument } from '../../domain/level-document';
+import { isMachine, levelDocumentSchema, type LevelDocument } from '../../domain/level-document';
 import {
+  machineFromWorkshop,
   playSolution,
   puzzleFromWorkshop,
   verifyPuzzle,
@@ -428,5 +429,109 @@ describe('vérification d’un puzzle avant export (U22)', () => {
         throw new Error('La simulation ne doit pas être lancée.');
       }),
     ).toEqual({ status: 'refused', reason: 'no-object-to-place' });
+  });
+});
+
+describe('atelier sans objectif complet (ADR 0020)', () => {
+  const withoutBasket = (): LevelDocument => {
+    const { goal: ignoredGoal, ...rest } = workshop({
+      objects: workshop().objects.filter(({ id }) => id !== 'basket-1'),
+    });
+    void ignoredGoal;
+    return { ...rest, goal: { type: 'basket', ballId: 'ball-1' } };
+  };
+
+  it('refuse le défi avec une raison dédiée, sans simuler', () => {
+    expect(puzzleFromWorkshop(withoutBasket())).toEqual({
+      status: 'refused',
+      reason: 'no-complete-goal',
+    });
+    expect(
+      verifyPuzzle(withoutBasket(), () => {
+        throw new Error('La simulation ne doit pas être lancée.');
+      }),
+    ).toEqual({ status: 'refused', reason: 'no-complete-goal' });
+  });
+
+  it('dit d’abord qu’il manque l’objectif, avant les objets à placer', () => {
+    const { goal: ignoredGoal, ...bare } = workshop({
+      objects: workshop().objects.slice(0, 3),
+    });
+    void ignoredGoal;
+
+    expect(puzzleFromWorkshop(bare)).toEqual({ status: 'refused', reason: 'no-complete-goal' });
+  });
+});
+
+describe('machine à partir de l’atelier (ADR 0020)', () => {
+  const machine = machineFromWorkshop(workshop());
+
+  it('retire solution, défi, inventaire et zones, et les marques « à placer »', () => {
+    expect(machine.inventory).toEqual([]);
+    expect(machine.buildZones).toEqual([]);
+    expect(machine.solution).toBeUndefined();
+    expect(machine.challenge).toBeUndefined();
+    expect(machine.objects.some(({ toPlace }) => toPlace === true)).toBe(false);
+    expect(isMachine(machine)).toBe(true);
+    expect(levelDocumentSchema.safeParse(machine).success).toBe(true);
+  });
+
+  it('laisse en place les objets à placer, avec leurs permissions d’auteur', () => {
+    expect(machine.objects).toEqual(
+      workshop().objects.map(({ toPlace, ...object }) => {
+        void toPlace;
+        return object;
+      }),
+    );
+  });
+
+  it('garde l’objectif tel quel : la balle rouge reste rouge', () => {
+    expect(machine.goal).toEqual({ type: 'basket', ballId: 'ball-1', basketId: 'basket-1' });
+  });
+
+  it('retire la marque « à placer » des fils et garde les fils', () => {
+    const wired = machineFromWorkshop(
+      workshop({
+        objects: [...workshop().objects, { ...lever, toPlace: true }, conveyor],
+        wires: [{ id: 'wire-1', sourceId: 'lever-1', targetId: 'conveyor-1', toPlace: true }],
+      }),
+    );
+
+    expect(wired.wires).toEqual([{ id: 'wire-1', sourceId: 'lever-1', targetId: 'conveyor-1' }]);
+    expect(isMachine(wired)).toBe(true);
+  });
+
+  it('réussit sans objectif ni objet à placer, et garde le titre et l’attribution', () => {
+    const { goal: ignoredGoal, ...bare } = workshop({
+      metadata: { title: 'Ma machine', author: 'Lili' },
+      objects: workshop().objects.slice(0, 3),
+    });
+    void ignoredGoal;
+    const result = machineFromWorkshop(bare);
+
+    expect(result.goal).toBeUndefined();
+    expect(result.metadata).toEqual({ title: 'Ma machine', author: 'Lili' });
+  });
+
+  it('réussit pour un atelier qui porte une solution ou un défi (campagne)', () => {
+    const puzzle = puzzleFromWorkshop(workshop());
+    if (puzzle.status !== 'ok') throw new Error('puzzle attendu');
+
+    const result = machineFromWorkshop({
+      ...puzzle.puzzle,
+      challenge: { elegantObjectCount: 4, minimalObjectCount: 3 },
+    });
+
+    expect(result.solution).toBeUndefined();
+    expect(result.challenge).toBeUndefined();
+    expect(result.inventory).toEqual([]);
+  });
+
+  it('ne modifie pas l’atelier', () => {
+    const document = workshop();
+    const before = structuredClone(document);
+    machineFromWorkshop(document);
+
+    expect(document).toEqual(before);
   });
 });

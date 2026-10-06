@@ -58,25 +58,35 @@ interface DrawerCard {
 
 type InventoryEntry = LevelDocument['inventory'][number];
 
-const authorCard = (entry: AuthorCatalogueEntry): DrawerCard => ({
-  key: entry.key,
-  kind: entry.kind,
-  name: entry.name,
-  accessibleName: entry.accessibleName,
-  detail: entry.description,
-  category: entry.category,
-  // The red ball is the goal's and never in the catalogue: a ball added here is blue.
-  thumbnail:
-    entry.type === 'box'
-      ? entry.props.material === 'wood'
-        ? 'box-wood'
-        : 'box-metal'
-      : entry.type === 'ball'
-        ? 'second-ball'
-        : entry.type,
-  isDepleted: false,
-  source: { from: 'catalogue', entry },
-});
+/** ADR 0020: the red ball and the basket exist once at most; the card is off once the goal names it. */
+const isGoalRoleTaken = (
+  entry: AuthorCatalogueEntry,
+  goal: LevelDocument['goal'] | undefined,
+): boolean =>
+  (entry.goalRole === 'ball' && goal?.ballId !== undefined) ||
+  (entry.goalRole === 'basket' && goal?.basketId !== undefined);
+
+const authorCard =
+  (goal: LevelDocument['goal'] | undefined) =>
+  (entry: AuthorCatalogueEntry): DrawerCard => ({
+    key: entry.key,
+    kind: entry.kind,
+    name: entry.name,
+    accessibleName: entry.accessibleName,
+    detail: entry.description,
+    category: entry.category,
+    // Only the card with the goal role is the red ball: any other ball added here is blue.
+    thumbnail:
+      entry.type === 'box'
+        ? entry.props.material === 'wood'
+          ? 'box-wood'
+          : 'box-metal'
+        : entry.type === 'ball' && entry.goalRole === undefined
+          ? 'second-ball'
+          : entry.type,
+    isDepleted: isGoalRoleTaken(entry, goal),
+    source: { from: 'catalogue', entry },
+  });
 
 const inventoryCards = (inventoryEntry: InventoryEntry): DrawerCard[] => {
   const catalogEntry = objectKinds.find(
@@ -249,7 +259,9 @@ export function ObjectDrawer({
   const inventory =
     session.mode === 'resolution' ? currentEditorAttempt(session).document.inventory : null;
   const drawerCards =
-    inventory === null ? authorCatalogue.map(authorCard) : inventory.flatMap(inventoryCards);
+    inventory === null
+      ? authorCatalogue.map(authorCard(currentEditorAttempt(session).document.goal))
+      : inventory.flatMap(inventoryCards);
   // U21: a puzzle may give the player wires, laid with the author's gesture.
   const wireEntries = inventory?.filter((entry) => entry.type === 'wire') ?? [];
   const entryCount = drawerCards.length + wireEntries.length;

@@ -28,19 +28,26 @@ test('présente l’accueil sans débordement et mène à la campagne au tactile
     await expect(
       page.getByRole('progressbar', { name: 'Progression de la campagne' }),
     ).toHaveAttribute('value', '0');
-    // V7 : les vignettes des trois lieux et l'aperçu réel du tutoriel 5.
+    // Les trois destinations gardent leurs sprites ; la machine est rendue sur un canvas.
     await expect
       .poll(() =>
         page
-          .locator('.home-place img, .home-board img')
+          .locator('.home-place img')
           .evaluateAll(
             (images) =>
-              images.length === 4 &&
+              images.length === 3 &&
               images.every(
                 (image) =>
                   image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
               ),
           ),
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page
+          .locator('.home-machine')
+          .evaluate((canvas: HTMLCanvasElement) => canvas.width > 0 && canvas.height > 0),
       )
       .toBe(true);
     // V7 : la police Nunito est déclarée et servie par l'application, sans réseau tiers.
@@ -120,4 +127,72 @@ test('reprend la progression enregistrée après rechargement', async ({ page })
   await launchCommand(page, 390).tap();
   await expect(page).toHaveURL(/\/levels$/);
   await expect(page.getByRole('button', { name: 'Jouer le niveau 2', exact: true })).toBeEnabled();
+});
+
+const machinePixels = async (page: Page): Promise<string> =>
+  page.locator('.home-machine').evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+
+test('anime la machine, la suspend et reprend sans ouvrir de résultat de partie', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.clock.install();
+  await page.goto('/');
+  await expect(
+    page.getByRole('button', { name: 'Mettre la démonstration en pause' }),
+  ).toBeVisible();
+  await expect
+    .poll(() => page.locator('.home-machine').evaluate((canvas: HTMLCanvasElement) => canvas.width))
+    .toBeGreaterThan(300);
+  const initial = await machinePixels(page);
+  await page.clock.runFor(2000);
+  expect(await machinePixels(page)).not.toBe(initial);
+
+  await page.getByRole('button', { name: 'Mettre la démonstration en pause' }).click();
+  const paused = await machinePixels(page);
+  await page.clock.runFor(1000);
+  expect(await machinePixels(page)).toBe(paused);
+  await page.getByRole('button', { name: 'Animer la démonstration' }).click();
+  await page.clock.runFor(1000);
+  expect(await machinePixels(page)).not.toBe(paused);
+  await page.clock.runFor(22000);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(
+    page.getByRole('progressbar', { name: 'Progression de la campagne' }),
+  ).toHaveAttribute('value', '0');
+
+  // A hidden tab stops drawing; becoming visible starts from the current machine.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const hidden = await machinePixels(page);
+  await page.clock.runFor(5000);
+  expect(await machinePixels(page)).toBe(hidden);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.runFor(1000);
+  expect(await machinePixels(page)).not.toBe(hidden);
+  await navigateTo(page, 'Campagne');
+  await expect(page.locator('.home-machine')).toHaveCount(0);
+});
+
+test('respecte la réduction des animations et permet de lancer volontairement la démo', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.install();
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Animer la démonstration' })).toBeVisible();
+  await expect
+    .poll(() => page.locator('.home-machine').evaluate((canvas: HTMLCanvasElement) => canvas.width))
+    .toBeGreaterThan(300);
+  const initial = await machinePixels(page);
+  await page.clock.runFor(2000);
+  expect(await machinePixels(page)).toBe(initial);
+  await page.getByRole('button', { name: 'Animer la démonstration' }).click();
+  await page.clock.runFor(2000);
+  expect(await machinePixels(page)).not.toBe(initial);
 });

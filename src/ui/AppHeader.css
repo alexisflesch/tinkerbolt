@@ -1,0 +1,313 @@
+/* En-tête partagé : marque, navigation, titre et menu, pour toutes les routes. */
+
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/*
+ * V7 : dans l'en-tête (maquettes V4), les commandes sont des boutons nuit à
+ * trait fin, l'action principale verte garde son liseré bas, et le menu est
+ * un simple contour. Les cibles restent de 44 px.
+ */
+.header-actions .btn-neutral,
+.header-actions .objective-button {
+  border: 1px solid var(--night-line);
+  color: var(--on-night);
+  background: var(--night-800);
+}
+
+.header-actions .btn-go {
+  border: 0;
+  box-shadow: inset 0 -3px 0 var(--go-edge);
+}
+
+.header-actions .icon-button:not(.objective-button) {
+  border-width: 1px;
+  background: transparent;
+}
+
+@media (hover: hover) {
+  .header-actions .btn-neutral:not(:disabled):hover,
+  .header-actions .icon-button:hover {
+    background: var(--night-700);
+  }
+}
+
+.app-header {
+  position: relative;
+  display: grid;
+  min-height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+  flex: 0 0 auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: max(var(--space-2), env(safe-area-inset-top))
+    max(var(--space-3), env(safe-area-inset-right)) var(--space-2)
+    max(var(--space-3), env(safe-area-inset-left));
+  border-bottom: 1px solid var(--night-800);
+  color: var(--on-night);
+  background: var(--night-950);
+  font-family: var(--font-ui);
+}
+
+/* La marque ne rétrécit jamais : c'est le titre du niveau qui s'ellipse. */
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-logo {
+  display: block;
+  width: 146px;
+  height: 32px;
+  background: url('/assets/home/logo.webp') left center / contain no-repeat;
+}
+
+/* La navigation principale tient la place du titre sur les pages et les plateaux larges. */
+.main-nav {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  align-self: stretch;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-block: calc(var(--space-2) * -1);
+}
+
+.main-nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  border-block: 3px solid transparent;
+  color: var(--on-night-muted);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.main-nav a[aria-current='page'] {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+  background: rgb(255 255 255 / 5%);
+}
+
+.main-nav a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+@media (hover: hover) {
+  .main-nav a:hover {
+    color: var(--on-night);
+  }
+}
+
+@media (max-width: 760px) {
+  .main-nav {
+    visibility: hidden;
+  }
+}
+
+/*
+ * V7 : le titre de la page en texte simple, centré, sans pastille ;
+ * « Titre · Contexte » sur une ligne, le contexte atténué. C'est le titre qui
+ * s'ellipse d'abord, le contexte reste lisible.
+ */
+.level-label {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  align-items: baseline;
+  justify-self: center;
+  color: var(--on-night);
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.level-title,
+.level-mode,
+.level-attribution {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.level-title {
+  flex: 0 1000 auto;
+}
+
+.level-separator,
+.level-mode,
+.level-attribution {
+  color: var(--on-night-muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.level-separator {
+  flex: 0 0 auto;
+  margin: 0 4px;
+  white-space: pre;
+}
+
+.level-mode {
+  flex: 0 1 auto;
+}
+
+/* ADR 0016 § Affichage : l'auteur d'un niveau reçu, tel qu'il l'a écrit, s'ellipse avec le titre. */
+.level-attribution {
+  flex: 0 1 auto;
+}
+
+.level-menu {
+  position: absolute;
+  z-index: var(--z-menu);
+  top: calc(100% + var(--space-2));
+  right: max(var(--space-3), env(safe-area-inset-right));
+  display: flex;
+  width: min(280px, calc(100vw - 2 * var(--space-3)));
+  /* Un téléphone en paysage n'a pas la hauteur de toutes les entrées (M12) : le menu défile. */
+  max-height: calc(
+    100dvh - var(--header-height) - env(safe-area-inset-top, 0px) - 2 * var(--space-2)
+  );
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+  border: 0;
+  border-radius: 14px;
+  background:
+    linear-gradient(rgb(255 252 244 / 88%), rgb(255 252 244 / 88%)),
+    #fdf6e6 url('/assets/home/papier.webp') 0 0 / 320px;
+  box-shadow:
+    inset 0 0 0 2px #cdbb98,
+    0 0 0 100vmax rgb(10 20 38 / 35%);
+  color: #17233d;
+  clip-path: inset(-100vmax);
+}
+
+.level-menu .btn {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  color: #17233d;
+  background: none;
+  box-shadow: none;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* Navigation ou menu selon la largeur. */
+
+/*
+ * Au-dessus de 760 px, la navigation principale (Paramètres compris) remplace
+ * le menu ; en dessous, c'est l'inverse. Une commande propre à un écran, que
+ * le menu porte sur petit écran, est alors montrée dans la barre du plateau.
+ */
+@media (min-width: 761px) {
+  .app-header:has(.main-nav) .menu-toggle {
+    display: none;
+  }
+}
+
+/* Écran large : une colonne vide de la largeur du logo garde la navigation centrée. */
+@media (min-width: 1100px) {
+  .app-header:has(.main-nav) .header-actions:not(:has(> :not(.menu-toggle))) {
+    width: 146px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1099px) {
+  .main-nav a {
+    gap: 6px;
+    padding: 0 10px;
+    font-size: var(--text-s);
+  }
+}
+
+/* Juste au-dessus du seuil du menu : les libellés seuls, sans icône, tiennent sur une ligne. */
+@media (min-width: 761px) and (max-width: 899px) {
+  .main-nav a svg {
+    display: none;
+  }
+}
+
+/* Le bouton du menu et son panneau, dans le style de l'application. */
+.menu-toggle {
+  border: 0;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.menu-toggle[aria-expanded='true'] {
+  color: var(--night-950);
+  background: var(--accent);
+}
+
+.level-menu .btn.level-menu-current {
+  background: linear-gradient(#ffd266, #ffb720);
+}
+
+.level-menu::-webkit-scrollbar-thumb {
+  background-color: #d4c19c;
+}
+
+@media (max-width: 419px) {
+  .brand-logo {
+    width: 118px;
+    height: 26px;
+  }
+}
+
+/* À 320 px, garder la marque et les quatre actions de l'atelier dans l'en-tête. */
+@media (max-width: 359px) {
+  .app-header {
+    gap: 6px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .brand-logo {
+    width: 86px;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 999px),
+  (orientation: landscape) and (max-height: 699px) {
+  .app-header {
+    padding-top: max(var(--space-1), env(safe-area-inset-top));
+    padding-bottom: var(--space-1);
+  }
+
+  /* Le contexte cède la place au titre ; l'attribution reste visible. */
+  .level-separator:has(+ .level-mode),
+  .level-mode {
+    display: none;
+  }
+}
+
+@media (min-width: 1000px) and (min-height: 700px) {
+  .app-header {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .level-menu {
+    scrollbar-color: #d4c19c transparent;
+  }
+}

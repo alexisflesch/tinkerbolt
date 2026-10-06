@@ -60,6 +60,7 @@ journaux sont consultables dans Git avant le commit de nettoyage du 5 octobre
 | `docs/decisions/0017-player-construction-and-async-storage.md` | contrat détaillé de stockage/reprise C2 (**accepté** ; C2a/C3 livrés) |
 | `docs/decisions/0018-level-document-v3.md` | passage accepté au format de niveau v3 et migrations des documents persistés |
 | `docs/decisions/0019-c9-object-contracts.md` | contrats C9 et ordre acceptés ; constantes physiques à équilibrer pendant l’intégration |
+| `docs/decisions/0020-machine-levels.md` | niveaux « Machine » : `goal` facultatif, export sans objectif, jeu sans victoire (accepté) |
 
 ### Sources exécutables
 

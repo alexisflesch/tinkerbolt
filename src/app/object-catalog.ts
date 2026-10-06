@@ -115,6 +115,8 @@ interface AuthorCatalogueMetadata {
   readonly accessibleName: string;
   readonly category: CatalogueCategory;
   readonly description: string;
+  /** ADR 0020: placing this card designates the goal's red ball or basket, at most once each. */
+  readonly goalRole?: 'ball' | 'basket';
 }
 export type AuthorCatalogueEntry = AuthorCatalogueMetadata &
   {
@@ -149,12 +151,21 @@ const authorEntry = (
 };
 
 /**
- * The goal's red ball and its basket are unique and already on the board
- * (LevelDocument v2 has a single goal): the author only adds blue balls,
- * listed simply as « Balle ». Entries follow `catalogueCategories`.
+ * ADR 0020: the red ball and the basket of the goal are cards like the others,
+ * one of each at most (the card is disabled once placed). Any other ball is
+ * blue, listed simply as « Balle ». Entries follow `catalogueCategories`.
  */
 export const authorCatalogue: readonly AuthorCatalogueEntry[] = [
+  {
+    ...authorEntry('Balle', 'ball'),
+    key: 'goal-ball',
+    name: 'Balle rouge',
+    accessibleName: 'Balle rouge',
+    description: 'La balle à amener dans le panier',
+    goalRole: 'ball',
+  },
   authorEntry('Balle', 'ball'),
+  { ...authorEntry('Panier', 'basket'), key: 'goal-basket', goalRole: 'basket' },
   authorEntry('Masse', 'mass', { weight: '10kg' }),
   {
     ...authorEntry('Caisse', 'box', { material: 'wood' }),

@@ -50,6 +50,10 @@ interface SimulationControlsProps {
   readonly desk?:
     | {
         readonly title: string;
+        /** Workshop only: the title is the default one, not a name the author chose. */
+        readonly isTitleDefault?: boolean;
+        /** Workshop only: the buttons kept beside the title, even when the title is hidden. */
+        readonly titleActions?: ReactNode;
         readonly actions: ReactNode;
         readonly onZoomIn: () => void;
         readonly onZoomOut: () => void;
@@ -147,6 +151,21 @@ export function SimulationControls({
       </Button>
     </>
   );
+  const deskTitleText = desk !== undefined && (
+    <p className={`toolbar-title${desk.isTitleDefault === true ? ' toolbar-title-default' : ''}`}>
+      {desk.title}
+    </p>
+  );
+  // The workshop's title keeps its buttons beside it, and where the title is hidden.
+  const deskTitle =
+    desk?.titleActions === undefined ? (
+      deskTitleText
+    ) : (
+      <div className="toolbar-heading">
+        {deskTitleText}
+        {desk.titleActions}
+      </div>
+    );
   const placementStatus = activePlacementKind !== null && (
     <div className="toolbar-status" aria-live="polite">
       <span className="toolbar-status-text">Placement actif : {activePlacementKind}.</span>
@@ -214,11 +233,7 @@ export function SimulationControls({
             </Button>
           </div>
           {framing}
-          {placementStatus === false ? (
-            <p className="toolbar-title">{desk.title}</p>
-          ) : (
-            placementStatus
-          )}
+          {placementStatus === false ? deskTitle : placementStatus}
           {desk.actions}
           {launch}
         </>

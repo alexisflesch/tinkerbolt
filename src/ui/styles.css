@@ -1,11 +1,11 @@
 /*
- * TinkerBolt — feuille de style unique de la coque.
+ * TinkerBolt — styles généraux ; en-tête partagé dans `AppHeader.css`.
  *
  * Organisation :
  *   1. Jetons de conception (couleurs, espacements, rayons, typographie, z-index)
  *   2. Base
  *   3. Boutons (`Button.tsx`) et panneaux (`Panel.tsx`) partagés par toutes les pages
- *   4. Coque, en-tête, menu (`AppFrame.tsx`, `AppHeader.tsx`)
+ *   4. Coque (`AppFrame.tsx`) ; en-tête et menu dans `AppHeader.css`
  *   5. Pages de contenu (liste des niveaux, paramètres)
  *   6. Écran plateau : barre d'actions, plateau, cadrage, dock, catalogue, feuilles
  *   7. Compositions responsives (docs/mobile-editor-interactions.md) :
@@ -142,8 +142,7 @@
  * piste transparente. Chromium et Safari la dessinent avec les pseudo-éléments
  * `-webkit-`, qu'ils ignorent dès que `scrollbar-width` ou `scrollbar-color`
  * sont posés (Chromium garderait alors ses flèches) : les propriétés
- * standard sont réservées aux autres navigateurs. Le menu, sur fond nuit,
- * prend la couleur des traits.
+ * standard sont réservées aux autres navigateurs.
  */
 @supports not selector(::-webkit-scrollbar) {
   :root {
@@ -153,14 +152,6 @@
   * {
     scrollbar-width: thin;
   }
-
-  .level-menu {
-    scrollbar-color: var(--night-line) transparent;
-  }
-}
-
-.level-menu::-webkit-scrollbar-thumb {
-  background-color: var(--night-line);
 }
 
 *::-webkit-scrollbar {
@@ -302,41 +293,6 @@ select:focus-visible {
   font-size: 20px;
 }
 
-.header-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-}
-
-/*
- * V7 : dans l'en-tête (maquettes V4), les commandes sont des boutons nuit à
- * trait fin, l'action principale verte garde son liseré bas, et le menu est
- * un simple contour. Les cibles restent de 44 px.
- */
-.header-actions .btn-neutral,
-.header-actions .objective-button {
-  border: 1px solid var(--night-line);
-  color: var(--on-night);
-  background: var(--night-800);
-}
-
-.header-actions .btn-go {
-  border: 0;
-  box-shadow: inset 0 -3px 0 var(--go-edge);
-}
-
-.header-actions .icon-button:not(.objective-button) {
-  border-width: 1px;
-  background: transparent;
-}
-
-@media (hover: hover) {
-  .header-actions .btn-neutral:not(:disabled):hover,
-  .header-actions .icon-button:hover {
-    background: var(--night-700);
-  }
-}
-
 /* Accès à l'objectif : icône seule sur petit écran, libellé en grand format. */
 .objective-button {
   display: inline-flex;
@@ -451,162 +407,6 @@ select:focus-visible {
 .app-shell-page {
   min-height: 100vh;
   min-height: 100dvh;
-}
-
-.app-header {
-  position: relative;
-  display: grid;
-  min-height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
-  flex: 0 0 auto;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-3);
-  padding: max(var(--space-2), env(safe-area-inset-top))
-    max(var(--space-3), env(safe-area-inset-right)) var(--space-2)
-    max(var(--space-3), env(safe-area-inset-left));
-  border-bottom: 1px solid var(--night-800);
-  background: var(--night-950);
-}
-
-/* La marque ne rétrécit jamais : c'est le titre du niveau qui s'ellipse. */
-.brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: inherit;
-  text-decoration: none;
-}
-
-.brand-logo {
-  display: block;
-  width: 146px;
-  height: 32px;
-  background: url('/assets/home/logo.webp') left center / contain no-repeat;
-}
-
-/* Accueil : la navigation principale tient la place du titre de page. */
-.main-nav {
-  display: flex;
-  min-width: 0;
-  overflow: hidden;
-  align-self: stretch;
-  justify-content: center;
-  gap: var(--space-1);
-  margin-block: calc(var(--space-2) * -1);
-}
-
-.main-nav a {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0 var(--space-4);
-  border-block: 3px solid transparent;
-  color: var(--on-night-muted);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.main-nav a[aria-current='page'] {
-  border-bottom-color: var(--accent);
-  color: var(--accent);
-  background: rgb(255 255 255 / 5%);
-}
-
-.main-nav a:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: -3px;
-}
-
-@media (hover: hover) {
-  .main-nav a:hover {
-    color: var(--on-night);
-  }
-}
-
-@media (max-width: 760px) {
-  .main-nav {
-    visibility: hidden;
-  }
-}
-
-/*
- * V7 : le titre de la page en texte simple, centré, sans pastille ;
- * « Titre · Contexte » sur une ligne, le contexte atténué. C'est le titre qui
- * s'ellipse d'abord, le contexte reste lisible.
- */
-.level-label {
-  display: flex;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  align-items: baseline;
-  justify-self: center;
-  color: var(--on-night);
-  font-size: 16px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.level-title,
-.level-mode,
-.level-attribution {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.level-title {
-  flex: 0 1000 auto;
-}
-
-.level-separator,
-.level-mode,
-.level-attribution {
-  color: var(--on-night-muted);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.level-separator {
-  flex: 0 0 auto;
-  margin: 0 4px;
-  white-space: pre;
-}
-
-.level-mode {
-  flex: 0 1 auto;
-}
-
-/* ADR 0016 § Affichage : l'auteur d'un niveau reçu, tel qu'il l'a écrit, s'ellipse avec le titre. */
-.level-attribution {
-  flex: 0 1 auto;
-}
-
-.level-menu {
-  position: absolute;
-  z-index: var(--z-menu);
-  top: calc(100% + var(--space-2));
-  right: max(var(--space-3), env(safe-area-inset-right));
-  display: flex;
-  width: min(280px, calc(100vw - 2 * var(--space-3)));
-  /* Un téléphone en paysage n'a pas la hauteur de toutes les entrées (M12) : le menu défile. */
-  max-height: calc(
-    100dvh - var(--header-height) - env(safe-area-inset-top, 0px) - 2 * var(--space-2)
-  );
-  flex-direction: column;
-  gap: var(--space-2);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: var(--space-2);
-  border: 2px solid var(--night-950);
-  border-radius: var(--radius-l);
-  background: var(--night-800);
-  box-shadow: 0 12px 28px rgb(5 12 26 / 45%);
-}
-
-.level-menu .btn {
-  flex: 0 0 auto;
-  justify-content: flex-start;
 }
 
 /* 5. Pages de contenu ---------------------------------------------------------- */
@@ -899,36 +699,31 @@ select:focus-visible {
   background: #f6ead3;
 }
 
-/* La scène 16:9 remplit la hauteur de l'ouverture, un peu moins large qu'elle. */
-.home-board-scene {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  height: 100%;
-  aspect-ratio: 16 / 9;
-  transform: translateX(-50%);
-}
-
-.home-board-scene .level-preview {
+.home-machine {
+  display: block;
   width: 100%;
   height: 100%;
 }
 
-.home-hints {
+.home-machine-toggle {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  opacity: 0.8;
-  stroke: var(--home-ink);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 0.07;
+  z-index: 2;
+  right: 10%;
+  bottom: 12%;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid #cdbb98;
+  border-radius: 50%;
+  background: #fff7e6;
+  color: #17233d;
+  cursor: pointer;
 }
 
-.home-hint-trail {
-  stroke-dasharray: 0.04 0.21;
+.home-machine-toggle:focus-visible {
+  outline: 3px solid #e0a322;
+  outline-offset: 2px;
 }
 
 .home-bolt {
@@ -1392,14 +1187,138 @@ select:focus-visible {
   border-bottom: 1px solid var(--panel-line);
 }
 
-/* L'aperçu déclenche l'action principale ; ses pastilles laissent passer le clic. */
+/* Toute la carte est l'action principale : son bouton la recouvre, sous le menu. */
 .level-card-thumb-action {
   position: absolute;
+  z-index: 1;
   inset: 0;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.level-card-thumb-action:disabled {
+  cursor: default;
+}
+
+.level-card-thumb-action:focus-visible {
+  outline: 3px solid var(--night-950);
+  outline-offset: -3px;
+}
+
+/* Au survol, la vignette se cerne et le titre se souligne. */
+.level-card-thumb-action:not(:disabled):hover ~ .level-card-thumb {
+  outline: 3px solid #ffb720;
+  outline-offset: -3px;
+}
+
+.level-card-thumb-action:not(:disabled):hover ~ .level-card-body .level-card-title {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* Titre et menu « ⋯ » des autres actions. */
+.level-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.level-card-heading .level-card-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.level-card-menu {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  margin: -6px -4px 0 0;
+}
+
+.level-card-menu-toggle {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #6d5c45;
+  background: none;
+  cursor: pointer;
+  place-items: center;
+}
+
+.level-card-menu-toggle:not(:disabled):hover,
+.level-card-menu-toggle[aria-expanded='true'] {
+  color: #17233d;
+  background: rgb(109 92 69 / 14%);
+}
+
+.level-card-menu-toggle:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.level-card-menu-list {
+  position: absolute;
+  z-index: 2;
+  top: 100%;
+  right: 0;
+  display: grid;
+  min-width: 168px;
+  padding: 5px;
+  border-radius: 12px;
+  background: #fdf6e6;
+  box-shadow:
+    inset 0 0 0 2px #cdbb98,
+    0 10px 22px rgb(69 45 18 / 30%);
+}
+
+.level-card-menu-list[hidden] {
+  display: none;
+}
+
+.level-card-menu-item {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #17233d;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.level-card-menu-item:not(:disabled):hover {
+  background: #f3e6cc;
+}
+
+.level-card-menu-item:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.level-card-menu-item-danger {
+  color: #c0392b;
+}
+
+.level-card-menu-item-danger:not(:disabled):hover {
+  background: #fbe9e6;
+}
+
+/* La carte au menu ouvert passe devant ses voisines. */
+.app-shell-page .level-card:has(.level-card-menu-toggle[aria-expanded='true']) {
+  z-index: 3;
 }
 
 .level-card-number,
@@ -1530,52 +1449,6 @@ select:focus-visible {
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.level-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: auto;
-  padding-top: 14px;
-}
-
-/* Boutons de la carte : 40 px (maquette V4), sans toucher à la cible tactile globale. */
-.level-card-actions .btn {
-  min-width: 40px;
-  min-height: 40px;
-  height: 40px;
-  border-width: 1px;
-  font-size: var(--text-m);
-}
-
-.level-card-actions .level-card-primary {
-  flex: 1;
-  gap: var(--space-2);
-  border: 0;
-  box-shadow: inset 0 -3px 0 var(--go-edge);
-}
-
-.level-card-primary:not(:disabled):hover {
-  filter: brightness(1.06);
-}
-
-.level-card-tool {
-  width: 40px;
-  padding: 0;
-  border-color: var(--panel-line);
-  color: var(--ink);
-  background: transparent;
-}
-
-.level-card-tool:not(:disabled):hover {
-  background: #f3e6cc;
-}
-
-.level-card-tool-danger:not(:disabled):hover {
-  border-color: #e7b3ab;
-  color: var(--danger);
-  background: #fbe9e6;
 }
 
 /* Mes niveaux (M9) : deux sections de cartes, des notices et des invites. */
@@ -2940,28 +2813,6 @@ select:focus-visible {
   }
 }
 
-/* 7a. Plus petits téléphones --------------------------------------------------- */
-
-@media (max-width: 419px) {
-  .brand-logo {
-    width: 118px;
-    height: 26px;
-  }
-}
-
-/* À 320 px, garder la marque et les quatre actions de l'atelier dans l'en-tête. */
-@media (max-width: 359px) {
-  .app-header {
-    gap: 6px;
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-
-  .brand-logo {
-    width: 86px;
-  }
-}
-
 /* 7b. Paysage compact : téléphone en paysage, petite hauteur --------------------- */
 
 /*
@@ -2974,17 +2825,6 @@ select:focus-visible {
   (orientation: landscape) and (max-height: 699px) {
   :root {
     --header-height: 48px;
-  }
-
-  .app-header {
-    padding-top: max(var(--space-1), env(safe-area-inset-top));
-    padding-bottom: var(--space-1);
-  }
-
-  /* Le contexte cède la place au titre ; l'attribution reste visible. */
-  .level-separator:has(+ .level-mode),
-  .level-mode {
-    display: none;
   }
 
   .workspace {
@@ -3129,11 +2969,6 @@ select:focus-visible {
 @media (min-width: 1000px) and (min-height: 700px) {
   :root {
     --header-height: 60px;
-  }
-
-  .app-header {
-    padding-right: 20px;
-    padding-left: 20px;
   }
 
   .objective-button {
@@ -3402,6 +3237,38 @@ select:focus-visible {
   white-space: nowrap;
 }
 
+/* Atelier : le titre garde à côté de lui le crayon et « Nouveau niveau ». */
+.toolbar-heading {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.toolbar-heading .toolbar-title {
+  flex: 0 1 auto;
+}
+
+.toolbar-title-default {
+  font-style: italic;
+  opacity: 0.55;
+}
+
+.app-shell-desk .workspace .title-action {
+  min-width: 36px;
+  height: 36px;
+  min-height: 0;
+  flex: none;
+  padding: 0;
+}
+
+.app-shell-desk .workspace .title-action:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .workspace-toolbar-desk .toolbar-status {
   flex: 1;
 }
@@ -3505,6 +3372,8 @@ select:focus-visible {
   mask: url('/assets/campaign/paper-edge.svg') 0 0 / 100% 100% no-repeat;
   content: '';
   pointer-events: none;
+  transform: rotate(var(--card-tilt));
+  transform-origin: 50% 12px;
 }
 
 .app-shell-desk .object-drawer::after {
@@ -3883,6 +3752,21 @@ select:focus-visible {
 @media (max-width: 1099px) {
   .toolbar-title {
     visibility: hidden;
+  }
+
+  /* Le titre masqué ne réserve plus sa place : ses boutons rejoignent les actions. */
+  .toolbar-heading {
+    justify-content: flex-end;
+  }
+
+  .toolbar-heading .toolbar-title {
+    display: none;
+  }
+
+  .app-shell-desk .workspace .title-action {
+    min-width: 44px;
+    height: auto;
+    min-height: 44px;
   }
 
   .app-shell-desk .workspace .objective-button {
@@ -4450,9 +4334,8 @@ select:focus-visible {
   border-radius: 0;
   background: none;
   box-shadow: none;
+  /* Seul le papier penche : texte, boutons et aperçu restent droits, donc nets. */
   filter: drop-shadow(2px 5px 4px rgb(94 65 26 / 22%));
-  transform: rotate(var(--card-tilt));
-  transform-origin: 50% 12px;
   container-type: inline-size;
   transition: none;
 }
@@ -4465,6 +4348,7 @@ select:focus-visible {
     linear-gradient(rgb(255 252 244 / 80%), rgb(255 252 244 / 80%)),
     url('/assets/home/papier.webp') 0 0 / 320px;
   mask: url('/assets/campaign/paper-edge.svg') 0 0 / 100% 100% no-repeat;
+  transform: rotate(var(--card-tilt));
   content: '';
   pointer-events: none;
 }
@@ -4474,19 +4358,19 @@ select:focus-visible {
     0 0,
     140px 90px;
   /* Une autre tranche du même papier, retournée pour varier les déchirures. */
-  transform: scale(-1, 1);
+  transform: rotate(var(--card-tilt)) scale(-1, 1);
 }
 
 .app-shell-page .level-card:nth-child(3n)::before {
   background-position:
     0 0,
     60px 210px;
-  transform: scale(1, -1);
+  transform: rotate(var(--card-tilt)) scale(1, -1);
 }
 
 .app-shell-page .level-card:hover {
   box-shadow: none;
-  transform: rotate(var(--card-tilt));
+  transform: none;
 }
 
 .level-card-attachment {
@@ -4597,47 +4481,6 @@ select:focus-visible {
   font-size: 13.5px;
   font-weight: 500;
   line-height: 1.35;
-}
-
-.app-shell-page .level-card-actions {
-  padding-top: 10px;
-}
-
-.app-shell-page .level-card-actions .btn {
-  border-radius: 10px;
-}
-
-.app-shell-page .level-card-actions .level-card-primary {
-  box-shadow: none;
-  font-weight: 800;
-}
-
-.app-shell-page .level-card-actions .level-card-tool {
-  background: none;
-}
-
-.app-shell-page .level-card-actions .level-card-tool-danger {
-  color: #c0392b;
-  box-shadow: inset 0 0 0 2px #e3b3ab;
-}
-
-/*
- * Carte étroite avec plus de deux icônes : le bouton principal prend sa propre
- * ligne et les icônes se partagent la suivante, pour que rien ne déborde.
- */
-@container (max-width: 345px) {
-  .level-card-actions:has(.level-card-tool:nth-child(4)) {
-    flex-wrap: wrap;
-  }
-
-  .level-card-actions:has(.level-card-tool:nth-child(4)) .level-card-primary {
-    flex-basis: 100%;
-  }
-
-  .level-card-actions:has(.level-card-tool:nth-child(4)) .level-card-tool {
-    width: auto;
-    flex: 1;
-  }
 }
 
 /* Mes niveaux : deux grandes feuilles, papier de l'atelier et plan bleu reçu. */
@@ -4906,18 +4749,6 @@ select:focus-visible {
     font-size: 12px;
   }
 
-  .app-shell-page .level-card-actions {
-    gap: 5px;
-    padding-top: 8px;
-  }
-
-  .app-shell-page .level-card-actions .btn {
-    min-width: 36px;
-    height: 36px;
-    min-height: 36px;
-    font-size: 15px;
-  }
-
   .app-shell-page .level-card-number {
     min-width: 24px;
     height: 24px;
@@ -4931,100 +4762,6 @@ select:focus-visible {
     padding: 0 6px;
     font-size: 0;
   }
-}
-
-/* 10. En-tête : navigation ou menu, jamais les deux -------------------------------- */
-
-/*
- * Au-dessus de 760 px, la navigation principale (Paramètres compris) remplace
- * le menu ; en dessous, c'est l'inverse. Une commande propre à un écran, que
- * le menu porte sur petit écran, est alors montrée dans la barre du plateau.
- */
-@media (min-width: 761px) {
-  .app-header:has(.main-nav) .menu-toggle {
-    display: none;
-  }
-}
-
-/* Écran large : une colonne vide de la largeur du logo garde la navigation centrée. */
-@media (min-width: 1100px) {
-  .app-header:has(.main-nav) .header-actions:not(:has(> :not(.menu-toggle))) {
-    width: 146px;
-  }
-}
-
-.main-nav a {
-  white-space: nowrap;
-}
-
-@media (max-width: 760px) {
-  .wide-only {
-    display: none !important;
-  }
-}
-
-@media (min-width: 761px) and (max-width: 1099px) {
-  .main-nav a {
-    gap: 6px;
-    padding: 0 10px;
-    font-size: var(--text-s);
-  }
-}
-
-/* Juste au-dessus du seuil du menu : les libellés seuls, sans icône, tiennent sur une ligne. */
-@media (min-width: 761px) and (max-width: 899px) {
-  .main-nav a svg {
-    display: none;
-  }
-}
-
-/* Le bouton du menu et son panneau, dans le style de l'application. */
-.menu-toggle {
-  border: 0;
-  border-radius: 12px;
-  background: rgb(255 255 255 / 10%);
-}
-
-.menu-toggle[aria-expanded='true'] {
-  color: var(--night-950);
-  background: var(--accent);
-}
-
-.level-menu {
-  gap: 4px;
-  padding: 8px;
-  border: 0;
-  border-radius: 14px;
-  color: #17233d;
-  background:
-    linear-gradient(rgb(255 252 244 / 88%), rgb(255 252 244 / 88%)),
-    #fdf6e6 url('/assets/home/papier.webp') 0 0 / 320px;
-  box-shadow:
-    inset 0 0 0 2px #cdbb98,
-    0 0 0 100vmax rgb(10 20 38 / 35%);
-  clip-path: inset(-100vmax);
-}
-
-.level-menu .btn,
-.app-shell-page .app-header .level-menu .btn {
-  gap: 10px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  color: #17233d;
-  background: none;
-  box-shadow: none;
-  font-family: var(--font-title);
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.level-menu .btn.level-menu-current {
-  background: linear-gradient(#ffd266, #ffb720);
-}
-
-.level-menu::-webkit-scrollbar-thumb {
-  background-color: #d4c19c;
 }
 
 /* 11. Barre du plateau pendant la simulation ---------------------------------------- */
@@ -5310,16 +5047,6 @@ select:focus-visible {
   background:
     linear-gradient(rgb(255 248 230 / 24%), rgb(255 248 230 / 24%)),
     url('../../art/background.png') center / cover no-repeat fixed;
-}
-
-.app-shell-page:has(.settings-page) .app-header {
-  padding-right: max(20px, calc((100vw - 992px) / 2));
-  padding-left: max(20px, calc((100vw - 992px) / 2));
-}
-
-.app-shell-page:has(.settings-page) .app-header:has(.main-nav) .header-actions {
-  width: 0;
-  min-width: 0;
 }
 
 .page-head:has(+ .settings-page),
@@ -5620,4 +5347,41 @@ select:focus-visible {
 
 .settings-repository-link {
   min-height: 36px;
+}
+
+@media (max-width: 760px) {
+  .wide-only {
+    display: none !important;
+  }
+}
+
+/* ADR 0020 : choix « Défi » / « Machine » de la boîte d'export. */
+.export-kind {
+  display: flex;
+  min-width: 0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.export-kind-option {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+}
+
+.export-kind-option input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--go);
+}
+
+.export-kind-refusal {
+  color: var(--danger);
+  font-weight: 700;
 }

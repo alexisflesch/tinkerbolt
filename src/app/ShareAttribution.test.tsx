@@ -10,6 +10,7 @@ import { levelDocumentSchema, type LevelDocument } from '../domain/level-documen
 import { decodeShareFragment } from '../infrastructure/level-share/level-share-codec';
 
 import {
+  cardAction,
   testDraftRepository,
   testReceivedRepository,
   testPreferencesRepository,
@@ -215,9 +216,7 @@ describe('partager : titre, pseudo et licence (M14)', () => {
     await openAt('/my-levels');
 
     const card = screen.getByRole('region', { name: 'Origine (remix)' });
-    await storageAction(() =>
-      fireEvent.click(within(card).getByRole('button', { name: 'Partager' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card, 'Partager')));
     await waitFor(() => {
       expect(
         within(exportDialog()).getByRole('textbox', { name: 'Pseudo (facultatif)' }),
@@ -315,9 +314,7 @@ describe('partager : titre, pseudo et licence (M14)', () => {
 
     await storageAction(() =>
       fireEvent.click(
-        within(screen.getByRole('region', { name: 'Origine (remix)' })).getByRole('button', {
-          name: 'Partager',
-        }),
+        cardAction(screen.getByRole('region', { name: 'Origine (remix)' }), 'Partager'),
       ),
     );
     const description = within(exportDialog()).getByRole('textbox', {
@@ -363,9 +360,7 @@ describe('partager : titre, pseudo et licence (M14)', () => {
     await openAt('/my-levels');
 
     const card = screen.getByRole('region', { name: 'Reçu' });
-    await storageAction(() =>
-      fireEvent.click(within(card).getByRole('button', { name: 'Partager' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card, 'Partager')));
 
     const dialog = screen.getByRole('dialog', { name: 'Partager le niveau' });
     await waitFor(() => {

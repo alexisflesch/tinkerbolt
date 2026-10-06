@@ -1,52 +1,62 @@
 import { describe, expect, it } from 'vitest';
 
+import source from '../../levels/demo-landing.json';
 import { embeddedLevels } from '../content/embedded-levels';
 import { levelDocumentSchema } from '../domain/level-document';
-import { withSolutionPlaced } from './home-hero';
+import { projectLevel } from '../presentation/board-renderer';
+import { createSimulationSession } from '../simulation/simulation-session';
+import { createHomeScene } from './home-hero';
 
-const tutorial5 = embeddedLevels.find(({ id }) => id === 'tuto-5');
+const level = levelDocumentSchema.parse(source);
 
-describe('niveau résolu de l’accueil', () => {
-  it('pose la solution de référence sur le plateau, sans marque « à placer »', () => {
-    if (tutorial5 === undefined) throw new Error('Tutoriel 5 introuvable.');
+describe('machine animée de l’accueil', () => {
+  it('retire l’objectif et la bascule, pose les deux balles bleues et conserve les branchements', () => {
+    const before = structuredClone(level);
+    const scene = createHomeScene(level);
 
-    const solved = withSolutionPlaced(tutorial5);
-
-    const added = solved.objects.slice(tutorial5.objects.length);
-    expect(solved.scene.min.y).toBeCloseTo(tutorial5.scene.min.y + 0.75);
-    expect(solved.scene.max.y).toBeCloseTo(tutorial5.scene.max.y + 0.75);
-    expect(added.map(({ type }) => type)).toEqual(['ball', 'springboard']);
-    expect(added.map(({ transform }) => transform)).toEqual(
-      tutorial5.solution?.placements.map(({ transform }) => transform),
+    expect(
+      scene.objects.some(({ id }) => id === level.goal?.ballId || id === level.goal?.basketId),
+    ).toBe(false);
+    expect(scene.objects.some(({ type }) => type === 'seesaw' || type === 'basket')).toBe(false);
+    expect(scene.objects.filter(({ type }) => type === 'ball')).toHaveLength(2);
+    expect(scene.objects.find(({ id }) => id === 'ball-a-placer')?.transform).toEqual(
+      level.solution?.placements[0]?.transform,
     );
-    expect(solved.objects.slice(0, tutorial5.objects.length)).toEqual(tutorial5.objects);
-    expect(new Set(solved.objects.map(({ id }) => id)).size).toBe(solved.objects.length);
-    expect(solved.wires.map(({ sourceId, targetId }) => [sourceId, targetId])).toEqual([
-      ['placement-9', 'placement-4'],
-      ['placement-9', 'placement-11'],
-    ]);
-    expect(solved.objects.some((object) => 'toPlace' in object)).toBe(false);
-    expect(solved.wires.some((wire) => 'toPlace' in wire)).toBe(false);
+    expect(scene.objects.some(({ toPlace }) => toPlace === true)).toBe(false);
+    expect(scene.wires).toEqual(level.wires);
+    expect(scene.goal).toBeUndefined();
+    expect(level).toEqual(before);
+    expect(embeddedLevels).toHaveLength(7);
+    expect(embeddedLevels.some(({ id }) => id === level.id)).toBe(false);
+    expect(
+      projectLevel(scene)
+        .objects.filter(({ family }) => family === 'ball')
+        .every(({ assetKey }) => assetKey.startsWith('second-ball-')),
+    ).toBe(true);
   });
 
-  it('reste un document de niveau valide, sans solution à rejouer', () => {
-    if (tutorial5 === undefined) throw new Error('Tutoriel 5 introuvable.');
-
-    const solved = withSolutionPlaced(tutorial5);
-
-    expect(solved.solution).toBeUndefined();
-    expect(levelDocumentSchema.safeParse(solved).success).toBe(true);
-  });
-
-  it('ne modifie pas le niveau embarqué et rend tel quel un niveau sans solution', () => {
-    if (tutorial5 === undefined) throw new Error('Tutoriel 5 introuvable.');
-    const before = structuredClone(tutorial5);
-
-    withSolutionPlaced(tutorial5);
-
-    expect(tutorial5).toEqual(before);
-    const { solution, ...unsolved } = tutorial5;
-    void solution;
-    expect(withSolutionPlaced(unsolved)).toBe(unsolved);
+  it('fait tourner les deux pistons au-delà de vingt secondes, sans résultat de partie', () => {
+    const scene = createHomeScene(level);
+    const before = structuredClone(scene);
+    const session = createSimulationSession(scene, { fixedStepSeconds: 1 / 60 });
+    const active = new Set<string>();
+    const initial = session.readState();
+    try {
+      for (let step = 0; step < 1800; step += 1) {
+        session.advanceFixedSteps(1);
+        for (const device of session.readState().devices) {
+          if (device.kind === 'piston' && device.extension > 0.5) active.add(device.placementId);
+        }
+      }
+      expect([...active].sort()).toEqual(['placement-1', 'placement-6']);
+      expect(session.readState().fixedStep).toBe(1800);
+      expect(session.readGoalEvaluation().status).toBe('pending');
+      expect(session.readFailureEvaluation().status).toBe('pending');
+      expect(scene).toEqual(before);
+      session.reset();
+      expect(session.readState()).toEqual(initial);
+    } finally {
+      session.destroy();
+    }
   });
 });

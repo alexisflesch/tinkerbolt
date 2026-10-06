@@ -18,6 +18,7 @@ import type * as EmbeddedLevels from '../content/embedded-levels';
 import { levelDocumentSchema, type LevelDocument } from '../domain/level-document';
 
 import {
+  cardAction,
   testDraftRepository,
   testReceivedRepository,
   renderStorageReady,
@@ -234,9 +235,7 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     window.history.replaceState(null, '', '/my-levels');
     await renderStorageReady(<App />);
 
-    await storageAction(() =>
-      fireEvent.click(within(receivedCard()).getByRole('button', { name: 'Modifier' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(receivedCard(), 'Modifier')));
 
     await waitFor(() => {
       expect(window.location.pathname).toBe('/editor');
@@ -274,9 +273,7 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     window.history.replaceState(null, '', '/my-levels');
     await renderStorageReady(<App />);
 
-    await storageAction(() =>
-      fireEvent.click(within(receivedCard()).getByRole('button', { name: 'Modifier' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(receivedCard(), 'Modifier')));
 
     const creation = await storedCreation(openedDraftId());
     await waitFor(() => {
@@ -389,7 +386,9 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     await renderStorageReady(<App progressRepository={repository} />);
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
 
     await waitFor(() => {
@@ -415,7 +414,9 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     await renderStorageReady(<App progressRepository={repository} developmentMode />);
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
 
     await waitFor(() => {
@@ -446,7 +447,9 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     await renderStorageReady(<App progressRepository={repository} developmentMode />);
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
 
     await waitFor(() => {
@@ -463,10 +466,14 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     await renderStorageReady(<App progressRepository={repository} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Modifier le niveau 1' })).toBeEnabled();
+      expect(
+        cardAction(screen.getByRole('region', { name: 'Niveau 1' }), 'Modifier le niveau 1'),
+      ).toBeEnabled();
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Modifier le niveau 2' })).toBeDisabled();
+      expect(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ).toBeDisabled();
     });
   });
 
@@ -510,7 +517,9 @@ describe('modifier et remixer (M11, ADR 0015 § Points d’entrée)', () => {
     await renderStorageReady(<App progressRepository={repository} unlockAllLevels />);
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
 
     await waitFor(() => {

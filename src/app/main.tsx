@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { StartupErrorBoundary } from './StartupErrorBoundary';
 import '../ui/styles.css';
+import '../ui/AppHeader.css';
 
 const rootElement = document.getElementById('root');
 

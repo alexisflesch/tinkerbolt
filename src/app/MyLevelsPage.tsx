@@ -24,7 +24,7 @@ import { listReceivedLevels } from '../application/received/list-received-levels
 import { receiveLevel } from '../application/received/receive-level';
 import type { ReceivedLevel } from '../application/received/received-level-repository';
 import { embeddedLevels } from '../content/embedded-levels';
-import type { LevelDocument } from '../domain/level-document';
+import { hasCompleteGoal, isMachine, type LevelDocument } from '../domain/level-document';
 import { AppFrame } from '../ui/AppFrame';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
@@ -253,6 +253,8 @@ export function MyLevelsPage() {
     const { title } = creation.document.metadata;
     const locked = isLocked(id);
     const modified = modifiedOn(creation.updatedAt, today);
+    // « Jouable »: the workshop gives a puzzle (objects to place); the export still verifies it.
+    const isPlayable = puzzleFromWorkshop(creation.document).status === 'ok';
     const deleteAction = {
       label: 'Supprimer',
       icon: Trash2,
@@ -280,6 +282,7 @@ export function MyLevelsPage() {
                 },
               },
             })}
+        {...(!locked && isPlayable ? { badge: 'Jouable' } : {})}
         actions={
           locked
             ? [deleteAction]
@@ -287,7 +290,7 @@ export function MyLevelsPage() {
                 {
                   label: 'Jouer',
                   icon: Play,
-                  disabled: puzzleFromWorkshop(creation.document).status !== 'ok',
+                  disabled: !isPlayable,
                   onSelect: () => {
                     // U22 « Jouer le puzzle », opened straight away from the workshop.
                     void navigate(`/editor?draft=${encodeURIComponent(id)}`, {
@@ -332,7 +335,11 @@ export function MyLevelsPage() {
                 ? {}
                 : { objectCount: level.bestObjectCount }),
             }
-          : { assistiveStatus: 'Pas encore résolu' })}
+          : // ADR 0020: a machine without a complete goal cannot be solved, so it never says so.
+            hasCompleteGoal(level.document)
+            ? { assistiveStatus: 'Pas encore résolu' }
+            : {})}
+        {...(isMachine(level.document) ? { badge: 'Machine' } : {})}
         primary={{
           label: 'Jouer',
           icon: Play,
@@ -416,7 +423,7 @@ export function MyLevelsPage() {
             tone="go"
             aria-label="Nouveau niveau"
             onClick={() => {
-              void navigate('/editor');
+              void navigate('/editor?new');
             }}
           >
             <FilePlus2 size={18} aria-hidden="true" />

@@ -168,29 +168,59 @@ describe('atelier créateur de puzzles (U22)', () => {
     });
   });
 
-  it('ne propose pas de supprimer la balle rouge ni le panier de l’objectif', async () => {
-    // The red ball rests on the barrier: moved aside so a tap selects it alone.
-    await openMachine({
-      ...machine,
-      objects: machine.objects.map((object) =>
-        object.id === 'ball-red'
-          ? { ...object, transform: { ...object.transform, position: { x: 4, y: 3 } } }
-          : object,
-      ),
-    });
-    for (const [x, y, name] of [
-      [6.8, 4.9, 'Panier'],
-      [4, 3, 'Balle'],
-    ] as const) {
-      await tapWorldPoint(x, y);
-      const openProperties = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
-      if (openProperties !== null) await storageAction(() => fireEvent.click(openProperties));
+  it('propose à l’auteur de supprimer le panier, qui sort de l’objectif, et l’annulation le rétablit (ADR 0020)', async () => {
+    await openMachine();
+    await tapWorldPoint(6.8, 4.9);
+    const openProperties = screen.queryByRole('button', { name: 'Ouvrir les propriétés' });
+    if (openProperties !== null) await storageAction(() => fireEvent.click(openProperties));
 
-      const panel = screen.getByRole('toolbar', { name: `Réglages de ${name}` });
-      await waitFor(() => {
-        expect(within(panel).queryByRole('button', { name: /Supprimer/ })).toBeNull();
-      });
-    }
+    const panel = screen.getByRole('toolbar', { name: 'Réglages de Panier' });
+    await storageAction(() =>
+      fireEvent.click(within(panel).getByRole('button', { name: /Supprimer/ })),
+    );
+
+    await waitFor(async () => {
+      const draft = await storedDraft();
+      expect(draft?.objects.some(({ type }) => type === 'basket')).toBe(false);
+      expect(draft?.goal).toEqual({ type: 'basket', ballId: 'ball-red' });
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Voir l’objectif' })).toBeNull();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Panier' })).toHaveProperty('disabled', false);
+    });
+
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
+
+    await waitFor(async () => {
+      const draft = await storedDraft();
+      expect(draft?.goal).toEqual(machine.goal);
+      expect(draft?.objects.some(({ type }) => type === 'basket')).toBe(true);
+    });
+  });
+
+  it('pose le panier depuis le catalogue : il rejoint l’objectif, et la carte se désactive (ADR 0020)', async () => {
+    const { goal: ignoredGoal, ...rest } = machine;
+    void ignoredGoal;
+    await openMachine({
+      ...rest,
+      inventory: [],
+      objects: machine.objects.filter(({ type }) => type !== 'basket'),
+    });
+    expect(screen.queryByRole('button', { name: 'Voir l’objectif' })).toBeNull();
+
+    await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Panier' })));
+    await tapWorldPoint(6.8, 4.9);
+
+    await waitFor(async () => {
+      const draft = await storedDraft();
+      expect(draft?.goal?.basketId).toBeDefined();
+      expect(draft?.goal?.ballId).toBeUndefined();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Panier' })).toHaveProperty('disabled', true);
+    });
   });
 
   it('teste comme un joueur, objets à placer dans le tiroir, puis revient à l’atelier', async () => {
@@ -247,7 +277,7 @@ describe('atelier créateur de puzzles (U22)', () => {
     });
   });
 
-  it('explique que l’esquisse doit être calibrée avant son export', async () => {
+  it('désactive « Défi » avec sa raison tant que la machine ne se vérifie pas, et laisse « Machine » (ADR 0020)', async () => {
     await openMachine();
     await selectBeam();
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'À placer' })));
@@ -258,7 +288,9 @@ describe('atelier créateur de puzzles (U22)', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Exporter le niveau' });
     await waitFor(() => {
-      expect(within(dialog).getByRole('alert')).toBeVisible();
+      expect(within(dialog).getByRole('radio', { name: 'Défi' })).toBeDisabled();
     });
+    expect(within(dialog).getByRole('radio', { name: 'Machine' })).toBeChecked();
+    expect(within(dialog).getByText(/Pour obtenir un défi/u)).toBeVisible();
   });
 });

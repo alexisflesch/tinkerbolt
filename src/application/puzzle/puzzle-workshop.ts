@@ -1,4 +1,5 @@
 import {
+  hasCompleteGoal,
   levelDocumentSchema,
   rotationMode,
   type LevelDocument,
@@ -20,6 +21,7 @@ type SolutionWire = Exclude<NonNullable<LevelDocument['solution']>['wires'], und
 
 /** Why a workshop cannot become a puzzle, or a puzzle cannot be exported (U22, ADR 0013). */
 export type PuzzleRefusalReason =
+  | 'no-complete-goal'
   | 'no-object-to-place'
   | 'invalid-puzzle'
   | 'solution-not-playable'
@@ -68,6 +70,7 @@ interface EntryDraft {
  * is validated like any document before it is returned.
  */
 export const puzzleFromWorkshop = (workshop: LevelDocument): PuzzleConversion => {
+  if (!hasCompleteGoal(workshop)) return { status: 'refused', reason: 'no-complete-goal' };
   const toPlace = workshop.objects.filter(isToPlace);
   if (toPlace.length === 0) return { status: 'refused', reason: 'no-object-to-place' };
 
@@ -158,6 +161,34 @@ export const puzzleFromWorkshop = (workshop: LevelDocument): PuzzleConversion =>
   return validation.success
     ? { status: 'ok', puzzle: validation.data }
     : { status: 'refused', reason: 'invalid-puzzle' };
+};
+
+/**
+ * ADR 0020: a workshop shared as a machine to watch, with nothing to place.
+ * The reference solution, the challenge, the stock and the build zones go, and
+ * so does every « à placer » marking: the objects and wires stay where the
+ * author put them, with their permissions. The goal is kept as it is, so the
+ * red ball stays red. Valid for any valid workshop document.
+ */
+export const machineFromWorkshop = (workshop: LevelDocument): LevelDocument => {
+  const { solution: ignoredSolution, challenge: ignoredChallenge, ...document } = workshop;
+  void ignoredSolution;
+  void ignoredChallenge;
+  return levelDocumentSchema.parse({
+    ...document,
+    objects: workshop.objects.map(({ toPlace, ...object }) => {
+      void toPlace;
+      return object;
+    }),
+    wires: workshop.wires.map(({ id, sourceId, targetId, timerId }) => ({
+      id,
+      sourceId,
+      targetId,
+      ...(timerId === undefined ? {} : { timerId }),
+    })),
+    inventory: [],
+    buildZones: [],
+  });
 };
 
 /**

@@ -9,8 +9,12 @@ import { useDraftRepository } from './draft-repository-context';
 import { randomIdPart } from './random-id-part';
 
 interface Remix {
-  /** Saves the winning attempt (snapshot taken at launch) as a new creation and opens it. */
-  readonly remix: (attempt: ConstructionAttempt) => void;
+  /**
+   * Saves the winning attempt (snapshot taken at launch) as a new creation and
+   * opens it. Without an attempt (ADR 0020: a machine, nothing to solve) the
+   * level alone becomes the creation.
+   */
+  readonly remix: (attempt?: ConstructionAttempt) => void;
   /** Why the last remix could not be saved; `undefined` otherwise. */
   readonly error: string | undefined;
   readonly clearError: () => void;
@@ -37,7 +41,7 @@ export function useRemix(level: LevelDocument): Remix {
     remix: (attempt) => {
       void (async () => {
         const result = await saveCreationFromLevel(drafts, level, {
-          playerSolution: solutionFromAttempt(attempt),
+          ...(attempt === undefined ? {} : { playerSolution: solutionFromAttempt(attempt) }),
           createId: randomIdPart,
         });
         if (!active.current) return;

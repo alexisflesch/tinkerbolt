@@ -77,6 +77,7 @@ const placementCommand = (
           type: source.entry.type,
           props: source.entry.props,
           transform,
+          ...(source.entry.goalRole === undefined ? {} : { goalRole: source.entry.goalRole }),
         });
 
 /**

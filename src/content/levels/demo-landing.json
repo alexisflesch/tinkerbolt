@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 3,
+  "id": "demo-landing",
+  "metadata": {
+    "title": "Demo landing",
+    "author": "Bolt"
+  },
+  "objects": [
+    {
+      "id": "goal-ball",
+      "transform": {
+        "position": {
+          "x": -2.3254864992194415,
+          "y": 1.6350258778876756
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "ball",
+      "props": {}
+    },
+    {
+      "id": "goal-basket",
+      "transform": {
+        "position": {
+          "x": -1.3960367383187782,
+          "y": 3.2873806932160123
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "basket",
+      "props": {}
+    },
+    {
+      "id": "placement-1",
+      "transform": {
+        "position": {
+          "x": 1.1283948511129234,
+          "y": 7.223198221230613
+        },
+        "rotation": 4.71238898038469
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "piston",
+      "props": {}
+    },
+    {
+      "id": "placement-3",
+      "transform": {
+        "position": {
+          "x": 1.197243191657832,
+          "y": 3.9414380374222406
+        },
+        "rotation": 3.141592653589793
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "button",
+      "props": {}
+    },
+    {
+      "id": "placement-5",
+      "transform": {
+        "position": {
+          "x": -0.3747898203483704,
+          "y": 6.408495379409731
+        },
+        "rotation": 4.71238898038469
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "button",
+      "props": {}
+    },
+    {
+      "id": "placement-6",
+      "transform": {
+        "position": {
+          "x": 2.3102872666979914,
+          "y": 7.246148613564105
+        },
+        "rotation": 4.71238898038469
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "piston",
+      "props": {}
+    },
+    {
+      "id": "placement-7",
+      "transform": {
+        "position": {
+          "x": 2.2184907399517035,
+          "y": 3.9299633139980896
+        },
+        "rotation": 3.141592653589793
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "button",
+      "props": {}
+    },
+    {
+      "id": "placement-9",
+      "transform": {
+        "position": {
+          "x": 0.9906988003465713,
+          "y": 3.0693609481571436
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "timer",
+      "props": {
+        "delaySeconds": 1
+      }
+    },
+    {
+      "id": "placement-13",
+      "transform": {
+        "position": {
+          "x": -1.579632313105198,
+          "y": 6.385545932561429
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "box",
+      "props": {
+        "material": "metal"
+      }
+    },
+    {
+      "id": "placement-15",
+      "transform": {
+        "position": {
+          "x": -1.556682866256896,
+          "y": 5.100380690997275
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "electro-magnet",
+      "props": {
+        "state": "on"
+      }
+    },
+    {
+      "id": "placement-16",
+      "transform": {
+        "position": {
+          "x": -1.1665435304826812,
+          "y": 5.742963311779352
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "conveyor",
+      "props": {
+        "direction": "right"
+      }
+    },
+    {
+      "id": "placement-18",
+      "transform": {
+        "position": {
+          "x": 2.2988128584355705,
+          "y": 6.316698852663443
+        },
+        "rotation": 0
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "ball",
+      "props": {}
+    },
+    {
+      "id": "placement-19",
+      "transform": {
+        "position": {
+          "x": 0.5431855322898747,
+          "y": 5.9380339251516485
+        },
+        "rotation": 1.5707963267948966
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "beam",
+      "props": {
+        "size": "short"
+      }
+    },
+    {
+      "id": "placement-20",
+      "transform": {
+        "position": {
+          "x": 1.7136041699359792,
+          "y": 5.9609833719999505
+        },
+        "rotation": 1.5707963267948966
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "beam",
+      "props": {
+        "size": "short"
+      }
+    },
+    {
+      "id": "placement-21",
+      "transform": {
+        "position": {
+          "x": 2.9069716241069257,
+          "y": 5.9724577802623715
+        },
+        "rotation": 1.5707963267948966
+      },
+      "permissions": {
+        "move": false,
+        "rotate": false,
+        "remove": false
+      },
+      "type": "beam",
+      "props": {
+        "size": "short"
+      }
+    }
+  ],
+  "inventory": [
+    {
+      "id": "ball-a-placer",
+      "quantity": 1,
+      "permissions": {
+        "move": true,
+        "rotate": false,
+        "remove": true
+      },
+      "type": "ball",
+      "props": {}
+    },
+    {
+      "id": "seesaw-a-placer",
+      "quantity": 1,
+      "permissions": {
+        "move": true,
+        "rotate": true,
+        "remove": true
+      },
+      "type": "seesaw",
+      "props": {}
+    }
+  ],
+  "goal": {
+    "type": "basket",
+    "ballId": "goal-ball",
+    "basketId": "goal-basket"
+  },
+  "buildZones": [
+    {
+      "min": {
+        "x": -7,
+        "y": 0
+      },
+      "max": {
+        "x": 16,
+        "y": 9
+      }
+    }
+  ],
+  "scene": {
+    "min": {
+      "x": -7,
+      "y": 0
+    },
+    "max": {
+      "x": 16,
+      "y": 9
+    }
+  },
+  "wires": [
+    {
+      "id": "wire-1",
+      "sourceId": "placement-5",
+      "targetId": "placement-1"
+    },
+    {
+      "id": "wire-2",
+      "sourceId": "placement-3",
+      "timerId": "placement-9",
+      "targetId": "placement-6"
+    }
+  ],
+  "solution": {
+    "placements": [
+      {
+        "inventoryId": "ball-a-placer",
+        "transform": {
+          "position": {
+            "x": 1.1283948511129234,
+            "y": 6.247849566633347
+          },
+          "rotation": 0
+        }
+      },
+      {
+        "inventoryId": "seesaw-a-placer",
+        "transform": {
+          "position": {
+            "x": -2.887746371194191,
+            "y": 2.266133775245602
+          },
+          "rotation": 0
+        }
+      }
+    ]
+  }
+}

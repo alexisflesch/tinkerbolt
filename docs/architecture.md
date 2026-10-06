@@ -188,6 +188,16 @@ règles d'inventaire ou la sérialisation.
 Le jeu et l'éditeur utilisent la même scène. Les overlays et outils disponibles
 changent selon le mode et les permissions.
 
+Amendement accueil du 6 octobre 2026 : la démonstration est une projection
+éphémère d’un export v3 validé, avec sa solution posée puis sans objectif ni
+bascule. `MachineScene` contient objets, fils et scène, avec objectif facultatif ;
+le moteur et le rendu acceptent cette projection. Sans objectif, aucune victoire,
+sortie de balle ou limite de tentative n’est évaluée. Le format persistant v3
+reste inchangé : un niveau jouable conserve son objectif obligatoire. La démo
+n’appartient pas à la campagne et ne lit ni n’écrit de progression. Sa boucle
+applicative suspend l’animation hors onglet visible et libère les ressources à
+la navigation ; la préférence de réduction des animations affiche l’état initial.
+
 Le langage d'interaction commun, les conflits de gestes et les scénarios
 d'acceptation mobile sont décrits dans `docs/mobile-editor-interactions.md`.
 

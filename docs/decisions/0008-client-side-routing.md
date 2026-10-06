@@ -182,3 +182,9 @@ la PWA ne la liste plus. `/bench` et `/bench/play` restent, hors menu.
   au premier niveau non résolu : l’amendement du 1er octobre 2026 sur ce point
   est remplacé).
 - `/import` est servi hors ligne par le repli de la PWA (ADR 0012).
+
+## Amendement du 6 octobre 2026 — reprise de l’Atelier (ADR 0015)
+
+- `/editor` sans paramètre rouvre la dernière création modifiée en remplaçant
+  l’URL par `/editor?draft=<id>` ; sans création ouvrable, l’atelier libre.
+- `/editor?new` ouvre toujours un atelier libre vierge.

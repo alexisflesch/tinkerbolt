@@ -4,6 +4,7 @@ import {
   MAX_CATCH_UP_FIXED_STEPS_PER_FRAME,
   capElapsedSecondsForCatchUp,
   fixedStepSeconds,
+  isWatchedRunOver,
 } from './use-simulation-runner';
 
 describe('capElapsedSecondsForCatchUp', () => {
@@ -38,5 +39,22 @@ describe('capElapsedSecondsForCatchUp', () => {
       2 * fixedStepSeconds,
       10,
     );
+  });
+});
+
+describe('isWatchedRunOver (ADR 0020)', () => {
+  const complete = { goal: { type: 'basket', ballId: 'ball-1', basketId: 'basket-1' } } as const;
+
+  it('s’arrête au temps écoulé quand il n’y a pas d’objectif complet', () => {
+    expect(isWatchedRunOver({}, true)).toBe(true);
+    expect(isWatchedRunOver({ goal: { type: 'basket', ballId: 'ball-1' } }, true)).toBe(true);
+  });
+
+  it('continue tant que le temps n’est pas écoulé', () => {
+    expect(isWatchedRunOver({}, false)).toBe(false);
+  });
+
+  it('laisse un objectif complet à l’évaluation de la victoire et de l’échec', () => {
+    expect(isWatchedRunOver(complete, true)).toBe(false);
   });
 });

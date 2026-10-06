@@ -1,4 +1,8 @@
-import { levelDocumentSchema, type LevelDocument } from '../../domain/level-document';
+import {
+  hasCompleteGoal,
+  levelDocumentSchema,
+  type LevelDocument,
+} from '../../domain/level-document';
 
 export interface ContentLevelFile {
   readonly filePath: string;
@@ -60,6 +64,14 @@ export const validateContentCatalog = (
     }
 
     if (campaignLevelIds.has(parsed.data.id)) {
+      if (!hasCompleteGoal(parsed.data)) {
+        issues.push({
+          filePath: file.filePath,
+          kind: 'invalid-file',
+          message: 'goal : un niveau de campagne exige un objectif complet.',
+        });
+        continue;
+      }
       const unlockedPlacements = parsed.data.objects.flatMap((placement, index) =>
         placement.permissions.move || placement.permissions.rotate || placement.permissions.remove
           ? [index]

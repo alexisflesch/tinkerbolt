@@ -36,10 +36,14 @@ for (const viewport of [
       const response = await request.get(asset);
       expect(response.ok()).toBe(true);
       expect(response.headers()['content-type']).toContain('image/png');
-      const transform = await card.evaluate((element) => getComputedStyle(element).transform);
+      // Only the paper tilts, and hovering moves nothing: the content stays straight and sharp.
+      const paperTransform = (): Promise<string> =>
+        card.evaluate((element) => getComputedStyle(element, '::before').transform);
+      const transform = await paperTransform();
       expect(transform).not.toBe('none');
       await card.hover();
-      expect(await card.evaluate((element) => getComputedStyle(element).transform)).toBe(transform);
+      expect(await paperTransform()).toBe(transform);
+      expect(await card.evaluate((element) => getComputedStyle(element).transform)).toBe('none');
       const bounds = await card.boundingBox();
       if (bounds === null) throw new Error('Carte non mesurable.');
       expect(bounds.x).toBeGreaterThanOrEqual(0);

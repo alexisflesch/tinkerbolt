@@ -24,7 +24,8 @@ export function levelCardDecoration(id: string): {
     value = Math.imul(value ^ (value >>> 15), 0x735a2d97);
     return ((value ^ (value >>> 15)) >>> 0) / 4294967296;
   };
-  const tilt = (random() * 2 - 1) * 1.2;
+  // Only the paper tilts (`styles.css`): its straight content stays inside the margin.
+  const tilt = (random() * 2 - 1) * 0.8;
   const choice = random();
   const kind = choice < 0.5 ? 'tape' : choice < 0.75 ? 'pin1' : 'pin2';
   const left = kind === 'tape' ? 23 + random() * 47 : 8 + random() * 80;

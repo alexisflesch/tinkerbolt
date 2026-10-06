@@ -669,14 +669,15 @@ describe('coque TinkerBolt', () => {
       expect(screen.getByRole('region', { name: 'Objets disponibles' })).toBeVisible(),
     );
 
+    // ADR 0020: the goal's red ball and basket are catalogue cards, off once placed.
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /Balle rouge/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Balle rouge' })).toBeDisabled();
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Balle' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(within(drawer).queryByRole('button', { name: /Panier/ })).not.toBeInTheDocument();
+      expect(within(drawer).getByRole('button', { name: 'Panier' })).toBeDisabled();
     });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Poutre/ })).toBeVisible();

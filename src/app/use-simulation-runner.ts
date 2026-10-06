@@ -9,6 +9,7 @@ import {
   type EditorSession,
 } from '../application/editor-session/editor-session';
 import { resolveAttemptOutcome, type AttemptOutcome } from '../domain/attempt-failure-evaluator';
+import { hasCompleteGoal, type LevelDocument } from '../domain/level-document';
 import type { ConstructionAttempt } from '../application/construction';
 import {
   createSimulationSession,
@@ -40,6 +41,15 @@ export const capElapsedSecondsForCatchUp = (
   fixedStepSeconds: number,
   maxSteps: number = MAX_CATCH_UP_FIXED_STEPS_PER_FRAME,
 ): number => Math.min(elapsedSeconds, maxSteps * fixedStepSeconds);
+
+/**
+ * ADR 0020: without a complete goal a run is watched, never won or lost. It
+ * lasts until the time limit, then the board returns to its stopped state.
+ */
+export const isWatchedRunOver = (
+  document: Pick<LevelDocument, 'goal'>,
+  hasReachedTimeLimit: boolean,
+): boolean => !hasCompleteGoal(document) && hasReachedTimeLimit;
 
 interface SimulationLifecyclePointers {
   /** Clears the active placement tool. */
@@ -145,6 +155,16 @@ export function useSimulationRunner({
       physicalSession.advanceElapsedSeconds(elapsedSeconds);
       const nextState = physicalSession.readState();
       updateSimulationState(nextState);
+
+      const simulatedDocument = sessionRef.current.simulationSnapshot?.document;
+      if (simulatedDocument !== undefined && !hasCompleteGoal(simulatedDocument)) {
+        if (isWatchedRunOver(simulatedDocument, physicalSession.hasReachedTimeLimit())) {
+          restoreConstruction();
+          return;
+        }
+        scheduleSimulationFrame();
+        return;
+      }
 
       const outcome = resolveAttemptOutcome(
         physicalSession.readGoalEvaluation(),

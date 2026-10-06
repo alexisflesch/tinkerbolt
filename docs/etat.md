@@ -1,6 +1,6 @@
 # État du dépôt — TinkerBolt
 
-Mis à jour le 5 octobre 2026. Ce fichier décrit ce qui est effectivement livré,
+Mis à jour le 6 octobre 2026. Ce fichier décrit ce qui est effectivement livré,
 les limites connues et la dernière gate. Les décisions appartiennent aux ADR ;
 le travail restant est ordonné dans `feuille-de-route.md`. Les anciens journaux
 sont consultables dans l’historique Git, avant le nettoyage documentaire.
@@ -8,7 +8,7 @@ sont consultables dans l’historique Git, avant le nettoyage documentaire.
 ## Application livrée
 
 Le core desktop v1 est validé par l’auteur. La campagne contient **sept
-tutoriels** et l’Atelier ; huit documents sont validés par `content:check`.
+tutoriels** et l’Atelier ; neuf documents sont validés par `content:check` (dont la démo de l’accueil).
 Les sources auteur dans `levels/` et les niveaux embarqués dans
 `src/content/levels/` sont conservés, ainsi que les fixtures de régression.
 
@@ -27,6 +27,15 @@ Les sources auteur dans `levels/` et les niveaux embarqués dans
 - Atelier libre et création de puzzle : objets « À placer », essai joueur,
   export avec solution vérifiée, fichier et lien, solution cachée en jeu.
   Import, partage, duplication, réception et remix depuis « Mes niveaux ».
+  « Atelier » rouvre la dernière création modifiée ; nom et description se
+  saisissent dans l’atelier ; « Nouveau niveau » en commence une autre (ATL1,
+  validation visuelle attendue).
+- Niveaux « Machine » (ADR 0020, MACH1) : `goal` et ses identifiants sont
+  facultatifs en v3 (`hasCompleteGoal`, `isMachine`) ; le catalogue de l’atelier
+  pose et retire balle rouge et panier ; l’export propose « Défi » ou « Machine »,
+  une machine se reçoit, se regarde (sans objectif complet, ni victoire ni échec,
+  arrêt à la durée maximale) et se remixe depuis la barre. Validation visuelle
+  auteur attendue (boîte d’export, carte « Machine », bouton « Remixer »).
 - IndexedDB/Dexie pour progression, préférences, créations, niveaux reçus et
   constructions engagées. Reprise avant simulation, barrières avant navigation
   et reset atomique progression/constructions. Les erreurs de stockage ne
@@ -36,6 +45,9 @@ Les sources auteur dans `levels/` et les niveaux embarqués dans
 - Identité graphique de l’accueil, du plateau, des pages et Paramètres,
   Bolt à l’accueil/victoire, catalogue par catégories, poignées harmonisées,
   splash avec progression réelle, sept niveaux annoncés et cadrage utile.
+- Démo de l’accueil issue de `levels/demo-landing.json`, simulée sans panier,
+  balle rouge ni bascule, hors campagne et progression. Pause/reprise, suspension
+  hors onglet visible et réduction des animations ; validation visuelle auteur attendue.
 - PWA installable, précache des assets/campagne/polices et navigation hors
   ligne. Invitations d’installation et de mise à jour en phase sûre.
 - Version applicative dans `package.json` ; le panneau À propos affiche version
@@ -127,7 +139,16 @@ le push doit être lancé depuis une machine authentifiée auprès du dépôt Gi
 
 ## Dernière gate
 
-`pnpm check` après OUT4, 5 octobre 2026 : **vert** — contrôle
-version/changelog, typecheck, lint, formatage, Knip, huit documents,
-**1 411 tests Vitest dans 112 fichiers**, build (89 entrées, 5 639,27 Kio)
-et **103 E2E v1**. Log : `/tmp/tinkerbolt-release-auth-check.log`.
+Maintenance UI1 du 6 octobre : styles du composant `AppHeader` regroupés dans
+`src/ui/AppHeader.css`, sans marges propres à Paramètres. L’en-tête de Mes niveaux,
+Paramètres, accueil, campagne et Atelier utilise les mêmes règles de présentation.
+Quatre tests de navigateur comparent son alignement et le menu compact ; captures
+inspectées dans `tmp/top-bar/` aux deux formats desktop et aux formats compacts.
+Validation visuelle de l’auteur attendue ; aucun commit ni push pour ce lot.
+
+`pnpm check --config=/tmp/tinkerbolt-catalogue-preview.config.ts` après UI1,
+6 octobre 2026 : **vert** — contrôle version/changelog, typecheck, lint,
+formatage, Knip, huit documents, **1 425 tests Vitest dans 114 fichiers**,
+build et **116 E2E v1**. La configuration externe utilise Chromium 151 déjà
+installé ; aucun changement d’outillage dans le dépôt. Log :
+`/tmp/tinkerbolt-topbar-check.log`.

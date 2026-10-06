@@ -1,4 +1,12 @@
-import { act, render, screen, waitFor, type RenderResult } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+  type RenderResult,
+} from '@testing-library/react';
 import { awaitDraftWrites } from './draft-writes';
 import type { ReactElement } from 'react';
 import type { CampaignProgress } from '../application/progression';
@@ -79,4 +87,16 @@ export async function activeStoredRowCount(): Promise<number> {
   );
   db.close();
   return counts.reduce((sum, count) => sum + count, 0);
+}
+
+/**
+ * A level card's action by name: on the card itself, or in its « ⋯ » menu,
+ * which is opened first. Inside an `act` callback the opening is only rendered
+ * afterwards, so the menu's button is looked up even while still hidden.
+ */
+export function cardAction(card: HTMLElement, name: string): HTMLElement {
+  const direct = within(card).queryByRole('button', { name });
+  if (direct !== null) return direct;
+  fireEvent.click(within(card).getByRole('button', { name: 'Autres actions' }));
+  return within(card).getByRole('button', { name, hidden: true });
 }

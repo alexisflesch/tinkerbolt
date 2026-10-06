@@ -150,7 +150,7 @@ const tapWorldPoint = (x: number, y: number): void => {
 const placeBall = (x: number, y: number): void => {
   const toggle = screen.queryByRole('button', { name: 'Ouvrir le catalogue' });
   if (toggle !== null) fireEvent.click(toggle);
-  fireEvent.click(screen.getByRole('button', { name: /^Balle/u }));
+  fireEvent.click(screen.getByRole('button', { name: /^Balle$/u }));
   tapWorldPoint(x, y);
 };
 
@@ -414,14 +414,14 @@ describe('C2a — écrans et stockage asynchrone', () => {
           : ({ status: 'ok' } as const),
       );
     });
-    window.history.replaceState(null, '', '/editor');
+    window.history.replaceState(null, '', '/editor?new');
     mount({ drafts: draftRepository({ create, save }) });
     placeBall(8, 3);
     expect(create).toHaveBeenCalledTimes(1);
-    expect(window.location.search).toBe('');
+    expect(window.location.search).toBe('?new');
     placeBall(10, 3);
     expect(create).toHaveBeenCalledTimes(1);
-    expect(window.location.search).toBe('');
+    expect(window.location.search).toBe('?new');
     await act(async () => {
       pending.resolve({ status: 'ok' });
       await pending.promise;

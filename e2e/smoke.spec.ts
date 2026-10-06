@@ -73,9 +73,10 @@ test('ouvre l’atelier depuis le menu et expose les familles du catalogue', asy
     });
   }
 
-  await expect(page.getByRole('button', { name: /Balle rouge/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /Panier/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Balle' })).toBeVisible();
+  // ADR 0020: the red ball and the basket are catalogue cards, off once placed.
+  await expect(page.getByRole('button', { name: 'Balle rouge' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Panier', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Balle', exact: true })).toBeVisible();
   for (const objectName of [
     'Poutre',
     'Bascule',
@@ -157,7 +158,7 @@ test.describe('coque sur le petit viewport supporté', () => {
     const drawer = page.getByRole('region', { name: 'Objets disponibles' });
     await expect(drawer).toHaveCSS('position', 'relative');
     await expect(drawer.locator('.drawer-content')).toHaveCSS('overflow-x', 'auto');
-    await expect(drawer.getByRole('button', { name: 'Balle' })).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Balle', exact: true })).toBeVisible();
     await expect(page.locator('.drawer-scrim')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Zoom arrière' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Zoom avant' })).toHaveCount(0);
@@ -173,7 +174,7 @@ test.describe('coque sur le petit viewport supporté', () => {
       expect(drawerBounds.y + drawerBounds.height).toBeLessThanOrEqual(568);
     }
 
-    const ballCard = drawer.getByRole('button', { name: 'Balle' });
+    const ballCard = drawer.getByRole('button', { name: 'Balle', exact: true });
     await ballCard.tap();
     await expect(ballCard).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: 'Annuler le placement' })).toBeVisible();

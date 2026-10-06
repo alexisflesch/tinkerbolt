@@ -1,46 +1,34 @@
 import { restoreSolution } from '../application/puzzle/restore-solution';
 import type { LevelDocument } from '../domain/level-document';
+import type { MachineScene } from '../domain/machine-scene';
 
-const HOME_PREVIEW_VERTICAL_PAN = 0.75;
-
-/**
- * `level` with its reference solution already on the board, for the home
- * page's picture of a finished machine. The copy is never played nor edited:
- * the restored objects and wires lose their workshop « à placer » marker so
- * that the board draws them like the rest of the decor.
- */
-export const withSolutionPlaced = (level: LevelDocument): LevelDocument => {
-  const { solution, ...board } = level;
-  if (solution === undefined) return level;
-  const usedIds = new Set([...level.objects, ...level.wires].map(({ id }) => id));
-  const restored = restoreSolution(solution, level.inventory, usedIds);
-  // Without its solution, which would name the same wires twice, the copy stays a valid document.
-  // Pan this display-only copy down to show the full springboard with bottom margin.
+/** Place the author's machine, then remove the goal and seesaw requested in levels/README.md. */
+export const createHomeScene = (level: LevelDocument): MachineScene => {
+  const restored =
+    level.solution === undefined
+      ? { objects: [], wires: [] }
+      : restoreSolution(
+          level.solution,
+          level.inventory,
+          new Set([...level.objects, ...level.wires].map(({ id }) => id)),
+        );
+  const objects = [...level.objects, ...restored.objects]
+    .filter(
+      ({ id, type }) =>
+        id !== level.goal?.ballId && id !== level.goal?.basketId && type !== 'seesaw',
+    )
+    .map(({ toPlace, ...object }) => {
+      void toPlace;
+      return object;
+    });
+  const ids = new Set(objects.map(({ id }) => id));
   return {
-    ...board,
-    scene: {
-      ...level.scene,
-      min: { ...level.scene.min, y: level.scene.min.y + HOME_PREVIEW_VERTICAL_PAN },
-      max: { ...level.scene.max, y: level.scene.max.y + HOME_PREVIEW_VERTICAL_PAN },
-    },
-    buildZones: level.buildZones.map((zone) => ({
-      ...zone,
-      min: { ...zone.min, y: zone.min.y + HOME_PREVIEW_VERTICAL_PAN },
-      max: { ...zone.max, y: zone.max.y + HOME_PREVIEW_VERTICAL_PAN },
-    })),
-    objects: [
-      ...level.objects,
-      ...restored.objects.map(({ toPlace, ...object }) => {
-        void toPlace;
-        return object;
-      }),
-    ],
-    wires: [
-      ...level.wires,
-      ...restored.wires.map(({ toPlace, ...wire }) => {
-        void toPlace;
-        return wire;
-      }),
-    ],
+    objects,
+    wires: [...level.wires, ...restored.wires].filter(
+      ({ sourceId, targetId, timerId }) =>
+        ids.has(sourceId) && ids.has(targetId) && (timerId === undefined || ids.has(timerId)),
+    ),
+    // Display crop only: the source's wide authoring scene would dwarf this compact machine.
+    scene: { min: { x: -4.5, y: 2.5 }, max: { x: 5, y: 8 } },
   };
 };

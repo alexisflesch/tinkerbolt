@@ -244,6 +244,142 @@ la Forge, éventuel relais et hébergement. F1 le fixe avant F2.
 
 ## Journal des lots de maintenance
 
+### MACH1 — Exporter et jouer une « Machine » — 6 octobre 2026 — livré, validation visuelle attendue
+
+Demande directe de l’auteur ; contrat dans l’ADR 0020 (réécrit le 6 octobre :
+« Machine » veut dire « rien à poser », l’objectif reste possible).
+Implémentation déléguée à un sous-agent Sonnet, tests puis code, dans le même lot.
+
+Livré : `goal` et ses deux identifiants facultatifs en v3 (un `goal` sans
+identifiant est refusé ; v1 et v2 inchangés), `hasCompleteGoal`, `isMachine` et
+`completeGoalOf` dans le domaine, aucune migration. Catalogue d’auteur : « Balle
+rouge » et « Panier », un exemplaire au plus (carte désactivée une fois posé),
+posés et retirés par des commandes annulables qui tiennent `goal` à jour ;
+l’interdiction de supprimer la balle cible et le panier ne vaut plus que pour le
+joueur. Retirer l’un des deux vide aussi l’inventaire, la solution et le défi
+du document, qui exigent un objectif complet (l’inventaire d’un atelier n’est
+jamais montré, l’annulation le rend). Export : `machineFromWorkshop` (objectif
+conservé), boîte « Exporter » à deux types « Défi » / « Machine » (boutons radio
+natifs), « Défi » désactivé avec sa raison, dont une raison dédiée « objectif
+incomplet », et phrase d’aide. Réception par lien ou fichier inchangée ; carte
+« Machine » sur « Mes niveaux », sans « Pas encore résolu » quand l’objectif
+manque. Jeu : sans objectif complet, la simulation n’évalue ni victoire ni échec
+et s’arrête à la durée maximale (`hasReachedTimeLimit`, `isWatchedRunOver`) ;
+« Objectif » absent ; « Remixer » dans la barre d’une machine reçue (réutilise
+`useRemix`). La validation de contenu exige un objectif complet des niveaux de
+campagne. `MachineScene` n’est plus qu’un `Pick` du document.
+
+Préalable repris (CARTES1) : tests des cartes (`LevelCard`, `CampaignDraftEditing`,
+`EditAndRemix`), badge « Jouable » testé dans `MyLevelsPage`, E2E adaptés par
+l’aide `e2e/card-menu.ts` (`levels`, `my-levels`, `remix`, `beta-journey`,
+`campaign-draft`, `construction-persistence`). Seul changement de style : le
+papier des cartes 3n+1 n’avait pas de rotation, `transform: rotate(var(--card-tilt))`
+ajouté à `.level-card::before`, comme le dit déjà le commentaire du CSS.
+
+Gate : `pnpm check` verte jusqu’aux tests (119 fichiers, 1503 tests) et au build ;
+E2E critiques 113 verts, 5 rouges hors périmètre : `app-header.spec.ts` (3) et
+`catalogue.spec.ts` (2, champ de recherche du catalogue resté vide).
+Limites : le choix Défi/Machine au clavier repose sur les boutons radio natifs
+(non simulé en jsdom) ; la boîte d’export entre de justesse (5 px de marge) dans
+le viewport 390 × 508 clavier ouvert ; machine à objectif complet : le jeu
+reste celui d’aujourd’hui, avec « Remixer » en plus ; pas d’outil pour redésigner
+une balle déjà posée comme balle rouge, hors des cartes du catalogue.
+
+### CARTES1 — Cartes de niveau sans rangée de boutons — 6 octobre 2026 — validation visuelle attendue
+
+Demandes directes de l’auteur, sans maquette à sa demande. Netteté : seul le
+papier de la carte penche (±0,8° au plus), le contenu reste droit. Actions : la
+vignette est l’action principale (« Modifier » une création, « Jouer » un niveau
+reçu ou de campagne) ; toutes les autres sont dans un menu « ⋯ » à côté du
+titre (créations : Jouer, Partager, Dupliquer, Supprimer ; reçus : Modifier,
+Partager, Supprimer ; campagne : Modifier dans l’Atelier). Plus de bouton jaune
+ni de boutons-icônes. Une création qui donne un puzzle porte le badge
+« Jouable » sur sa vignette.
+
+Tests repris dans MACH1 : `LevelCard.test.tsx` (pastilles `quick` retirées,
+badge couvert), `CampaignDraftEditing.test.tsx` et `EditAndRemix.test.tsx`
+(« Modifier le niveau N » dans le menu, via `cardAction`), badge « Jouable » testé
+dans `MyLevelsPage.test.tsx`, E2E adaptés (`e2e/card-menu.ts`). Gate verte hors
+les cinq E2E hors périmètre. Validation visuelle de l’auteur toujours attendue.
+
+### UI3 — Machine animée de l’accueil — 6 octobre 2026 — validation visuelle attendue
+
+Demande directe de l’auteur : intégrer `levels/demo-landing.json` selon son README,
+avant la reprise de C7d. L’export auteur est conservé ; sa copie embarquée est
+validée en v3. La solution est posée, puis objectif et bascule sont retirés d’une
+projection éphémère. La campagne conserve sept tutoriels. Les deux balles bleues,
+pistons et branchements tournent dans le moteur existant, sans issue de partie.
+Le contrat de projection sans objectif est documenté dans `architecture.md` ;
+aucune migration ni dépendance ajoutée.
+
+Rouge : projection absente et ancien aperçu statique encore affiché. Vert :
+projection, source inchangée, deux pistons actifs pendant trente secondes,
+réinitialisation déterministe et aucun résultat. Cinq E2E accueil verts, dont
+animation/pause/reprise, réduction des animations et suspension hors onglet visible.
+Captures initiales et après quatre secondes inspectées à 1440 × 900 et 1280 × 720,
+dans `tmp/home-machine/` ; accord visuel de l’auteur attendu.
+
+Gate complète en cours ; aucun commit ni push, le workspace contient aussi
+d’autres lots en cours. Prochaine étape : résultat de la gate et recette visuelle auteur.
+
+### ATL1 — Reprise de l’Atelier et infos du niveau — 6 octobre 2026 — validation visuelle attendue
+
+Demande directe de l’auteur : `/editor` ouvrait toujours un atelier vierge, d’où
+des brouillons presque identiques tous nommés « Nouveau niveau », et le nom ne se
+saisissait qu’à l’export. Décision dans l’ADR 0015 (amendement du 6 octobre),
+ADR 0008 amendée ; maquettes acceptées par l’auteur avant code.
+
+Livré : `/editor` nu rouvre la dernière création modifiée (hors création d’un
+niveau de campagne verrouillé) en remplaçant l’URL ; `/editor?new` ouvre un
+atelier vierge, cible de « Nouveau niveau » dans Mes niveaux. Dans la barre de
+l’atelier, un crayon ouvre « Infos du niveau » (nom, description, rappel de
+l’enregistrement automatique) et une icône « Nouveau niveau » ouvre une
+confirmation qui propose de nommer le niveau encore sans titre ; elle est
+inactive tant que rien n’est enregistré. Titre par défaut « Sans titre »,
+atténué. Les créations existantes ne sont pas renommées.
+
+Tests rouges puis verts : `last-editable-creation.test.ts` (4) et
+`WorkshopResume.test.tsx` (7). Tests adaptés au nouveau contrat : titre par
+défaut, « Nouveau niveau » vers `?new`, insertion libre démarrée sur `?new` ;
+l’ancien test « le menu Atelier ouvre un atelier neuf » est remplacé par son
+contraire dans `WorkshopResume.test.tsx`.
+
+Gate : `pnpm check` non verte au moment du lot, pour une cause extérieure —
+`src/app/home-hero.test.ts` et `HomePage.test.tsx`, modifiés par le travail en
+cours sur la démo animée de l’accueil, cassent typecheck, lint et deux tests.
+Hors ces deux fichiers, Vitest est vert ; relancer la gate après ce travail.
+E2E v1 : 113 verts, 5 rouges sans lien avec le lot — `app-header.spec.ts`
+(3, test non suivi du lot UI1) et `catalogue.spec.ts` (2) : le champ de
+recherche du catalogue reste vide après saisie, défaut reproduit à l’identique
+sur le commit `0724e46` sans ce lot.
+Captures réelles à 1440 × 900, 1280 × 720 et 1024 × 700 dans
+`tmp/atelier-infos/reel-*.png`. Défaut connu : à 1280 px le titre est tronqué
+(« Sa… ») entre les deux groupes de boutons ; à arbitrer par l’auteur.
+
+### UI1 — Factoriser la barre de navigation — 6 octobre 2026 — validation visuelle attendue
+
+Demande directe de l’auteur : harmoniser les barres de `/settings` et
+`/my-levels` avec les autres pages. Le composant `AppHeader` était déjà partagé ;
+ses styles, auparavant dispersés dans `styles.css`, sont regroupés dans
+`src/ui/AppHeader.css`. Les marges et la colonne d’actions propres à Paramètres
+sont supprimées ; couleurs et police de l’en-tête sont explicites, indépendantes
+du contenu de la page. Aucune nouvelle dépendance.
+
+Test rouge sur le décalage du logo de Paramètres, puis quatre E2E verts comparant
+logo, barre, navigation, liens et menu entre accueil, campagne, Mes niveaux,
+Paramètres et Atelier (desktop). Captures inspectées dans `tmp/top-bar/` à
+1440 × 900, 1280 × 720, 844 × 390 et 390 × 844 ; accord visuel de l’auteur attendu.
+Chromium 151 utilisé via la configuration temporaire déjà disponible dans `/tmp/`
+pour éviter les défauts du Chromium 140 documentés dans VIS1.
+
+Gate complète verte : `pnpm check
+--config=/tmp/tinkerbolt-catalogue-preview.config.ts` (configuration externe,
+Chromium 151), **1 425 tests Vitest dans 114 fichiers**, huit documents, build et
+**116 E2E v1**. Log : `/tmp/tinkerbolt-topbar-check.log`. Un fichier de test
+préexistant mal formaté (`level-card-decoration.test.ts`) a reçu uniquement le
+formatage Prettier requis par la gate. Aucun commit ni push ; prochaine étape :
+validation visuelle de l’auteur. C7d reste séparé.
+
 ### VIS1 — Cartes, Mes niveaux et catalogue — validation visuelle en cours — 5 octobre 2026
 
 Cartes communes inclinées avec fixations stables par identifiant ; panneaux de

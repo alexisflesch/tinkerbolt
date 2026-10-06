@@ -4,8 +4,9 @@ import { levelCardDecoration } from './level-card-decoration';
 
 describe('fixations et inclinaison des feuilles de niveaux', () => {
   it('varie aussi les fixations sur une petite série de créations aux identifiants voisins', () => {
-    const kinds = Array.from({ length: 4 }, (_, index) =>
-      levelCardDecoration(`creation-capture-${String(index)}`).kind,
+    const kinds = Array.from(
+      { length: 4 },
+      (_, index) => levelCardDecoration(`creation-capture-${String(index)}`).kind,
     );
     expect(new Set(kinds).size).toBeGreaterThan(1);
   });
@@ -19,7 +20,7 @@ describe('fixations et inclinaison des feuilles de niveaux', () => {
     expect(tilts.some((tilt) => tilt < 0)).toBe(true);
     expect(tilts.some((tilt) => tilt > 0)).toBe(true);
     for (const { kind, style } of decorations) {
-      expect(Math.abs(Number.parseFloat(style['--card-tilt']))).toBeLessThanOrEqual(1.2);
+      expect(Math.abs(Number.parseFloat(style['--card-tilt']))).toBeLessThanOrEqual(0.8);
       const position = Number.parseFloat(style['--attachment-left']);
       expect(position).toBeGreaterThanOrEqual(kind === 'tape' ? 23 : 8);
       expect(position).toBeLessThanOrEqual(kind === 'tape' ? 70 : 88);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { embeddedWorkshopDocument } from '../content/embedded-levels';
-import type { LevelDocument } from '../domain/level-document';
+import { isMachine, type LevelDocument } from '../domain/level-document';
 import { decodeLevelFile } from '../infrastructure/level-file/level-file-codec';
 import { decodeShareFragment } from '../infrastructure/level-share/level-share-codec';
 
@@ -97,26 +97,63 @@ describe('export d’un niveau (U16, U22)', () => {
   });
 
   it('refuse un atelier sans objet à placer et invite à sélectionner ceux à poser (tutoiement, V7)', () => {
-    expect(prepareLevelExport(embeddedWorkshopDocument)).toEqual({
-      status: 'invalid',
-      reasons: [
+    expect(prepareLevelExport(embeddedWorkshopDocument)).toMatchObject({
+      status: 'machine-only',
+      refusal:
         'Aucun objet n’est à placer : sélectionne chaque objet que le joueur devra poser, puis choisis « À placer » dans ses propriétés.',
-      ],
     });
   });
 
-  it('refuse une machine complète qui ne gagne pas, ou un décor qui gagne seul', () => {
-    expect(prepareLevelExport(levelOneWorkshop, () => 'lost')).toEqual({
-      status: 'invalid',
-      reasons: [
-        'La machine complète ne gagne pas : avec tous les objets en place, la balle doit atteindre le panier.',
-      ],
+  it('offre la machine quand le défi est refusé, objectif conservé (ADR 0020)', () => {
+    const result = prepareLevelExport(embeddedWorkshopDocument);
+
+    if (result.status !== 'machine-only') throw new Error('Machine attendue.');
+    expect(isMachine(result.machine)).toBe(true);
+    expect(result.machine.goal).toEqual(embeddedWorkshopDocument.goal);
+    expect(result.machine.objects.map(({ id }) => id)).toEqual(
+      embeddedWorkshopDocument.objects.map(({ id }) => id),
+    );
+  });
+
+  it('offre les deux types quand le puzzle est vérifié, la machine sans objet à placer', () => {
+    const result = prepareLevelExport(levelOneWorkshop, successfulExportRun);
+
+    if (result.status !== 'ready') throw new Error('Puzzle attendu.');
+    expect(isMachine(result.machine)).toBe(true);
+    expect(result.machine.objects).toHaveLength(levelOneWorkshop.objects.length);
+    expect(result.machine.solution).toBeUndefined();
+    expect(result.puzzle.solution).toBeDefined();
+  });
+
+  it('refuse le défi sans objectif complet avec une raison dédiée, et offre la machine', () => {
+    const { goal: ignoredGoal, ...withoutGoal } = levelOneWorkshop;
+    void ignoredGoal;
+    const { inventory: ignoredInventory, ...rest } = withoutGoal;
+    void ignoredInventory;
+    const workshopWithoutGoal: LevelDocument = { ...rest, inventory: [] };
+
+    const result = prepareLevelExport(workshopWithoutGoal, () => {
+      throw new Error('La simulation ne doit pas être lancée.');
     });
-    expect(prepareLevelExport(levelOneWorkshop, () => 'won')).toEqual({
-      status: 'invalid',
-      reasons: [
+
+    expect(result).toMatchObject({
+      status: 'machine-only',
+      refusal: 'L’objectif est incomplet : pose la balle rouge et le panier depuis le catalogue.',
+    });
+    if (result.status !== 'machine-only') return;
+    expect(result.machine.goal).toBeUndefined();
+  });
+
+  it('refuse une machine complète qui ne gagne pas, ou un décor qui gagne seul', () => {
+    expect(prepareLevelExport(levelOneWorkshop, () => 'lost')).toMatchObject({
+      status: 'machine-only',
+      refusal:
+        'La machine complète ne gagne pas : avec tous les objets en place, la balle doit atteindre le panier.',
+    });
+    expect(prepareLevelExport(levelOneWorkshop, () => 'won')).toMatchObject({
+      status: 'machine-only',
+      refusal:
         'La balle atteint le panier sans les objets à placer : le joueur n’aurait rien à faire.',
-      ],
     });
   });
 
@@ -128,12 +165,24 @@ describe('export d’un niveau (U16, U22)', () => {
 
     const result = prepareLevelExport(depleted);
 
-    expect(result).toEqual({
-      status: 'invalid',
-      reasons: [
+    expect(result).toMatchObject({
+      status: 'machine-only',
+      refusal:
         'Aucun objet n’est à placer : sélectionne chaque objet que le joueur devra poser, puis choisis « À placer » dans ses propriétés.',
-      ],
     });
+  });
+
+  it('nomme une machine comme un puzzle : titre, identifiant, fichier relisible', () => {
+    const result = prepareLevelExport(embeddedWorkshopDocument);
+    if (result.status !== 'machine-only') throw new Error('Machine attendue.');
+
+    const named = nameExportedLevel(result.machine, 'Ma machine', 'Lili', 'Elle roule.');
+
+    if (named === null) throw new Error('Nom refusé.');
+    expect(named.puzzle.id).toBe('ma-machine');
+    expect(named.puzzle.metadata).toMatchObject({ title: 'Ma machine', author: 'Lili' });
+    expect(decodeLevelFile(named.fileText)).toEqual({ status: 'ok', document: named.puzzle });
+    expect(isMachine(named.puzzle)).toBe(true);
   });
 
   it('construit un lien /shared sous le chemin de base, décodable par le codec L23', async () => {

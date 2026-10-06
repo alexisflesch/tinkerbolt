@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CircleQuestionMark, Eye, Gamepad2, Upload } from 'lucide-react';
+import {
+  ArrowLeft,
+  CircleQuestionMark,
+  Eye,
+  FilePlus,
+  Gamepad2,
+  Pencil,
+  Shuffle,
+  Upload,
+} from 'lucide-react';
 
 import { projectWires } from '../presentation/control-wires';
 import { hitTestWires, wireRoutes } from '../presentation/wire-hit-test';
@@ -21,7 +30,7 @@ import {
 } from '../application/editor-session/editor-session';
 import type { EditorSession } from '../application/editor-session/editor-session';
 import { puzzleFromWorkshop } from '../application/puzzle/puzzle-workshop';
-import type { LevelDocument } from '../domain/level-document';
+import { hasCompleteGoal, type LevelDocument } from '../domain/level-document';
 import type { AttemptOutcome } from '../domain/attempt-failure-evaluator';
 import { AppFrame } from '../ui/AppFrame';
 import { frameLevel } from '../presentation/level-framing';
@@ -39,6 +48,7 @@ import { usePwaUpdateStatus } from './use-pwa-update-status';
 import { useBoardCamera } from './use-board-camera';
 import { placementSourceKey, useBoardPointers } from './use-board-pointers';
 import { LevelExportDialog } from './LevelExportDialog';
+import { LevelInfoDialog, NewLevelDialog } from './LevelInfoDialog';
 import { puzzleRefusalMessage } from './level-export';
 import { useWiringTool, wiringAnchor, wiringGuide } from './use-wiring-tool';
 import { useEditorSession } from './use-editor-session';
@@ -65,6 +75,8 @@ interface BoardShellProps {
   readonly campaignVictory?: CampaignVictory | null;
   /** « Remettre à zéro » goes back to it; `initialDocument` when absent. */
   readonly resetDocument?: LevelDocument;
+  /** ADR 0020, a received machine: « Remixer » in the bar opens it as a creation. */
+  readonly onRemix?: (() => void) | undefined;
   /** U22, workshop only: plays the puzzle the committed workshop gives. */
   readonly onPlayAsPlayer?: (puzzle: LevelDocument) => void;
   /**
@@ -86,6 +98,14 @@ interface BoardShellProps {
    * solution, the workshop's menu offers to reveal it.
    */
   readonly authorSource?: LevelDocument | undefined;
+  /**
+   * ADR 0015 (amendment of 6 Oct. 2026), workshop only: the pencil that names
+   * the creation and « Nouveau niveau ». `onNewLevel` is absent while the
+   * workshop has nothing stored to leave behind.
+   */
+  readonly levelInfo?:
+    | { readonly defaultTitle: string; readonly onNewLevel: (() => void) | undefined }
+    | undefined;
   /**
    * U8: offers level 1's hint. `onDone` is called once, when the player
    * closes it or first acts on the board, so it never comes back.
@@ -153,6 +173,7 @@ export function BoardShell({
   campaignVictory = null,
   resetDocument = initialDocument,
   onPlayAsPlayer,
+  onRemix,
   exit,
   notice,
   authorSource,
@@ -160,6 +181,7 @@ export function BoardShell({
   storageError,
   saveNotice,
   beforeLeave,
+  levelInfo,
 }: BoardShellProps) {
   const navigate = useNavigate();
   // A narrow portrait screen keeps the level's own actions in the header: its bar has no room.
@@ -295,6 +317,8 @@ export function BoardShell({
   const resetDialogCancelRef = useRef<HTMLButtonElement>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isRevealDialogOpen, setIsRevealDialogOpen] = useState(false);
+  const [isLevelInfoOpen, setIsLevelInfoOpen] = useState(false);
+  const [isNewLevelOpen, setIsNewLevelOpen] = useState(false);
   const revealDialogCancelRef = useRef<HTMLButtonElement>(null);
   const shownCampaignVictory =
     simulation.attemptOutcome?.outcome === 'won' ? campaignVictory : null;
@@ -492,6 +516,47 @@ export function BoardShell({
     })();
   };
 
+  const committedMetadata = session.history.state.document.metadata;
+  const openMyLevels = (): void => {
+    void (async () => {
+      await beforeLeave?.();
+      void navigate('/my-levels');
+    })();
+  };
+  const titleActions = levelInfo !== undefined && (
+    <>
+      <button
+        className="icon-button objective-button title-action"
+        type="button"
+        aria-label="Nom et description du niveau"
+        title="Nom et description du niveau"
+        aria-haspopup="dialog"
+        onClick={() => {
+          setIsLevelInfoOpen(true);
+        }}
+      >
+        <span className="objective-button-glyph" aria-hidden="true">
+          <Pencil size={18} />
+        </span>
+      </button>
+      <button
+        className="icon-button objective-button title-action"
+        type="button"
+        aria-label="Nouveau niveau"
+        title="Nouveau niveau"
+        aria-haspopup="dialog"
+        disabled={levelInfo.onNewLevel === undefined}
+        onClick={() => {
+          setIsNewLevelOpen(true);
+        }}
+      >
+        <span className="objective-button-glyph" aria-hidden="true">
+          <FilePlus size={18} />
+        </span>
+      </button>
+    </>
+  );
+
   const levelActions = (
     <>
       {revealSource !== undefined && (
@@ -526,6 +591,21 @@ export function BoardShell({
           </span>
           <span className="objective-button-label" aria-hidden="true">
             {exit.shortLabel ?? 'Atelier'}
+          </span>
+        </button>
+      )}
+      {onRemix !== undefined && (
+        <button
+          className="icon-button objective-button"
+          type="button"
+          aria-label="Remixer"
+          onClick={onRemix}
+        >
+          <span className="objective-button-glyph" aria-hidden="true">
+            <Shuffle size={18} />
+          </span>
+          <span className="objective-button-label" aria-hidden="true">
+            Remixer
           </span>
         </button>
       )}
@@ -568,22 +648,25 @@ export function BoardShell({
       {/* The objective is reachable on demand rather than permanently on
       screen (`mobile-editor-interactions.md` § Organisation de l'écran:
       « un accès à l'objectif »), so the board keeps all remaining space. */}
-      <button
-        className="icon-button objective-button"
-        type="button"
-        aria-label="Voir l’objectif"
-        aria-haspopup="dialog"
-        onClick={() => {
-          setIsObjectiveOpen(true);
-        }}
-      >
-        <span className="objective-button-glyph" aria-hidden="true">
-          <CircleQuestionMark size={18} />
-        </span>
-        <span className="objective-button-label" aria-hidden="true">
-          Objectif
-        </span>
-      </button>
+      {/* ADR 0020: without a complete goal there is nothing to reach, so no button. */}
+      {hasCompleteGoal(currentEditorAttempt(session).document) && (
+        <button
+          className="icon-button objective-button"
+          type="button"
+          aria-label="Voir l’objectif"
+          aria-haspopup="dialog"
+          onClick={() => {
+            setIsObjectiveOpen(true);
+          }}
+        >
+          <span className="objective-button-glyph" aria-hidden="true">
+            <CircleQuestionMark size={18} />
+          </span>
+          <span className="objective-button-label" aria-hidden="true">
+            Objectif
+          </span>
+        </button>
+      )}
     </>
   );
 
@@ -709,6 +792,12 @@ export function BoardShell({
           desk={{
             title: attribution === undefined ? title : `${title} · ${attribution}`,
             actions: isNarrowPortrait ? null : levelActions,
+            ...(levelInfo === undefined
+              ? {}
+              : {
+                  isTitleDefault: committedMetadata.title === levelInfo.defaultTitle,
+                  titleActions,
+                }),
             onZoomIn: boardCamera.zoomIn,
             onZoomOut: boardCamera.zoomOut,
             onFitToScene: boardCamera.fitCameraToCurrentScene,
@@ -830,6 +919,40 @@ export function BoardShell({
           campaign={shownCampaignVictory}
           onReplay={resetToInitialAttempt}
           onClose={victoryDialog.close}
+        />
+      )}
+      {isLevelInfoOpen && levelInfo !== undefined && (
+        <LevelInfoDialog
+          metadata={committedMetadata}
+          defaultTitle={levelInfo.defaultTitle}
+          onClose={() => {
+            setIsLevelInfoOpen(false);
+          }}
+          onApply={(commands) => {
+            setIsLevelInfoOpen(false);
+            for (const command of commands) executeCommand(command);
+          }}
+          onOpenMyLevels={openMyLevels}
+        />
+      )}
+      {isNewLevelOpen && levelInfo?.onNewLevel !== undefined && (
+        <NewLevelDialog
+          metadata={committedMetadata}
+          defaultTitle={levelInfo.defaultTitle}
+          onClose={() => {
+            setIsNewLevelOpen(false);
+          }}
+          onConfirm={(commands) => {
+            const { onNewLevel } = levelInfo;
+            setIsNewLevelOpen(false);
+            for (const command of commands) executeCommand(command);
+            // The name just typed is saved before the workshop is left.
+            void (async () => {
+              await beforeLeave?.();
+              onNewLevel?.();
+            })();
+          }}
+          onOpenMyLevels={openMyLevels}
         />
       )}
       {isExportOpen && (

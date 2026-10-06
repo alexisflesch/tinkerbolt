@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { campaignDraftId } from '../application/drafts/campaign-draft';
+import { lastEditableCreationId } from '../application/drafts/last-editable-creation';
 import { saveFreeCreation, startFreeCreation } from '../application/drafts/save-free-creation';
 import { puzzleFromWorkshop } from '../application/puzzle/puzzle-workshop';
 import { embeddedLevels, embeddedWorkshopDocument } from '../content/embedded-levels';
@@ -27,19 +28,28 @@ import { useCampaignProgress } from './use-campaign-progress';
 interface FreeSession {
   /** Changes when a new free workshop begins, so that it mounts afresh. */
   readonly generation: number;
+  /** Started on `?new`: a blank workshop, whatever is stored. */
+  readonly explicit: boolean;
   readonly adopted: { readonly draftId: string; readonly fromKey: string } | null;
 }
 
 /**
- * `/editor` (ADR 0008): the free-creation workshop, or with `?draft=<id>` an
- * author draft (U17). The id comes from the URL and is untrusted: the draft
- * repository validates it and decodes the stored document with the L22 codec.
+ * `/editor` (ADR 0008): with `?draft=<id>` an author draft (U17), with `?new`
+ * a blank free workshop, and bare the last modified creation (ADR 0015,
+ * amendment of 6 Oct. 2026). The id comes from the URL and is untrusted: the
+ * draft repository validates it and decodes the stored document with the L22
+ * codec.
  */
 export function EditorPage() {
   const [searchParams] = useSearchParams();
   const locationKey = useLocation().key;
   const draftId = searchParams.get('draft');
-  const [freeSession, setFreeSession] = useState<FreeSession>({ generation: 0, adopted: null });
+  const asksNew = draftId === null && searchParams.has('new');
+  const [freeSession, setFreeSession] = useState<FreeSession>({
+    generation: 0,
+    explicit: asksNew,
+    adopted: null,
+  });
   const { adopted } = freeSession;
 
   // The free workshop keeps the URL it created; going anywhere else, even
@@ -47,25 +57,73 @@ export function EditorPage() {
   const ownsUrl =
     adopted !== null &&
     (draftId === adopted.draftId || (draftId === null && locationKey === adopted.fromKey));
-  if (adopted !== null && !ownsUrl) {
-    setFreeSession({ generation: freeSession.generation + 1, adopted: null });
+  const endsFreeSession =
+    adopted === null ? draftId === null && freeSession.explicit !== asksNew : !ownsUrl;
+  if (endsFreeSession) {
+    setFreeSession({ generation: freeSession.generation + 1, explicit: asksNew, adopted: null });
   }
 
   if (draftId === null || ownsUrl) {
     return (
-      <FreeEditor
-        key={freeSession.generation}
-        onCreated={(createdId) => {
-          setFreeSession((current) => ({
-            ...current,
-            adopted: { draftId: createdId, fromKey: locationKey },
-          }));
-        }}
-      />
+      <LastCreationGate key={freeSession.generation} skip={freeSession.explicit}>
+        <FreeEditor
+          onCreated={(createdId) => {
+            setFreeSession((current) => ({
+              ...current,
+              adopted: { draftId: createdId, fromKey: locationKey },
+            }));
+          }}
+        />
+      </LastCreationGate>
     );
   }
 
   return <DraftEditor key={draftId} draftId={draftId} />;
+}
+
+/**
+ * ADR 0015 (amendment of 6 Oct. 2026): a bare `/editor` reopens the last
+ * modified creation, replacing the URL. Without one, the free workshop opens;
+ * the choice is made once, so the workshop is never left for the creation it
+ * stores afterwards.
+ */
+function LastCreationGate({
+  skip,
+  children,
+}: {
+  readonly skip: boolean;
+  readonly children: ReactNode;
+}) {
+  const drafts = useDraftRepository();
+  const { levels: levelProgress, loading } = useCampaignProgress();
+  const [choice, setChoice] = useState<'pending' | 'free' | { readonly draftId: string }>(
+    skip ? 'free' : 'pending',
+  );
+  const isPending = choice === 'pending';
+
+  useEffect(() => {
+    if (!isPending || loading) return undefined;
+    let active = true;
+    const isLocked = (creationId: string): boolean => {
+      const level = embeddedLevels.find((candidate) => campaignDraftId(candidate) === creationId);
+      return level !== undefined && levelProgress[level.id]?.unlocked !== true;
+    };
+    void (async () => {
+      await awaitDraftWrites(drafts);
+      return lastEditableCreationId(drafts, isLocked);
+    })()
+      .catch(() => null)
+      .then((draftId) => {
+        if (active) setChoice(draftId === null ? 'free' : { draftId });
+      });
+    return () => {
+      active = false;
+    };
+  }, [isPending, loading, drafts, levelProgress]);
+
+  if (choice === 'pending') return <StorageLoading title="Atelier" />;
+  if (choice === 'free') return children;
+  return <Navigate to={`/editor?draft=${encodeURIComponent(choice.draftId)}`} replace />;
 }
 
 /**
@@ -80,6 +138,7 @@ function FreeEditor({ onCreated }: { readonly onCreated: (draftId: string) => vo
   const queueKey = useRef(Symbol('free-editor'));
   const active = useRef(true);
   const [unsaved, setUnsaved] = useState(false);
+  const [isStored, setIsStored] = useState(false);
   useEffect(() => {
     active.current = true;
     return () => {
@@ -91,6 +150,7 @@ function FreeEditor({ onCreated }: { readonly onCreated: (draftId: string) => vo
       initialDocument={embeddedWorkshopDocument}
       unsaved={unsaved}
       beforeLeave={() => awaitDraftWrites(drafts)}
+      isStored={isStored}
       onDocumentCommitted={(document) => {
         void orderDraftWrite(drafts, queueKey.current, async () => {
           if (createdIdRef.current !== null)
@@ -99,6 +159,7 @@ function FreeEditor({ onCreated }: { readonly onCreated: (draftId: string) => vo
           if (started.status === 'ok') {
             createdIdRef.current = started.draftId;
             if (active.current) {
+              setIsStored(true);
               onCreated(started.draftId);
               void navigate(`/editor?draft=${encodeURIComponent(started.draftId)}`, {
                 replace: true,
@@ -118,6 +179,8 @@ interface WorkshopProps {
   readonly initialDocument: LevelDocument;
   readonly beforeLeave?: (() => Promise<void>) | undefined;
   readonly unsaved?: boolean;
+  /** The creation exists in storage: « Nouveau niveau » has something to leave behind. */
+  readonly isStored: boolean;
   readonly onDocumentCommitted?: (document: LevelDocument) => void;
   /** « Jouer » from « Mes niveaux » (M9): open on the puzzle when there is one. */
   readonly startPlaying?: boolean;
@@ -145,7 +208,9 @@ function Workshop({
   authorSource,
   beforeLeave,
   unsaved = false,
+  isStored,
 }: WorkshopProps) {
+  const navigate = useNavigate();
   const [workshopDocument, setWorkshopDocument] = useState(initialDocument);
   const [playtest, setPlaytest] = useState<LevelDocument | null>(() => {
     if (!startPlaying) return null;
@@ -186,6 +251,14 @@ function Workshop({
       onPlayAsPlayer={setPlaytest}
       authorSource={authorSource}
       beforeLeave={beforeLeave}
+      levelInfo={{
+        defaultTitle: embeddedWorkshopDocument.metadata.title,
+        onNewLevel: isStored
+          ? () => {
+              void navigate('/editor?new');
+            }
+          : undefined,
+      }}
       saveNotice={
         unsaved ? 'Dernières modifications non enregistrées sur cet appareil.' : undefined
       }
@@ -251,6 +324,7 @@ function StoredDraftEditor({ draftId }: { readonly draftId: string }) {
     <Workshop
       initialDocument={draft.document}
       unsaved={unsaved}
+      isStored
       beforeLeave={() => awaitDraftWrites(drafts)}
       startPlaying={asksToPlayPuzzle(navigationState)}
       authorSource={draft.source}

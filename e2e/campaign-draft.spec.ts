@@ -1,5 +1,6 @@
 import { progressFixture, seedIndexedDB, storedDraft } from './indexed-db-fixture';
 import { expect, test, type Page } from '@playwright/test';
+import { pressCardAction } from './card-menu';
 
 const tapWorldPoint = async (page: Page, x: number, y: number): Promise<void> => {
   const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
@@ -41,7 +42,11 @@ test('édite un tutoriel de campagne au toucher et conserve le brouillon', async
   await page.setViewportSize({ width: 390, height: 844 });
   await resolveLevelOne(page);
   await page.goto('/levels');
-  await page.getByRole('button', { name: 'Modifier le niveau 2' }).tap();
+  await pressCardAction(
+    page.getByRole('region', { name: 'Niveau 2', exact: true }),
+    'Modifier le niveau 2',
+    'tap',
+  );
   // V7b removes the calibration guide from campaign drafts.
   await expect(page).toHaveURL(/\/editor\?draft=tuto-2-brouillon$/u);
   await expect(page.getByRole('dialog', { name: 'Fiche de calibrage' })).toHaveCount(0);

@@ -124,7 +124,7 @@ describe('campagne embarquée', () => {
 
 describe('atelier libre embarqué (M14b)', () => {
   it('n’a pas de description : une création partie de zéro n’en hérite pas', () => {
-    expect(embeddedWorkshopDocument.metadata).toEqual({ title: 'Nouveau niveau' });
+    expect(embeddedWorkshopDocument.metadata).toEqual({ title: 'Sans titre' });
     expect('description' in embeddedWorkshopDocument.metadata).toBe(false);
   });
 });

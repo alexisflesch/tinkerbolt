@@ -165,7 +165,9 @@ export const projectPendingWire = (
  * the ports of its two objects, drawn behind the objects: it never goes
  * around them, and crossings mean nothing.
  */
-export const projectWires = (document: LevelDocument): readonly ProjectedWire[] => {
+export const projectWires = (
+  document: Pick<LevelDocument, 'objects' | 'wires'>,
+): readonly ProjectedWire[] => {
   const placementsById = new Map(document.objects.map((placement) => [placement.id, placement]));
   const circuitsBySource = new Map(
     controlCircuits(document.wires).map((circuit) => [circuit.sourceId, circuit]),

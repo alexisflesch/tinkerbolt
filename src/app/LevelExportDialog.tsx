@@ -22,17 +22,24 @@ import {
 } from './browser-share';
 import {
   createShareLink,
+  type LevelExportKind,
   nameExportedLevel,
   prepareLevelExport,
   pseudoRefusal,
 } from './level-export';
 import { usePreferencesRepository } from './preferences-repository-context';
 
+const MIME_TYPE = 'application/json';
+
 /** Mirrors the level title's length limit (`level-document.ts`). */
 const MAX_LEVEL_NAME_LENGTH = 160;
 
 /** Mirrors the level description's length limit (`level-document.ts`). */
 const MAX_LEVEL_DESCRIPTION_LENGTH = 2000;
+
+/** ADR 0020: how to get a « Défi » when it is refused. */
+const CHALLENGE_HELP =
+  'Pour obtenir un défi : pose la balle rouge et le panier, marque des objets « À placer », puis vérifie que la balle atteint le panier.';
 
 /** ADR 0016 § Licence: the exact notice shown when sharing. */
 const LICENCE_NOTICE =
@@ -81,6 +88,10 @@ export function LevelExportDialog({
 }: LevelExportDialogProps) {
   const preferences = usePreferencesRepository();
   const [preparation] = useState(() => prepareLevelExport(levelDocument, run));
+  // ADR 0020: the verified puzzle when there is one; otherwise only the machine.
+  const [kind, setKind] = useState<LevelExportKind>(
+    preparation.status === 'ready' ? 'puzzle' : 'machine',
+  );
   const [name, setName] = useState(levelDocument.metadata.title);
   // A level that already names its author keeps it; otherwise the last pseudonym is offered.
   const [pseudo, setPseudo] = useState(levelDocument.metadata.author ?? '');
@@ -100,11 +111,16 @@ export function LevelExportDialog({
   }, [remembered, levelDocument.metadata.author]);
   const [description, setDescription] = useState(levelDocument.metadata.description ?? '');
   const pseudoError = pseudoRefusal(pseudo);
-  const named =
-    preparation.status === 'ready'
-      ? nameExportedLevel(preparation.puzzle, name, pseudo, description)
-      : null;
+  const exported =
+    preparation.status === 'invalid'
+      ? null
+      : kind === 'puzzle' && preparation.status === 'ready'
+        ? preparation.puzzle
+        : preparation.machine;
+  const named = exported === null ? null : nameExportedLevel(exported, name, pseudo, description);
   const pseudoHelpId = useId();
+  const kindHelpId = useId();
+  const kindName = useId();
   const pseudoErrorId = useId();
   const [downloadedFileName, setDownloadedFileName] = useState<string | null>(null);
   const [share, setShare] = useState<ShareState>({ status: 'idle' });
@@ -165,10 +181,49 @@ export function LevelExportDialog({
         </div>
       ) : (
         <>
-          <p className="panel-note">
-            Puzzle vérifié. Envoie le fichier ou le lien : il ouvre le niveau avec les objets à
-            placer dans le tiroir du joueur.
-          </p>
+          <div
+            className="export-kind"
+            role="radiogroup"
+            aria-label="Type de niveau"
+            aria-describedby={kindHelpId}
+          >
+            <label className="export-kind-option">
+              <input
+                type="radio"
+                name={kindName}
+                checked={kind === 'puzzle'}
+                disabled={preparation.status !== 'ready'}
+                onChange={() => {
+                  setKind('puzzle');
+                }}
+              />
+              Défi
+            </label>
+            <label className="export-kind-option">
+              <input
+                type="radio"
+                name={kindName}
+                checked={kind === 'machine'}
+                onChange={() => {
+                  setKind('machine');
+                }}
+              />
+              Machine
+            </label>
+          </div>
+          <div id={kindHelpId}>
+            {kind === 'puzzle' ? (
+              <p className="panel-note">Puzzle vérifié : envoie le fichier ou le lien.</p>
+            ) : (
+              <p className="panel-note">Machine : le niveau se regarde, sans objet à placer.</p>
+            )}
+            {preparation.status === 'machine-only' && (
+              <>
+                <p className="panel-note export-kind-refusal">{preparation.refusal}</p>
+                <p className="panel-note">{CHALLENGE_HELP}</p>
+              </>
+            )}
+          </div>
           <label className="export-link">
             <span className="export-link-label">Nom du niveau</span>
             <input
@@ -226,7 +281,7 @@ export function LevelExportDialog({
             disabled={named === null || remembered === null}
             onClick={() => {
               if (named === null) return;
-              downloadFile(named.fileName, preparation.mimeType, named.fileText);
+              downloadFile(named.fileName, MIME_TYPE, named.fileText);
               void recordAttribution(named.puzzle).then(() => {
                 setDownloadedFileName(named.fileName);
               });

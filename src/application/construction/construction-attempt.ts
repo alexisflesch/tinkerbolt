@@ -24,6 +24,8 @@ export type ConstructionErrorCode =
   | 'remove-not-permitted'
   | 'outside-build-zone'
   | 'goal-object-protected'
+  | 'goal-role-taken'
+  | 'goal-role-mismatch'
   | 'inventory-provenance-missing'
   | 'inventory-source-not-found'
   | 'inventory-provenance-mismatch'
@@ -576,16 +578,40 @@ const returnWiresToInventory = (
   };
 };
 
+/**
+ * ADR 0020: the document without the goal's reference to `placementId`; the
+ * goal goes when it names nothing any more. A level that lost its complete
+ * goal cannot keep a stock (emptied by the caller), a reference solution or a
+ * challenge, which all need one: they go with it.
+ */
+const withoutGoalObject = (document: LevelDocument, placementId: string): LevelDocument => {
+  const { goal } = document;
+  if (goal?.ballId !== placementId && goal?.basketId !== placementId) return document;
+
+  const { ballId, basketId } = goal;
+  const rest: LevelDocument = { ...document };
+  delete rest.goal;
+  delete rest.solution;
+  delete rest.challenge;
+  const remaining = {
+    ...(ballId === undefined || ballId === placementId ? {} : { ballId }),
+    ...(basketId === undefined || basketId === placementId ? {} : { basketId }),
+  };
+  return {
+    ...rest,
+    ...(Object.keys(remaining).length === 0 ? {} : { goal: { type: 'basket', ...remaining } }),
+  };
+};
+
 export const removePlacement = (input: RemovePlacementInput): ConstructionCommand => ({
   execute: (state) => {
     const placement = state.document.objects.find(({ id }) => id === input.placementId);
     if (placement === undefined) return reject('placement-not-found');
-    if (
-      placement.id === state.document.goal.ballId ||
-      placement.id === state.document.goal.basketId
-    ) {
-      return reject('goal-object-protected');
-    }
+    // ADR 0020: only the author may take the goal's ball or basket off the board.
+    const isGoalObject =
+      placement.id === state.document.goal?.ballId ||
+      placement.id === state.document.goal?.basketId;
+    if (isGoalObject && input.context !== 'author') return reject('goal-object-protected');
     if (input.context === 'player' && !placement.permissions.remove) {
       return reject('remove-not-permitted');
     }
@@ -618,9 +644,9 @@ export const removePlacement = (input: RemovePlacementInput): ConstructionComman
       state.document.wires.filter(isCut).map(({ id }) => id),
     );
     const documentCandidate = {
-      ...state.document,
+      ...withoutGoalObject(state.document, placement.id),
       objects: state.document.objects.filter(({ id }) => id !== placement.id),
-      inventory: returned.inventory,
+      inventory: isGoalObject ? [] : returned.inventory,
       wires: state.document.wires.filter((wire) => !isCut(wire)),
     };
     const provenance = Object.fromEntries(

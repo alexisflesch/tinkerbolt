@@ -245,7 +245,7 @@ describe('renderLevelPreview — aperçu d’un document (V5)', () => {
   it('ne dessine ni sélection, ni poignée, ni contour pointillé, même pour un objet à placer', async () => {
     const level = tutorial(2);
     const first = level.objects.find(
-      ({ id }) => id !== level.goal.ballId && id !== level.goal.basketId,
+      ({ id }) => id !== level.goal?.ballId && id !== level.goal?.basketId,
     );
     if (first === undefined) throw new Error('Le tutoriel 3 devrait avoir un objet décoratif.');
     const workshop = levelDocumentSchema.parse({

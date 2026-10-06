@@ -309,3 +309,46 @@ supprimer sans secours une construction
 incompatible avec la source et avertir `source-changed`. Les créations et les
 reçus restent indépendants du reset. Aucun stockage Dexie ni reprise n’est
 déclaré livré par ce renvoi.
+
+## Amendement du 6 octobre 2026 — reprise de l’Atelier et infos du niveau
+
+Demande de l’auteur : après quelques essais, « Mes créations » contenait
+plusieurs brouillons quasi identiques, tous nommés « Nouveau niveau », parce que
+chaque retour sur `/editor` ouvrait un atelier vierge. Cet amendement remplace
+la première phrase de § Atelier libre ; le reste (rien n’est enregistré avant la
+première modification engagée, remplacement d’URL, nouvel essai après un échec
+d’écriture) est inchangé.
+
+### « Atelier » reprend, « Nouveau niveau » crée
+
+- `/editor` sans paramètre (menu, accueil) rouvre la **dernière création
+  modifiée** : la plus récente par `updatedAt`, en ignorant la création d’un
+  niveau de campagne verrouillé. L’URL est remplacée par `/editor?draft=<id>`.
+  Sans création ouvrable, ou si la liste ne peut pas être lue, l’atelier libre
+  s’ouvre comme avant. Aucune nouvelle donnée n’est persistée pour cela.
+- `/editor?new` ouvre toujours un atelier libre vierge. « Nouveau niveau » de
+  « Mes niveaux » y mène.
+- Dans l’atelier, un bouton-icône « Nouveau niveau » ouvre une boîte de
+  confirmation qui dit que le niveau en cours est enregistré et se retrouve dans
+  « Mes niveaux ». Si ce niveau porte encore le titre par défaut, la boîte
+  propose de saisir son nom et sa description avant de partir ; la saisie est
+  facultative. Confirmer attend les écritures en cours puis mène à
+  `/editor?new`. Sur un atelier libre encore vierge, le bouton est inactif.
+
+### Infos du niveau
+
+- Le titre par défaut de l’atelier libre devient « Sans titre », affiché
+  atténué tant qu’il n’a pas été changé. Le titre reste obligatoire dans le
+  schéma : un niveau jamais nommé s’exporte sous ce titre.
+- Un bouton crayon, à côté du titre, ouvre la boîte « Infos du niveau » : nom,
+  description facultative, et une phrase rappelant que le niveau est enregistré
+  automatiquement sur l’appareil et se retrouve dans « Mes niveaux ». Quand la
+  barre masque le titre faute de place, le crayon reste un bouton-icône.
+- Nom et description passent par les commandes d’auteur existantes
+  (`updateLevelTitle`, `updateLevelDescription`), annulables ; la boîte
+  d’export reste préremplie avec ces valeurs.
+- Il n’y a pas de bouton « Enregistrer » ni de mention permanente
+  « Enregistré » : seul l’échec d’écriture est signalé, comme aujourd’hui.
+
+Les créations déjà enregistrées sous « Nouveau niveau » ne sont ni renommées ni
+nettoyées. ADR 0008 amendée en conséquence.

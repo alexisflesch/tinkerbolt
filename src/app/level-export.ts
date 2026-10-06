@@ -1,4 +1,5 @@
 import {
+  machineFromWorkshop,
   verifyPuzzle,
   type PuzzleRefusalReason,
   type PuzzleRunner,
@@ -8,18 +9,33 @@ import { encodeLevelFile } from '../infrastructure/level-file/level-file-codec';
 import { encodeShareFragment } from '../infrastructure/level-share/level-share-codec';
 import { runLevelOutcome } from '../simulation/level-outcome';
 
+/** ADR 0020: the two kinds of level the export dialog offers. */
+export type LevelExportKind = 'puzzle' | 'machine';
+
 type LevelExportPreparation =
   | {
+      /** Both kinds are available. */
       readonly status: 'ready';
       /** The verified puzzle: the file holds it, and so does the share link. */
       readonly puzzle: LevelDocument;
+      /** The same workshop as a machine to watch, nothing to place. */
+      readonly machine: LevelDocument;
       readonly fileName: string;
       readonly mimeType: string;
       readonly fileText: string;
     }
+  | {
+      /** The puzzle is refused (`refusal`), the machine is still available. */
+      readonly status: 'machine-only';
+      readonly refusal: string;
+      readonly machine: LevelDocument;
+      readonly mimeType: string;
+    }
   | { readonly status: 'invalid'; readonly reasons: readonly string[] };
 
 const refusalMessages: Readonly<Record<PuzzleRefusalReason, string>> = {
+  'no-complete-goal':
+    'L’objectif est incomplet : pose la balle rouge et le panier depuis le catalogue.',
   'no-object-to-place':
     'Aucun objet n’est à placer : sélectionne chaque objet que le joueur devra poser, puis choisis « À placer » dans ses propriétés.',
   'invalid-puzzle': 'Le puzzle obtenu depuis l’atelier n’est pas un niveau valide.',
@@ -35,11 +51,14 @@ const refusalMessages: Readonly<Record<PuzzleRefusalReason, string>> = {
 export const puzzleRefusalMessage = (reason: PuzzleRefusalReason): string =>
   refusalMessages[reason];
 
+const MIME_TYPE = 'application/json';
+
 /**
- * U16, U22 (ADR 0013): validates the author's committed workshop, turns it
- * into a puzzle and checks it by deterministic simulation before any export.
- * The schema messages are already written for people, so they are shown
- * as-is, without duplicates. `run` is injected for tests.
+ * U16, U22 (ADR 0013, 0020): validates the author's committed workshop, turns
+ * it into a puzzle and checks it by deterministic simulation. A refused puzzle
+ * leaves the machine, available for any valid document. The schema messages
+ * are already written for people, so they are shown as-is, without duplicates.
+ * `run` is injected for tests.
  */
 export const prepareLevelExport = (
   document: LevelDocument,
@@ -53,16 +72,23 @@ export const prepareLevelExport = (
     };
   }
 
+  const machine = machineFromWorkshop(validation.data);
   const verification = verifyPuzzle(validation.data, run);
   if (verification.status === 'refused') {
-    return { status: 'invalid', reasons: [refusalMessages[verification.reason]] };
+    return {
+      status: 'machine-only',
+      refusal: refusalMessages[verification.reason],
+      machine,
+      mimeType: MIME_TYPE,
+    };
   }
 
   return {
     status: 'ready',
     puzzle: verification.puzzle,
+    machine,
     fileName: `${verification.puzzle.id}.json`,
-    mimeType: 'application/json',
+    mimeType: MIME_TYPE,
     fileText: encodeLevelFile(verification.puzzle),
   };
 };
@@ -125,7 +151,7 @@ const withDescription = (
 };
 
 /**
- * Names the verified puzzle before it leaves the workshop: the name becomes
+ * Names the verified puzzle (or the machine) before it leaves the workshop: the name becomes
  * its title, and its identifier and file name when it holds a letter or a
  * digit. A blank name is refused (`null`). When `pseudo` is given, it becomes
  * the author, edge spaces removed, or removes it when blank (M14); an invalid

@@ -126,6 +126,26 @@ describe('validateContentCatalog', () => {
     ]);
   });
 
+  it('exige un objectif complet d’un niveau de campagne, pas d’un autre niveau (ADR 0020)', () => {
+    const { goal: ignoredGoal, ...machine } = validLevel;
+    void ignoredGoal;
+
+    const campaign = validateContentCatalog(
+      [file('machine.json', machine)],
+      new Set(['first-drop']),
+    );
+    expect(campaign.valid).toBe(false);
+    expect(campaign.issues).toEqual([
+      {
+        filePath: 'machine.json',
+        kind: 'invalid-file',
+        message: 'goal : un niveau de campagne exige un objectif complet.',
+      },
+    ]);
+
+    expect(validateContentCatalog([file('machine.json', machine)]).valid).toBe(true);
+  });
+
   it('n’impose pas les permissions de campagne à un document hors campagne', () => {
     const workshop = {
       ...validLevel,

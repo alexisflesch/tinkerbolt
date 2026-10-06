@@ -147,10 +147,15 @@ test('désactive « Modifier » d’un niveau verrouillé et refuse son URL dire
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/levels');
+  const firstCard = page.getByRole('region', { name: 'Niveau 1', exact: true });
+  await firstCard.getByRole('button', { name: 'Autres actions' }).click();
+  await expect(firstCard.getByRole('button', { name: 'Modifier le niveau 1' })).toBeEnabled();
+  // The menu of a locked level has no enabled action: it stays closed.
   await expect(
-    page.getByRole('button', { name: 'Modifier le niveau 1', exact: true }),
-  ).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Modifier le niveau 2' })).toBeDisabled();
+    page
+      .getByRole('region', { name: 'Niveau 2', exact: true })
+      .getByRole('button', { name: 'Modifier le niveau 2', includeHidden: true }),
+  ).toBeDisabled();
   await captureFormats(page, 'levels-locked');
 
   await page.goto('/editor?draft=tuto-2-brouillon');

@@ -226,7 +226,7 @@ describe('LevelCard — carte de niveau commune (V6)', () => {
     expect(screen.getByText(/Une chute simple\./u)).toHaveClass('level-card-description');
   });
 
-  it('propose une action principale avec icône, libellé visible et nom accessible précis', () => {
+  it('fait de l’aperçu l’action principale, nommée précisément, seul bouton de la carte', () => {
     const onSelect = vi.fn();
     render(
       <LevelCard
@@ -234,14 +234,15 @@ describe('LevelCard — carte de niveau commune (V6)', () => {
         number={1}
         label="Niveau 1"
         primary={{ label: 'Jouer', name: 'Jouer le niveau 1', icon: Play, onSelect }}
-        actions={[]}
       />,
     );
 
-    const button = within(card('Niveau 1')).getByRole('button', { name: 'Jouer le niveau 1' });
-    expect(button).toHaveTextContent('Jouer');
-    expect(button).toHaveClass('btn-go');
-    expect(button.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    const region = card('Niveau 1');
+    const button = within(region).getByRole('button', { name: 'Jouer le niveau 1' });
+    expect(button).toHaveClass('level-card-thumb-action');
+    expect(button).toHaveAttribute('title', 'Jouer');
+    expect(within(region).getAllByRole('button')).toHaveLength(1);
+    expect(button.parentElement).toBe(region);
     fireEvent.click(button);
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
@@ -251,103 +252,122 @@ describe('LevelCard — carte de niveau commune (V6)', () => {
       <LevelCard
         document={tutorial(0)}
         primary={{ label: 'Modifier', icon: Pencil, onSelect: () => undefined }}
-        actions={[]}
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Modifier' })).toHaveTextContent('Modifier');
+    expect(screen.getByRole('button', { name: 'Modifier' })).toBeEnabled();
   });
 
-  it('range les actions secondaires en boutons-icônes nommés, avec une infobulle', () => {
-    const onShare = vi.fn();
+  it('n’a plus de rangée de boutons : ni bouton principal en toutes lettres, ni boutons-icônes', () => {
     render(
       <LevelCard
         document={tutorial(0)}
-        number={1}
-        label="Niveau 1"
+        label="A"
+        primary={{ label: 'Modifier', icon: Pencil, onSelect: () => undefined }}
+        actions={[{ label: 'Partager', icon: Share2, onSelect: () => undefined }]}
+      />,
+    );
+
+    expect(card('A').querySelector('.level-card-actions, .btn')).toBeNull();
+  });
+
+  it('pose le badge d’une création sur l’aperçu, sans palier', () => {
+    const { rerender } = render(
+      <LevelCard document={tutorial(0)} label="A" badge="Jouable" actions={[]} />,
+    );
+
+    const badge = within(card('A')).getByText('Jouable');
+    expect(badge).toHaveClass('level-card-tier');
+    expect(badge.closest('.level-card-thumb')).not.toBeNull();
+    expect(badge.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+
+    rerender(<LevelCard document={tutorial(0)} label="A" badge="Jouable" tier="elegant" />);
+    expect(within(card('A')).queryByText('Jouable')).toBeNull();
+    expect(within(card('A')).getByText('Élégant')).toBeVisible();
+
+    rerender(<LevelCard document={tutorial(0)} label="A" badge="Jouable" locked />);
+    expect(within(card('A')).queryByText('Jouable')).toBeNull();
+
+    rerender(<LevelCard document={tutorial(0)} label="A" />);
+    expect(card('A').querySelector('.level-card-tier')).toBeNull();
+  });
+
+  describe('menu des autres actions', () => {
+    const onShare = vi.fn();
+    const menuCard = (
+      <LevelCard
+        document={tutorial(0)}
+        label="A"
         actions={[
-          {
-            label: 'Modifier dans l’Atelier',
-            name: 'Modifier le niveau 1',
-            icon: Pencil,
-            onSelect: () => undefined,
-          },
           { label: 'Partager', icon: Share2, onSelect: onShare },
           { label: 'Dupliquer', icon: Copy, onSelect: () => undefined },
           { label: 'Supprimer', icon: Trash2, onSelect: () => undefined, danger: true },
         ]}
-      />,
+      />
     );
+    const toggle = (): HTMLElement =>
+      within(card('A')).getByRole('button', { name: 'Autres actions' });
 
-    const region = card('Niveau 1');
-    const edit = within(region).getByRole('button', { name: 'Modifier le niveau 1' });
-    expect(edit).toHaveAttribute('title', 'Modifier dans l’Atelier');
-    expect(edit).toHaveTextContent('');
-    expect(edit.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    it('reste fermé tant qu’on ne l’ouvre pas, puis liste les actions avec leur libellé', () => {
+      render(menuCard);
 
-    const share = within(region).getByRole('button', { name: 'Partager' });
-    expect(share).toHaveAttribute('title', 'Partager');
-    expect(share).toHaveTextContent('');
-    fireEvent.click(share);
-    expect(onShare).toHaveBeenCalledTimes(1);
+      expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+      expect(within(card('A')).queryByRole('button', { name: 'Partager' })).toBeNull();
 
-    expect(within(region).getByRole('button', { name: 'Supprimer' })).toHaveClass(
-      'level-card-tool-danger',
-    );
-    expect(within(region).getAllByRole('button')).toHaveLength(4);
+      fireEvent.click(toggle());
+
+      expect(toggle()).toHaveAttribute('aria-expanded', 'true');
+      expect(within(card('A')).getByRole('button', { name: 'Partager' })).toHaveTextContent(
+        'Partager',
+      );
+      expect(within(card('A')).getByRole('button', { name: 'Dupliquer' })).toBeVisible();
+      expect(within(card('A')).getByRole('button', { name: 'Supprimer' })).toHaveClass(
+        'level-card-menu-item-danger',
+      );
+    });
+
+    it('déclenche l’action choisie et se referme', () => {
+      render(menuCard);
+      fireEvent.click(toggle());
+
+      fireEvent.click(within(card('A')).getByRole('button', { name: 'Partager' }));
+
+      expect(onShare).toHaveBeenCalledTimes(1);
+      expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('se referme avec Échap ou d’un appui ailleurs', () => {
+      render(menuCard);
+
+      fireEvent.click(toggle());
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+      expect(toggle()).toHaveFocus();
+
+      fireEvent.click(toggle());
+      fireEvent.pointerDown(document.body);
+      expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('n’existe pas sans autre action', () => {
+      render(<LevelCard document={tutorial(0)} label="B" />);
+
+      expect(within(card('B')).queryByRole('button', { name: 'Autres actions' })).toBeNull();
+    });
   });
 
-  describe('aperçu cliquable', () => {
-    const hitArea = (region: HTMLElement): HTMLElement | null =>
-      region.querySelector<HTMLElement>('.level-card-thumb-action');
+  it('désactive l’aperçu quand l’action principale l’est, et n’en pose aucun sans elle', () => {
+    const { rerender } = render(<LevelCard document={tutorial(0)} label="A" />);
+    expect(card('A').querySelector('.level-card-thumb-action')).toBeNull();
 
-    it('déclenche l’action principale, sans second arrêt de tabulation ni second bouton nommé', () => {
-      const onSelect = vi.fn();
-      render(
-        <LevelCard
-          document={tutorial(0)}
-          label="Niveau 1"
-          primary={{ label: 'Jouer', name: 'Jouer le niveau 1', icon: Play, onSelect }}
-          actions={[]}
-        />,
-      );
-
-      const region = card('Niveau 1');
-      const area = hitArea(region);
-      if (area === null) throw new Error('Aperçu cliquable introuvable.');
-      expect(area).toHaveAttribute('tabindex', '-1');
-      expect(area).toHaveAttribute('aria-hidden', 'true');
-      expect(within(region).getAllByRole('button')).toHaveLength(1);
-
-      fireEvent.click(area);
-      expect(onSelect).toHaveBeenCalledTimes(1);
-    });
-
-    it('n’est pas cliquable sans action principale, ni quand elle est indisponible', () => {
-      const { rerender } = render(<LevelCard document={tutorial(0)} label="A" actions={[]} />);
-      expect(hitArea(card('A'))).toBeNull();
-
-      rerender(
-        <LevelCard
-          document={tutorial(0)}
-          label="A"
-          primary={{ label: 'Jouer', icon: Play, onSelect: vi.fn(), disabled: true }}
-          actions={[]}
-        />,
-      );
-      expect(hitArea(card('A'))).toBeNull();
-
-      rerender(
-        <LevelCard
-          document={tutorial(0)}
-          label="A"
-          locked
-          primary={{ label: 'Jouer', icon: Play, onSelect: vi.fn() }}
-          actions={[]}
-        />,
-      );
-      expect(hitArea(card('A'))).toBeNull();
-    });
+    rerender(
+      <LevelCard
+        document={tutorial(0)}
+        label="A"
+        primary={{ label: 'Jouer', icon: Play, onSelect: vi.fn(), disabled: true }}
+      />,
+    );
+    expect(within(card('A')).getByRole('button', { name: 'Jouer' })).toBeDisabled();
   });
 
   it('désactive une action qui l’est', () => {
@@ -356,12 +376,17 @@ describe('LevelCard — carte de niveau commune (V6)', () => {
       <LevelCard
         document={tutorial(0)}
         primary={{ label: 'Jouer', icon: Play, onSelect, disabled: true }}
-        actions={[{ label: 'Partager', icon: Share2, onSelect, disabled: true }]}
+        actions={[
+          { label: 'Partager', icon: Share2, onSelect, disabled: true },
+          { label: 'Dupliquer', icon: Copy, onSelect },
+        ]}
       />,
     );
 
     expect(screen.getByRole('button', { name: 'Jouer' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Autres actions' }));
     expect(screen.getByRole('button', { name: 'Partager' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Dupliquer' })).toBeEnabled();
   });
 
   describe('niveau verrouillé', () => {
@@ -401,6 +426,7 @@ describe('LevelCard — carte de niveau commune (V6)', () => {
       render(lockedCard({ availableWhenLocked: true }));
 
       const region = card('Niveau 2');
+      fireEvent.click(within(region).getByRole('button', { name: 'Autres actions' }));
       expect(within(region).getByRole('button', { name: 'Supprimer' })).toBeEnabled();
       expect(within(region).getByRole('button', { name: 'Modifier le niveau 2' })).toBeDisabled();
     });

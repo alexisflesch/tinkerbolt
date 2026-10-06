@@ -84,14 +84,56 @@ describe('ObjectDrawer', () => {
     expect(thumbnailOf(ball)).toMatch(/\/thumbs\/second-ball\.png$/);
   });
 
-  it('ne propose à l’auteur ni balle rouge ni panier : l’objectif est déjà posé, et unique', () => {
-    const drawer = renderDrawer('creation');
+  it('propose à l’auteur la balle rouge et le panier, une balle bleue en plus (ADR 0020)', () => {
+    const { goal: ignoredGoal, inventory: ignoredInventory, ...bare } = embeddedWorkshopDocument;
+    void ignoredGoal;
+    void ignoredInventory;
+    const drawer = renderDrawer('creation', undefined, {
+      ...bare,
+      objects: [],
+      inventory: [],
+    });
 
+    const red = within(drawer).getByRole('button', { name: 'Balle rouge' });
+    expect(thumbnailOf(red)).toMatch(/\/thumbs\/ball\.png$/);
+    expect(red).toHaveProperty('disabled', false);
+    expect(within(drawer).getByRole('button', { name: 'Panier' })).toHaveProperty(
+      'disabled',
+      false,
+    );
     const blue = within(drawer).getByRole('button', { name: 'Balle' });
     expect(thumbnailOf(blue)).toMatch(/\/thumbs\/second-ball\.png$/);
-    expect(within(drawer).queryByRole('button', { name: /Balle rouge/ })).toBeNull();
-    expect(within(drawer).queryByRole('button', { name: /Panier/ })).toBeNull();
-    expect(within(drawer).getByText('15 objets')).toBeTruthy();
+    expect(within(drawer).getByText('17 objets')).toBeTruthy();
+  });
+
+  it('désactive la balle rouge et le panier une fois posés : un exemplaire de chacun', () => {
+    const drawer = renderDrawer('creation');
+
+    expect(within(drawer).getByRole('button', { name: 'Balle rouge' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    expect(within(drawer).getByRole('button', { name: 'Panier' })).toHaveProperty('disabled', true);
+    expect(within(drawer).getByRole('button', { name: 'Balle' })).toHaveProperty('disabled', false);
+  });
+
+  it('ne désactive que l’entrée dont l’objet est déjà désigné', () => {
+    const goal = embeddedWorkshopDocument.goal;
+    if (goal?.ballId === undefined) throw new Error('Atelier sans balle.');
+    const drawer = renderDrawer('creation', undefined, {
+      ...embeddedWorkshopDocument,
+      inventory: [],
+      goal: { type: 'basket', ballId: goal.ballId },
+    });
+
+    expect(within(drawer).getByRole('button', { name: 'Balle rouge' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    expect(within(drawer).getByRole('button', { name: 'Panier' })).toHaveProperty(
+      'disabled',
+      false,
+    );
   });
 
   it('range le catalogue de l’auteur en quatre catégories, chaque carte avec sa description', () => {
@@ -107,7 +149,10 @@ describe('ObjectDrawer', () => {
           .map((card) => card.getAttribute('aria-label')),
       ]);
     expect(groups).toEqual([
-      ['Ce qui bouge', ['Balle', 'Masse', 'Caisse en bois', 'Caisse métallique']],
+      [
+        'Ce qui bouge',
+        ['Balle rouge', 'Balle', 'Panier', 'Masse', 'Caisse en bois', 'Caisse métallique'],
+      ],
       ['Structures', ['Poutre moyenne', 'Bascule', 'Tremplin']],
       ['Appareils', ['Convoyeur', 'Ventilateur', 'Électroaimant', 'Piston', 'Barrière']],
       ['Commandes', ['Levier', 'Bouton', 'Minuteur', 'Fil de commande']],
@@ -168,7 +213,7 @@ describe('ObjectDrawer', () => {
     expect(panel?.getAttribute('data-expanded')).toBe('false');
     expect(cards?.hasAttribute('inert')).toBe(true);
     expect(cards?.getAttribute('aria-hidden')).toBe('true');
-    expect(cards?.querySelectorAll('.object-card')).toHaveLength(4);
+    expect(cards?.querySelectorAll('.object-card')).toHaveLength(6);
     expect(within(group).queryByRole('button', { name: 'Balle' })).toBeNull();
     fireEvent.click(within(group).getByRole('button', { name: 'Ce qui bouge' }));
     expect(cards?.hasAttribute('inert')).toBe(false);
@@ -196,7 +241,7 @@ describe('ObjectDrawer', () => {
     expect(wire.querySelector('svg')).not.toBeNull();
     fireEvent.click(wire);
     expect(onSelectWire).toHaveBeenCalledOnce();
-    expect(within(drawer).getByText('15 objets')).toBeTruthy();
+    expect(within(drawer).getByText('17 objets')).toBeTruthy();
   });
 
   it('ne montre pas de carte Fil au joueur dont l’inventaire n’a pas de fil', () => {

@@ -5,6 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { decodeLevelFile } from '../src/infrastructure/level-file/level-file-codec';
 import { decodeShareFragment } from '../src/infrastructure/level-share/level-share-codec';
 import { navigateTo } from './app-navigation';
+import { pressCardAction } from './card-menu';
 
 const formats = [
   { width: 1440, height: 900 },
@@ -72,7 +73,10 @@ test('V8 : joue, crée, partage, reçoit et remixe un vrai puzzle depuis un appa
   await victory.getByRole('button', { name: 'Voir la scène' }).click();
   await menu(page, 'Campagne');
   await expect(page.getByRole('region', { name: 'Niveau 1', exact: true })).toContainText('Résolu');
-  await page.getByRole('button', { name: 'Modifier le niveau 1', exact: true }).click();
+  await pressCardAction(
+    page.getByRole('region', { name: 'Niveau 1', exact: true }),
+    'Modifier le niveau 1',
+  );
   await expect(page).toHaveURL(/\/editor\?draft=tuto-1-brouillon$/u);
   await expect(page.getByRole('region', { name: 'Plateau de jeu' })).toBeVisible();
   // A production campaign draft must open without the hidden solution.
@@ -85,7 +89,10 @@ test('V8 : joue, crée, partage, reçoit et remixe un vrai puzzle depuis un appa
   await expect(page.getByText(/^Aucun objet n’est à placer/u)).toContainText('propriétés');
   await page.getByRole('button', { name: 'Exporter le niveau' }).click();
   const dialog = page.getByRole('dialog', { name: 'Exporter le niveau' });
-  await expect(dialog.getByRole('alert')).toContainText('Aucun objet n’est à placer');
+  // ADR 0020: the challenge is refused, said why, and the machine stays on offer.
+  await expect(dialog.getByRole('radio', { name: 'Défi' })).toBeDisabled();
+  await expect(dialog.getByRole('radio', { name: 'Machine' })).toBeChecked();
+  await expect(dialog).toContainText('Aucun objet n’est à placer');
   await capture(page, 'refus-explique');
   await dialog.getByRole('button', { name: 'Fermer l’export' }).click();
   await chooseBeam(page, 'Poutre moyenne');

@@ -270,9 +270,9 @@ export function ObjectBar({ session, onExecuteCommand }: ObjectBarProps) {
   const isAuthor = session.mode === 'creation';
   const context = isAuthor ? 'author' : 'player';
   const { goal, wires } = attempt.document;
-  // The goal's ball and basket are unique: removing one would break the level.
-  const isGoalObject = placement.id === goal.ballId || placement.id === goal.basketId;
-  const canRemove = !isGoalObject && (isAuthor || placement.permissions.remove);
+  const isGoalObject = placement.id === goal?.ballId || placement.id === goal?.basketId;
+  // The goal's ball and basket are the author's to remove (ADR 0020), never the player's.
+  const canRemove = isAuthor || (!isGoalObject && placement.permissions.remove);
   const canMirror =
     isMirrorableFamily(placement.type) && (isAuthor || placement.permissions.rotate);
   const isWired = wires.some(

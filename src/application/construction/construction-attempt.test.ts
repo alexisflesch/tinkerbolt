@@ -595,15 +595,62 @@ describe('ConstructionAttempt', () => {
     expect(mismatchedProvenance.document.inventory[0]?.quantity).toBe(1);
   });
 
-  it('never removes a goal object, including for the author', () => {
+  it('never removes a goal object for the player', () => {
     const attempt = createConstructionAttempt(createLevel());
 
     expect(
-      removePlacement({ context: 'author', placementId: 'goal-ball' }).execute(attempt),
+      removePlacement({ context: 'player', placementId: 'goal-ball' }).execute(attempt),
     ).toEqual({ status: 'rejected', reason: 'goal-object-protected' });
     expect(
-      removePlacement({ context: 'author', placementId: 'goal-basket' }).execute(attempt),
+      removePlacement({ context: 'player', placementId: 'goal-basket' }).execute(attempt),
     ).toEqual({ status: 'rejected', reason: 'goal-object-protected' });
+  });
+
+  describe('l’auteur retire la balle rouge ou le panier (ADR 0020)', () => {
+    const withoutStock = (): ConstructionAttempt =>
+      createConstructionAttempt({ ...createLevel(), inventory: [] });
+    const removeAsAuthor = (attempt: ConstructionAttempt, placementId: string) => {
+      const outcome = removePlacement({ context: 'author', placementId }).execute(attempt);
+      if (outcome.status !== 'accepted') throw new Error(`refusé : ${outcome.reason}`);
+      return outcome.state;
+    };
+
+    it('retire la balle de l’objectif, qui garde le panier', () => {
+      const state = removeAsAuthor(withoutStock(), 'goal-ball');
+
+      expect(state.document.objects.some(({ id }) => id === 'goal-ball')).toBe(false);
+      expect(state.document.goal).toEqual({ type: 'basket', basketId: 'goal-basket' });
+    });
+
+    it('retire le panier de l’objectif, qui garde la balle', () => {
+      const state = removeAsAuthor(withoutStock(), 'goal-basket');
+
+      expect(state.document.goal).toEqual({ type: 'basket', ballId: 'goal-ball' });
+    });
+
+    it('retire l’objectif quand il ne désigne plus rien', () => {
+      const state = removeAsAuthor(removeAsAuthor(withoutStock(), 'goal-ball'), 'goal-basket');
+
+      expect('goal' in state.document).toBe(false);
+    });
+
+    it('vide l’inventaire et la solution, qui exigent un objectif complet', () => {
+      const state = removeAsAuthor(createConstructionAttempt(createLevel()), 'goal-ball');
+
+      expect(state.document.inventory).toEqual([]);
+      expect(state.document.solution).toBeUndefined();
+    });
+
+    it('s’annule par l’historique', () => {
+      const initial = createConstructionAttempt(createLevel());
+      const history = executeCommand(
+        createHistory(initial),
+        removePlacement({ context: 'author', placementId: 'goal-ball' }),
+      );
+      if (history.status !== 'accepted') throw new Error('refusé');
+
+      expect(undo(history.history).history.state).toEqual(initial);
+    });
   });
 
   it('allows the author to delete a fixed non-goal object without inventory provenance', () => {

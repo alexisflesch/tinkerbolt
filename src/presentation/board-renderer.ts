@@ -1,3 +1,4 @@
+import type { MachineScene } from '../domain/machine-scene';
 import {
   ballGeometry,
   boxGeometry,
@@ -363,7 +364,7 @@ const BEAM_LAYERS = {
  */
 const layerAssetsFor = (
   object: Placement,
-  goalBallId: string,
+  goalBallId: string | undefined,
   view: BoardSimulationView | undefined,
 ): readonly SpriteAsset[] => {
   if (object.type === 'ball') {
@@ -709,13 +710,13 @@ const appearanceOf = (id: string, ghost: BoardGhost | undefined): BoardAppearanc
  * is projecting, drawn translucent (C1).
  */
 export const projectLevel = (
-  document: LevelDocument,
+  document: MachineScene,
   simulation?: BoardSimulationView,
   ghost?: BoardGhost,
 ): BoardProjection => {
   const objects = document.objects
     .flatMap((object, documentIndex) =>
-      layerAssetsFor(object, document.goal.ballId, simulation).map((assetKey, layerIndex) => ({
+      layerAssetsFor(object, document.goal?.ballId, simulation).map((assetKey, layerIndex) => ({
         documentIndex,
         layerIndex,
         projected: {

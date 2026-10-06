@@ -86,12 +86,12 @@ export function ContextPanel({ session, onExecuteCommand, onClose }: ContextPane
   const canEdit = session.mode === 'creation';
   const { goal } = displayedAttempt.document;
   const isGoalObject =
-    selectedPlacement.id === goal.ballId || selectedPlacement.id === goal.basketId;
+    selectedPlacement.id === goal?.ballId || selectedPlacement.id === goal?.basketId;
   const canMove = canEdit || selectedPlacement.permissions.move;
   const canRotate = canEdit || selectedPlacement.permissions.rotate;
   const rotationStep = rotationMode(selectedPlacement.type) === 'fixed' ? null : ROTATION_STEP;
-  // The goal's ball and basket are unique: removing one would break the level.
-  const canRemove = !isGoalObject && (canEdit || selectedPlacement.permissions.remove);
+  // The goal's ball and basket are the author's to remove (ADR 0020), never the player's.
+  const canRemove = canEdit || (!isGoalObject && selectedPlacement.permissions.remove);
   const { wires } = displayedAttempt.document;
   const circuits = controlCircuits(wires);
   const circuitLabel = (sourceId: string): string =>

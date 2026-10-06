@@ -58,7 +58,7 @@ const tapWorldPoint = async (x: number, y: number): Promise<void> => {
 const placeBall = async (): Promise<void> => {
   const toggle = screen.queryByRole('button', { name: 'Ouvrir le catalogue' });
   if (toggle !== null) await storageAction(() => fireEvent.click(toggle));
-  await storageAction(() => fireEvent.click(screen.getByRole('button', { name: /^Balle/u })));
+  await storageAction(() => fireEvent.click(screen.getByRole('button', { name: /^Balle$/u })));
   await tapWorldPoint(8, 3);
 };
 
@@ -114,11 +114,11 @@ describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
     });
   });
 
-  it('affiche dans l’en-tête « Nouveau niveau · Atelier » pour un atelier neuf (V3, V7)', async () => {
+  it('affiche le titre « Sans titre » pour un atelier neuf (V3, V7, ADR 0015 amendée le 6 octobre 2026)', async () => {
     await renderStorageReady(<App draftRepository={draftStorage()} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Nouveau niveau', { selector: '.toolbar-title' })).toBeVisible();
+      expect(screen.getByText('Sans titre', { selector: '.toolbar-title' })).toBeVisible();
     });
     await waitFor(() => {
       expect(screen.getByRole('banner')).not.toHaveTextContent('Atelier de niveau');
@@ -149,7 +149,7 @@ describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
       expect(screen.getByText('Atelier de niveau', { selector: '.toolbar-title' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.getByRole('banner')).not.toHaveTextContent('Nouveau niveau');
+      expect(screen.queryByText('Sans titre', { selector: '.toolbar-title' })).toBeNull();
     });
     await waitFor(async () => {
       expect((await storedCreation(id)).document.metadata.title).toBe('Atelier de niveau');
@@ -192,7 +192,7 @@ describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
 
     const { metadata } = (await storedCreation(draftIdInUrl())).document;
     await waitFor(() => {
-      expect(metadata).toEqual({ title: 'Nouveau niveau' });
+      expect(metadata).toEqual({ title: 'Sans titre' });
     });
     await waitFor(() => {
       expect('description' in metadata).toBe(false);
@@ -271,47 +271,6 @@ describe('atelier libre enregistré (M13, ADR 0015 § Atelier libre)', () => {
     });
     await waitFor(async () => {
       expect(await storedIds()).toEqual([id]);
-    });
-    await waitFor(async () => {
-      expect(
-        (await storedCreation(id)).document.objects.filter(({ type }) => type === 'ball'),
-      ).toHaveLength(2);
-    });
-  });
-
-  it('« Atelier de construction » depuis une création enregistrée ouvre un atelier neuf, sans la modifier', async () => {
-    await renderStorageReady(<App />);
-    await placeBall();
-    const id = draftIdInUrl();
-
-    await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' })),
-    );
-    await storageAction(() =>
-      fireEvent.click(
-        within(screen.getByRole('navigation', { name: 'Menu principal' })).getByRole('button', {
-          name: 'Atelier',
-        }),
-      ),
-    );
-
-    await waitFor(() => {
-      expect(window.location.search).toBe('');
-    });
-    await waitFor(() => {
-      expect(blueBalls()).toBe('');
-    });
-    await waitFor(async () => {
-      expect(await storedIds()).toEqual([id]);
-    });
-
-    await placeBall();
-
-    await waitFor(() => {
-      expect(draftIdInUrl()).not.toBe(id);
-    });
-    await waitFor(async () => {
-      expect(await storedIds()).toHaveLength(2);
     });
     await waitFor(async () => {
       expect(

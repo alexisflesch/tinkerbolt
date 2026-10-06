@@ -5,7 +5,16 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 
 ## [Non publié]
 
-Aucun changement notable pour le moment.
+- L’accueil montre une machine animée avec deux balles et deux pistons ;
+  la démonstration peut être mise en pause et respecte la réduction des animations.
+
+- « Atelier » rouvre la dernière création modifiée au lieu d’un atelier vierge ;
+  « Nouveau niveau » en commence une autre, depuis Mes niveaux ou l’atelier.
+- Dans l’atelier, un crayon permet de nommer et décrire le niveau sans passer par
+  l’export. Un niveau jamais nommé s’appelle « Sans titre ».
+- Une machine sans objet à placer peut se partager : la boîte « Exporter » propose
+  « Défi » ou « Machine », celui qui la reçoit la regarde tourner (et la remixe),
+  et le catalogue de l’atelier pose ou retire la balle rouge et le panier.
 
 ## [0.2.0] - 2026-10-05
 

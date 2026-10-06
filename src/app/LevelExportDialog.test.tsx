@@ -212,11 +212,7 @@ describe('boîte « Exporter » de l’atelier (U16, U22)', () => {
     await renderDialog(levelOneWorkshop);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          'Puzzle vérifié. Envoie le fichier ou le lien : il ouvre le niveau avec les objets à placer dans le tiroir du joueur.',
-        ),
-      ).toBeVisible();
+      expect(screen.getByText('Puzzle vérifié : envoie le fichier ou le lien.')).toBeVisible();
     });
   });
 
@@ -317,7 +313,7 @@ describe('boîte « Exporter » de l’atelier (U16, U22)', () => {
     });
   });
 
-  it('offre « Exporter » dans l’atelier seulement, et refuse un atelier sans objet à placer', async () => {
+  it('offre « Exporter » dans l’atelier seulement, et ne propose que « Machine » sans objet à placer', async () => {
     // Le niveau 2 est verrouillé sans progression (U5b) ; `unlockAllLevels`
     // ouvre son mode joueur directement pour ce test, qui ne porte pas sur le
     // déblocage mais sur la présence d’« Exporter » selon le mode.
@@ -338,11 +334,114 @@ describe('boîte « Exporter » de l’atelier (U16, U22)', () => {
       expect(screen.getByRole('dialog', { name: 'Exporter le niveau' })).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('Aucun objet n’est à placer');
+      expect(screen.getByRole('radio', { name: 'Défi' })).toBeDisabled();
     });
+    expect(screen.getByRole('radio', { name: 'Machine' })).toBeChecked();
+    expect(screen.getByText(/Aucun objet n’est à placer/u)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Télécharger le fichier' })).toBeEnabled();
+  });
+});
+
+describe('types « Défi » et « Machine » de la boîte d’export (ADR 0020)', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/');
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  const exportHelp =
+    'Pour obtenir un défi : pose la balle rouge et le panier, marque des objets « À placer », puis vérifie que la balle atteint le panier.';
+
+  it('propose les deux types quand le défi est vérifié, « Défi » choisi d’abord', async () => {
+    await renderDialog(levelOneWorkshop);
+
+    const challenge = screen.getByRole('radio', { name: 'Défi' });
+    const machine = screen.getByRole('radio', { name: 'Machine' });
+    expect(challenge).toBeEnabled();
+    expect(challenge).toBeChecked();
+    expect(machine).toBeEnabled();
+    expect(machine).not.toBeChecked();
+    expect(screen.getByRole('radiogroup', { name: 'Type de niveau' })).toBeVisible();
+    expect(screen.queryByText(exportHelp)).toBeNull();
+  });
+
+  it('exporte la machine : plus d’objet à placer, objectif conservé, mêmes nom et licence', async () => {
+    const { downloadFile } = await renderDialog(levelOneWorkshop);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Machine' }));
+    expect(screen.getByRole('radio', { name: 'Machine' })).toBeChecked();
+    expect(screen.getByText(/se regarde/u)).toBeVisible();
+    expect(screen.getByText(licenceNotice)).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Télécharger le fichier' })).toBeNull();
+      expect(downloadFile).toHaveBeenCalledTimes(1);
     });
+    const exported = downloadedDocument(downloadFile);
+    expect(exported.inventory).toEqual([]);
+    expect(exported.solution).toBeUndefined();
+    expect(exported.objects.some(({ toPlace }) => toPlace === true)).toBe(false);
+    expect(exported.objects).toHaveLength(levelOneWorkshop.objects.length);
+    expect(exported.goal).toEqual(levelOneWorkshop.goal);
+    expect(exported.metadata.title).toBe(levelOneWorkshop.metadata.title);
+  });
+
+  it('copie le lien de la machine, relisible par le codec de lien', async () => {
+    const { writeClipboard } = await renderDialog(levelOneWorkshop);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Machine' }));
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de partage' })),
+    );
+
+    await waitFor(() => {
+      expect(writeClipboard).toHaveBeenCalledTimes(1);
+    });
+    const link = String(writeClipboard.mock.calls[0]?.[0]);
+    const decoded = await decodeShareFragment(new URL(link).hash);
+    if (decoded.status !== 'ok') throw new Error('Lien illisible.');
+    expect(decoded.document.inventory).toEqual([]);
+    expect(decoded.document.solution).toBeUndefined();
+  });
+
+  it('désactive « Défi » sans objet à placer, dit pourquoi et comment l’obtenir, et choisit « Machine »', async () => {
+    const { downloadFile } = await renderDialog({
+      ...levelOneWorkshop,
+      objects: levelOneWorkshop.objects.filter(({ toPlace }) => toPlace !== true),
+    });
+
+    expect(screen.getByRole('radio', { name: 'Défi' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Machine' })).toBeChecked();
+    expect(screen.getByText(/Aucun objet n’est à placer/u)).toBeVisible();
+    expect(screen.getByText(exportHelp)).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await waitFor(() => {
+      expect(downloadFile).toHaveBeenCalledTimes(1);
+    });
+    expect(downloadedDocument(downloadFile).inventory).toEqual([]);
+  });
+
+  it('dit que l’objectif manque, avec une raison dédiée, et exporte la machine sans objectif', async () => {
+    const { goal: ignoredGoal, ...withoutGoal } = levelOneWorkshop;
+    void ignoredGoal;
+    const { downloadFile } = await renderDialog({ ...withoutGoal, inventory: [] });
+
+    expect(screen.getByRole('radio', { name: 'Défi' })).toBeDisabled();
+    expect(screen.getByText(/L’objectif est incomplet/u)).toBeVisible();
+    await storageAction(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Télécharger le fichier' })),
+    );
+    await waitFor(() => {
+      expect(downloadFile).toHaveBeenCalledTimes(1);
+    });
+    expect(downloadedDocument(downloadFile).goal).toBeUndefined();
   });
 });
 

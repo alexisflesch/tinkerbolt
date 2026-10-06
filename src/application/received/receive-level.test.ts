@@ -115,6 +115,22 @@ describe('recevoir un niveau (M8, ADR 0015 § Réception)', () => {
     expect([...entries.values()]).toEqual([expected]);
   });
 
+  it('reçoit une machine sans objectif comme tout niveau : jamais résolue, sans record ni solution (ADR 0020)', async () => {
+    const { goal: ignoredGoal, ...rest } = puzzle;
+    void ignoredGoal;
+    const machine: LevelDocument = { ...rest, inventory: [] };
+    const { repository, entries } = createMemoryRepository();
+
+    const result = await receiveLevel(repository, machine, 'file', fingerprint, clock);
+
+    expect(result).toMatchObject({ status: 'received', isNew: true });
+    const [stored] = [...entries.values()];
+    expect(stored?.solved).toBe(false);
+    expect(stored?.bestObjectCount).toBeUndefined();
+    expect(stored?.playerSolution).toBeUndefined();
+    expect(stored?.document.goal).toBeUndefined();
+  });
+
   it('ne crée qu’une entrée pour le même document reçu deux fois, sans rien réinitialiser', async () => {
     const solved: ReceivedLevel = {
       id: 'recu-0123456789abcdef',

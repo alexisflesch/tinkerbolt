@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { levelDocumentSchema, type LevelDocument } from '../../domain/level-document';
+import {
+  hasCompleteGoal,
+  levelDocumentSchema,
+  type LevelDocument,
+} from '../../domain/level-document';
 import { creationFromLevel } from '../drafts/creation-from-level';
 import { createHistory, executeCommand, redo, undo, type Command } from '../history';
 import { workshopFromPuzzle } from '../puzzle/puzzle-workshop';
@@ -549,7 +553,7 @@ describe('commandes d’auteur', () => {
       });
       expect(state.document.inventory).toEqual([]);
       expect(state.provenance).toEqual({});
-      expect(state.document.goal.ballId).toBe('ball-1');
+      expect(state.document.goal?.ballId).toBe('ball-1');
     });
 
     it('agrandit la scène pour accueillir un objet posé au-delà de son bord', () => {
@@ -576,11 +580,84 @@ describe('commandes d’auteur', () => {
       expect(state.document.objects.some(({ id }) => id === 'mass-1')).toBe(true);
     });
 
-    it('ne fait jamais d’une balle ajoutée l’objectif : il est unique et déjà posé', () => {
+    it('ne fait pas d’une balle ajoutée sans rôle l’objectif, même s’il est déjà posé', () => {
       const state = accepted(addAuthoredPlacement(addedBall));
 
-      expect(state.document.goal.ballId).toBe('ball-1');
+      expect(state.document.goal?.ballId).toBe('ball-1');
       expect(state.document.objects.some(({ id }) => id === 'ball-3')).toBe(true);
+    });
+
+    describe('balle rouge et panier du catalogue (ADR 0020)', () => {
+      const { goal: ignoredGoal, ...withoutGoal } = createLevel({ inventory: [] });
+      void ignoredGoal;
+      const bare = (objects: LevelDocument['objects']): LevelDocument => ({
+        ...withoutGoal,
+        objects,
+      });
+      const ball = createLevel().objects[0];
+      const basket = createLevel().objects[1];
+      if (ball === undefined || basket === undefined) throw new Error('Fixture invalide.');
+      const redBall = { ...addedBall, placementId: 'red-ball', goalRole: 'ball' } as const;
+      const redBasket = {
+        ...addedMass,
+        placementId: 'the-basket',
+        type: 'basket',
+        props: {},
+        goalRole: 'basket',
+      } as const;
+
+      it('pose la balle rouge et la désigne dans l’objectif, un panier ensuite le complète', () => {
+        const withBall = accepted(addAuthoredPlacement(redBall), bare([]));
+        expect(withBall.document.goal).toEqual({ type: 'basket', ballId: 'red-ball' });
+        expect(withBall.document.objects.at(-1)).toMatchObject({ id: 'red-ball', type: 'ball' });
+
+        const complete = accepted(addAuthoredPlacement(redBasket), withBall.document);
+        expect(complete.document.goal).toEqual({
+          type: 'basket',
+          ballId: 'red-ball',
+          basketId: 'the-basket',
+        });
+        expect(hasCompleteGoal(complete.document)).toBe(true);
+      });
+
+      it('n’autorise qu’un exemplaire de chacun', () => {
+        const state = { document: createLevel(), provenance: {} };
+
+        expect(addAuthoredPlacement(redBall).execute(state)).toEqual({
+          status: 'rejected',
+          reason: 'goal-role-taken',
+        });
+        expect(addAuthoredPlacement(redBasket).execute(state)).toEqual({
+          status: 'rejected',
+          reason: 'goal-role-taken',
+        });
+      });
+
+      it('refuse une famille qui n’est pas celle du rôle', () => {
+        expect(
+          addAuthoredPlacement({ ...redBall, type: 'mass', props: { weight: '10kg' } }).execute({
+            document: bare([]),
+            provenance: {},
+          }),
+        ).toEqual({ status: 'rejected', reason: 'goal-role-mismatch' });
+      });
+
+      it('s’annule par l’historique, objectif compris', () => {
+        const history = executeCommand(
+          createHistory<ConstructionAttempt>({ document: bare([]), provenance: {} }),
+          addAuthoredPlacement(redBall),
+        );
+        if (history.status !== 'accepted') throw new Error('refusé');
+
+        const undone = undo(history.history);
+        expect(undone.history.state.document).toEqual(bare([]));
+        expect(redo(undone.history).history.state.document.goal?.ballId).toBe('red-ball');
+      });
+
+      it('laisse une balle ordinaire hors de l’objectif', () => {
+        const state = accepted(addAuthoredPlacement(addedBall), bare([ball]));
+        expect(state.document.goal).toBeUndefined();
+      });
     });
 
     it('refuse un identifiant pris et des propriétés invalides', () => {

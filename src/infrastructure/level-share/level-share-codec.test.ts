@@ -52,6 +52,16 @@ afterEach(() => {
 });
 
 describe('codec de partage par URL', () => {
+  it('fait l’aller-retour d’une machine sans objectif (ADR 0020)', async () => {
+    const { goal: ignoredGoal, ...rest } = selfSolvingLevel;
+    void ignoredGoal;
+    const machine = levelDocumentSchema.parse({ ...rest, inventory: [], solution: undefined });
+
+    const result = await decodeShareFragment(await encodeShareFragment(machine));
+
+    expect(result).toEqual({ status: 'ok', document: machine });
+  });
+
   it('encode et décode un niveau avec challenge et wires', async () => {
     const document = levelTwelve();
 

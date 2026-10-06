@@ -10,7 +10,12 @@ import type { ProgressRepository } from '../application/progression/progress-rep
 import { embeddedLevels } from '../content/embedded-levels';
 import type * as EmbeddedLevels from '../content/embedded-levels';
 
-import { testDraftRepository, renderStorageReady, storageAction } from './storage-test-fixture';
+import {
+  cardAction,
+  testDraftRepository,
+  renderStorageReady,
+  storageAction,
+} from './storage-test-fixture';
 import type { CampaignProgress } from '../application/progression';
 import { recordSuccess } from '../application/progression';
 import { App } from './App';
@@ -180,9 +185,7 @@ describe('éditer un niveau de la campagne (U17)', () => {
     await renderStorageReady(<App progressRepository={repository} developmentMode />);
 
     const card = screen.getByRole('region', { name: 'Niveau 2' });
-    await storageAction(() =>
-      fireEvent.click(within(card).getByRole('button', { name: 'Modifier le niveau 2' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card, 'Modifier le niveau 2')));
 
     await waitFor(() => {
       expect(window.location.pathname).toBe('/editor');
@@ -257,7 +260,9 @@ describe('éditer un niveau de la campagne (U17)', () => {
     await renderStorageReady(<App />);
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 1' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 1' }), 'Modifier le niveau 1'),
+      ),
     );
 
     const stored = await testDraftRepository(testClock).load(
@@ -283,7 +288,9 @@ describe('éditer un niveau de la campagne (U17)', () => {
     window.history.replaceState(null, '', '/levels');
     await renderStorageReady(<App progressRepository={levelTwoUnlocked()} />);
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
 
     // The shelf is locked for the player (`move: false`); the author context ignores it.
@@ -408,7 +415,9 @@ describe('éditer un niveau de la campagne (U17)', () => {
     await renderStorageReady(<App progressRepository={levelTwoUnlocked()} />);
 
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
 
     await waitFor(() => {
@@ -466,7 +475,9 @@ describe('éditer un niveau de la campagne (U17)', () => {
     window.history.replaceState(null, '', '/levels');
     await renderStorageReady(<App progressRepository={levelTwoUnlocked()} />);
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
     const before = await storedDraft();
 
@@ -491,7 +502,9 @@ describe('éditer un niveau de la campagne (U17)', () => {
     window.history.replaceState(null, '', '/levels');
     await renderStorageReady(<App progressRepository={levelTwoUnlocked()} />);
     await storageAction(() =>
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier le niveau 2' })),
+      fireEvent.click(
+        cardAction(screen.getByRole('region', { name: 'Niveau 2' }), 'Modifier le niveau 2'),
+      ),
     );
     await waitFor(() => {
       expect(ballColours().red).toBe('ball-red');
@@ -503,7 +516,7 @@ describe('éditer un niveau de la campagne (U17)', () => {
     await placeFromCatalogue('Balle', 3.0, 0.8);
     const blueBallId = (await storedDraft()).objects.at(-1)?.id ?? '';
     await waitFor(async () => {
-      expect((await storedDraft()).goal.ballId).toBe('ball-red');
+      expect((await storedDraft()).goal?.ballId).toBe('ball-red');
     });
     await waitFor(() => {
       expect(ballColours().red).toBe('ball-red');
@@ -517,7 +530,7 @@ describe('éditer un niveau de la campagne (U17)', () => {
 
     await storageAction(() => fireEvent.click(screen.getByRole('button', { name: 'Annuler' })));
     await waitFor(async () => {
-      expect((await storedDraft()).goal.ballId).toBe('ball-red');
+      expect((await storedDraft()).goal?.ballId).toBe('ball-red');
     });
     await waitFor(() => {
       expect(ballColours().red).toBe('ball-red');

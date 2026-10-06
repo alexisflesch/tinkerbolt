@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import type { ConstructionAttempt } from '../application/construction';
 import { countObjectsUsed } from '../application/progression';
 import { recordReceivedVictory } from '../application/received/record-received-victory';
-import type { LevelDocument } from '../domain/level-document';
+import { isMachine, type LevelDocument } from '../domain/level-document';
 import type { CampaignVictory } from '../ui/CampaignVictoryDialog';
 import { PlayerConstructionBoard } from './PlayerConstructionBoard';
 import { attributionLine } from './level-attribution';
@@ -61,7 +61,14 @@ export function ReceivedLevelBoard({
           },
           ...(remixError === undefined ? {} : { remixError }),
         };
-  const shownNotice = isVictoryNotKept ? victoryNotKeptNotice : notice;
+  // ADR 0020: a machine has nothing to place, so it can be remixed straight from the bar.
+  const canRemixFromBar = isMachine(document);
+  const shownNotice =
+    canRemixFromBar && remixError !== undefined
+      ? remixError
+      : isVictoryNotKept
+        ? victoryNotKeptNotice
+        : notice;
 
   return (
     <PlayerConstructionBoard
@@ -73,6 +80,14 @@ export function ReceivedLevelBoard({
       subtitle="Mes niveaux"
       attribution={attributionLine(document.metadata)}
       campaignVictory={victory}
+      {...(canRemixFromBar
+        ? {
+            onRemix: () => {
+              clearRemixError();
+              remix();
+            },
+          }
+        : {})}
       onSimulationLaunched={(attempt) => {
         launchedAttemptRef.current = attempt;
         setWonAttempt(null);

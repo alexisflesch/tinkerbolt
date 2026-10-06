@@ -16,6 +16,7 @@ import { levelFingerprint } from '../infrastructure/level-file/level-fingerprint
 import { decodeShareFragment } from '../infrastructure/level-share/level-share-codec';
 
 import {
+  cardAction,
   testDraftRepository,
   testReceivedRepository,
   renderStorageReady,
@@ -52,6 +53,36 @@ const puzzle = (id: string, metadata: LevelDocument['metadata']): LevelDocument 
     buildZones: [],
     scene: { min: { x: 0, y: 0 }, max: { x: 8, y: 5.5 } },
   });
+
+/** A real challenge: the player has a beam to place, and the reference solution wins. */
+const challenge = (id: string, metadata: LevelDocument['metadata']): LevelDocument =>
+  levelDocumentSchema.parse({
+    ...puzzle(id, metadata),
+    inventory: [
+      {
+        id: 'beam-stock',
+        type: 'beam',
+        props: { size: 'medium' },
+        quantity: 1,
+        permissions: { move: true, rotate: true, remove: true },
+      },
+    ],
+    solution: {
+      placements: [
+        {
+          inventoryId: 'beam-stock',
+          transform: { position: { x: 4, y: 3 }, rotation: 0 },
+        },
+      ],
+    },
+  });
+
+/** A machine without a goal: nothing to place, nothing to reach. */
+const machine = (id: string, metadata: LevelDocument['metadata']): LevelDocument => {
+  const { goal: ignoredGoal, ...rest } = puzzle(id, metadata);
+  void ignoredGoal;
+  return levelDocumentSchema.parse(rest);
+};
 
 /** A workshop: its beam is « à placer », so « Jouer » has a puzzle to open. */
 const workshop = (id: string, title: string): LevelDocument =>
@@ -373,7 +404,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     );
     await saveReceived(
       receivedLevel(
-        puzzle('recu-neuf', { title: 'Pas encore' }),
+        challenge('recu-neuf', { title: 'Pas encore' }),
         'd'.repeat(16),
         '2026-09-01T08:00:00.000Z',
       ),
@@ -408,6 +439,69 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await waitFor(() => {
       expect(within(card('Pas encore')).queryByText(/^par /u)).toBeNull();
     });
+  });
+
+  it('pose le badge « Machine » sur un niveau reçu où il n’y a rien à poser, sans dire « Pas encore résolu » s’il n’a pas d’objectif (ADR 0020)', async () => {
+    await saveReceived(
+      receivedLevel(
+        machine('recu-machine', { title: 'Ma machine' }),
+        'e'.repeat(16),
+        '2026-09-03T08:00:00.000Z',
+      ),
+    );
+    await saveReceived(
+      receivedLevel(
+        puzzle('recu-machine-objectif', { title: 'Machine avec objectif' }),
+        'f'.repeat(16),
+        '2026-09-02T08:00:00.000Z',
+      ),
+    );
+    await saveReceived(
+      receivedLevel(
+        challenge('recu-defi', { title: 'Un défi' }),
+        '1'.repeat(16),
+        '2026-09-01T08:00:00.000Z',
+      ),
+    );
+
+    await openMyLevels();
+
+    await waitFor(() => {
+      expect(within(card('Ma machine')).getByText('Machine')).toHaveClass('level-card-tier');
+    });
+    expect(within(card('Ma machine')).queryByText('Pas encore résolu')).toBeNull();
+    expect(card('Ma machine').querySelector('.level-card-tier')).toHaveTextContent('Machine');
+    // An objective can still be reached: the state stays for screen readers.
+    expect(within(card('Machine avec objectif')).getByText('Machine')).toBeVisible();
+    expect(
+      within(card('Machine avec objectif')).getByText('Pas encore résolu'),
+    ).toBeInTheDocument();
+    // A challenge is no machine.
+    expect(within(card('Un défi')).queryByText('Machine')).toBeNull();
+  });
+
+  it('ouvre une machine reçue avec « Modifier » comme une création, objectif conservé (ADR 0020)', async () => {
+    await saveReceived(
+      receivedLevel(
+        machine('recu-machine', { title: 'Ma machine', author: 'Lili' }),
+        'e'.repeat(16),
+        '2026-09-03T08:00:00.000Z',
+      ),
+    );
+    await openMyLevels();
+
+    await storageAction(() => fireEvent.click(cardAction(card('Ma machine'), 'Modifier')));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/editor');
+    });
+    const [draftId] = await storedDraftIds();
+    const stored = await testDraftRepository(() => new Date()).load(draftId ?? '');
+    if (stored.status !== 'ok' || stored.creation === null) throw new Error('Création absente.');
+    expect(stored.creation.document.goal).toBeUndefined();
+    expect(stored.creation.document.metadata.basedOn).toEqual([
+      { title: 'Ma machine', author: 'Lili' },
+    ]);
   });
 
   it('montre la description d’un niveau reçu en texte brut, et rien sans description (M14b)', async () => {
@@ -448,9 +542,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await saveCreation(workshop('creation-a-garder', 'À garder'), '2026-09-01T08:00:00.000Z');
     await openMyLevels();
 
-    await storageAction(() =>
-      fireEvent.click(within(card('À garder')).getByRole('button', { name: 'Supprimer' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('À garder'), 'Supprimer')));
     const dialog = screen.getByRole('dialog', { name: 'Confirmer la suppression' });
     await waitFor(() => {
       expect(within(dialog).getByText(/« À garder »/u)).toBeVisible();
@@ -469,9 +561,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
       expect(await storedDraftIds()).toEqual(['creation-a-garder']);
     });
 
-    await storageAction(() =>
-      fireEvent.click(within(card('À garder')).getByRole('button', { name: 'Supprimer' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('À garder'), 'Supprimer')));
     await storageAction(() =>
       fireEvent.click(
         within(screen.getByRole('dialog', { name: 'Confirmer la suppression' })).getByRole(
@@ -505,9 +595,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     );
     await openMyLevels();
 
-    await storageAction(() =>
-      fireEvent.click(within(card('À effacer')).getByRole('button', { name: 'Supprimer' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('À effacer'), 'Supprimer')));
     await storageAction(() =>
       fireEvent.click(
         within(screen.getByRole('dialog', { name: 'Confirmer la suppression' })).getByRole(
@@ -522,9 +610,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
       expect(await storedReceivedIds()).toEqual([id]);
     });
 
-    await storageAction(() =>
-      fireEvent.click(within(card('À effacer')).getByRole('button', { name: 'Supprimer' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('À effacer'), 'Supprimer')));
     await storageAction(() =>
       fireEvent.click(
         within(screen.getByRole('dialog', { name: 'Confirmer la suppression' })).getByRole(
@@ -667,9 +753,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await saveCreation(workshop('creation-1', 'Ma machine'), '2026-09-01T08:00:00.000Z', source);
     await openMyLevels();
 
-    await storageAction(() =>
-      fireEvent.click(within(card('Ma machine')).getByRole('button', { name: 'Dupliquer' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('Ma machine'), 'Dupliquer')));
 
     await waitFor(() => {
       expect(cardTitles('Mes créations')).toEqual(['Ma machine (copie)', 'Ma machine']);
@@ -691,9 +775,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await saveCreation(workshop('creation-1', 'Ma machine'), '2026-09-01T08:00:00.000Z');
     await openMyLevels();
 
-    await storageAction(() =>
-      fireEvent.click(within(card('Ma machine')).getByRole('button', { name: 'Modifier' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('Ma machine'), 'Modifier')));
 
     await waitFor(() => {
       expect(window.location.pathname).toBe('/editor');
@@ -710,9 +792,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await saveCreation(workshop('creation-1', 'Ma machine'), '2026-09-01T08:00:00.000Z');
     await openMyLevels();
 
-    await storageAction(() =>
-      fireEvent.click(within(card('Ma machine')).getByRole('button', { name: 'Jouer' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('Ma machine'), 'Jouer')));
 
     await waitFor(() => {
       expect(window.location.search).toBe('?draft=creation-1');
@@ -738,10 +818,22 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await openMyLevels();
 
     await waitFor(() => {
-      expect(
-        within(card('Sans objet à placer')).getByRole('button', { name: 'Jouer' }),
-      ).toBeDisabled();
+      expect(cardAction(card('Sans objet à placer'), 'Jouer')).toBeDisabled();
     });
+  });
+
+  it('pose le badge « Jouable » sur une création qui donne un puzzle, et sur elle seule', async () => {
+    await saveCreation(workshop('creation-jouable', 'Jouable ici'), '2026-09-02T08:00:00.000Z');
+    await saveCreation(
+      puzzle('creation-vide', { title: 'Sans objet à placer' }),
+      '2026-09-01T08:00:00.000Z',
+    );
+    await openMyLevels();
+
+    await waitFor(() => {
+      expect(within(card('Jouable ici')).getByText('Jouable')).toHaveClass('level-card-tier');
+    });
+    expect(within(card('Sans objet à placer')).queryByText('Jouable')).toBeNull();
   });
 
   it('ouvre la boîte d’export vérifiée pour partager une création', async () => {
@@ -751,16 +843,14 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     );
     await openMyLevels();
 
-    await storageAction(() =>
-      fireEvent.click(
-        within(card('Sans objet à placer')).getByRole('button', { name: 'Partager' }),
-      ),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('Sans objet à placer'), 'Partager')));
 
     const dialog = screen.getByRole('dialog', { name: 'Exporter le niveau' });
     await waitFor(() => {
-      expect(within(dialog).getByRole('alert')).toHaveTextContent('Aucun objet n’est à placer');
+      expect(within(dialog).getByRole('radio', { name: 'Défi' })).toBeDisabled();
     });
+    expect(within(dialog).getByRole('radio', { name: 'Machine' })).toBeChecked();
+    expect(within(dialog).getByText(/Aucun objet n’est à placer/u)).toBeVisible();
   });
 
   it('partage un niveau reçu tel quel, sans vérification', async () => {
@@ -768,9 +858,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await saveReceived(receivedLevel(document, '2'.repeat(16), '2026-09-01T08:00:00.000Z'));
     await openMyLevels();
 
-    await storageAction(() =>
-      fireEvent.click(within(card('À partager')).getByRole('button', { name: 'Partager' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('À partager'), 'Partager')));
     const dialog = screen.getByRole('dialog', { name: 'Partager le niveau' });
     await waitFor(() => {
       expect(within(dialog).getByRole('button', { name: 'Télécharger le fichier' })).toBeEnabled();
@@ -797,12 +885,10 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     );
     await openMyLevels();
     await waitFor(() => {
-      expect(within(card('À jouer')).getByRole('button', { name: 'Modifier' })).toBeEnabled();
+      expect(cardAction(card('À jouer'), 'Modifier')).toBeEnabled();
     });
 
-    await storageAction(() =>
-      fireEvent.click(within(card('À jouer')).getByRole('button', { name: 'Jouer' })),
-    );
+    await storageAction(() => fireEvent.click(cardAction(card('À jouer'), 'Jouer')));
 
     await waitFor(() => {
       expect(window.location.pathname).toBe(`/my-levels/recu-${'3'.repeat(16)}/play`);
@@ -853,24 +939,24 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
     await waitFor(() => {
       expect(within(lockedCard).getByText('Verrouillé')).toBeVisible();
     });
-    // V6: the buttons are icons, named by `aria-label` (they had a visible label).
+    // Neither the preview nor a sticker acts: the menu alone remains, with « Supprimer » only.
     await waitFor(() => {
       expect(
         within(lockedCard)
-          .getAllByRole('button')
-          .map((button) => button.getAttribute('aria-label')),
-      ).toEqual(['Supprimer']);
+          .getAllByRole('button', { hidden: true })
+          .map((button) => button.getAttribute('aria-label') ?? button.textContent),
+      ).toEqual(['Autres actions', 'Supprimer']);
     });
     const openCard = card(`${first.metadata.title} (remix)`);
     await waitFor(() => {
       expect(within(openCard).queryByText('Verrouillé')).toBeNull();
     });
     await waitFor(() => {
-      expect(within(openCard).getByRole('button', { name: 'Modifier' })).toBeEnabled();
+      expect(cardAction(openCard, 'Modifier')).toBeEnabled();
     });
   });
 
-  it('ouvre l’atelier libre avec « Nouveau niveau »', async () => {
+  it('ouvre un atelier libre vierge (`/editor?new`) avec « Nouveau niveau »', async () => {
     await openMyLevels();
 
     await storageAction(() =>
@@ -881,7 +967,7 @@ describe('page « Mes niveaux » (M9, ADR 0015 § Page « Mes niveaux »)', () =
       expect(window.location.pathname).toBe('/editor');
     });
     await waitFor(() => {
-      expect(window.location.search).toBe('');
+      expect(window.location.search).toBe('?new');
     });
   });
 });

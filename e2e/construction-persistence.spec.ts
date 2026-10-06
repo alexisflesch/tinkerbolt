@@ -6,6 +6,7 @@ import { decodeLevelFile } from '../src/infrastructure/level-file/level-file-cod
 import { decodePlayerConstructionRow } from '../src/infrastructure/player-construction/player-construction-codec';
 import { browserRows, storedDraft } from './indexed-db-fixture';
 import { navigateTo } from './app-navigation';
+import { pressCardAction } from './card-menu';
 
 const screenPoint = async (page: Page, x: number, y: number) => {
   const canvas = page.getByRole('img', { name: 'Rendu du plateau' });
@@ -102,7 +103,10 @@ test('C7b : Atelier conserve déplacement, rôle joueur et métadonnées engagé
   const point = decoded.document.solution?.placements[0]?.transform.position;
   if (point === undefined) throw new Error('Solution absente');
   await page.goto('/levels');
-  await page.getByRole('button', { name: 'Modifier le niveau 1', exact: true }).click();
+  await pressCardAction(
+    page.getByRole('region', { name: 'Niveau 1', exact: true }),
+    'Modifier le niveau 1',
+  );
   await catalogue(page, /^Poutre moyenne/u);
   await clickWorld(page, point.x, point.y);
   const sizeHandle = page.getByRole('button', { name: 'Redimensionner la poutre' });

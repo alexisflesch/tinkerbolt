@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { sketchLevels as embeddedLevels } from '../../test/fixtures/sketch-campaign';
-import { levelDocumentSchema, type LevelDocument } from '../domain/level-document';
+import { completeGoalOf, levelDocumentSchema, type LevelDocument } from '../domain/level-document';
 import {
   createSimulationSession,
   type SimulationBodyState,
@@ -880,7 +880,9 @@ describe('port physique candidat-neutre', () => {
     if (level === undefined) throw new Error('Niveau 17 embarqué introuvable.');
     const { solution: ignoredSolution, ...machine } = level;
     void ignoredSolution;
-    const goalIds = new Set([machine.goal.ballId, machine.goal.basketId]);
+    const goal = completeGoalOf(machine);
+    if (goal === null) throw new Error('Le niveau 17 embarqué n’a pas d’objectif complet.');
+    const goalIds = new Set([goal.ballId, goal.basketId]);
     const reordered: LevelDocument = {
       ...machine,
       objects: [...machine.objects].reverse(),
@@ -900,7 +902,7 @@ describe('port physique candidat-neutre', () => {
       let ballState: SimulationBodyState | undefined;
       withSession(document, (session) => {
         session.advanceFixedSteps(600);
-        ballState = body(session.readState(), machine.goal.ballId, 'primary');
+        ballState = body(session.readState(), goal.ballId, 'primary');
       });
       return ballState;
     };
@@ -1467,6 +1469,50 @@ describe('port physique candidat-neutre', () => {
       expect(session.readGoalEvaluation().status).toBe('pending');
       expect(level).toEqual(levelBeforeSimulation);
     });
+  });
+
+  it.each([
+    ['sans objectif', undefined],
+    ['avec une balle désignée et sans panier', { type: 'basket', ballId: 'ball-1' }],
+  ] as const)(
+    'laisse tomber une balle hors scène sans rien conclure, %s, et n’annonce que le temps écoulé (ADR 0020)',
+    (_label, goal) => {
+      const { goal: ignoredGoal, ...unreachable } = createUnreachableBasketLevelDocument();
+      void ignoredGoal;
+      const machine = levelDocumentSchema.parse(
+        goal === undefined ? unreachable : { ...unreachable, goal },
+      );
+
+      withSession(machine, (session) => {
+        session.advanceFixedSteps(DEFAULT_ATTEMPT_TIMEOUT_FIXED_STEPS - 1);
+
+        expect(body(session.readState(), 'ball-1', 'primary').position.y).toBeGreaterThan(8);
+        expect(session.hasReachedTimeLimit()).toBe(false);
+
+        session.advanceFixedSteps(1);
+
+        expect(session.hasReachedTimeLimit()).toBe(true);
+        session.advanceFixedSteps(60);
+        expect(session.readFailureEvaluation().status).toBe('pending');
+        expect(session.readGoalEvaluation().status).toBe('pending');
+      });
+    },
+  );
+
+  it('n’atteint le temps écoulé qu’au bout de la durée injectée', () => {
+    const session = createSimulationSession(createUnreachableBasketLevelDocument(), {
+      fixedStepSeconds: FIXED_STEP_SECONDS,
+      attemptTimeoutSeconds: 1,
+    });
+
+    try {
+      session.advanceFixedSteps(59);
+      expect(session.hasReachedTimeLimit()).toBe(false);
+      session.advanceFixedSteps(1);
+      expect(session.hasReachedTimeLimit()).toBe(true);
+    } finally {
+      session.destroy();
+    }
   });
 
   it('compte la limite de temps en pas fixes issus de la durée injectée', () => {

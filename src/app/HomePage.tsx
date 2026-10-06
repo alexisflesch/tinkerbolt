@@ -10,43 +10,9 @@ import {
 } from '../presentation/sprite-loader';
 import { AppFrame } from '../ui/AppFrame';
 import { PwaInvitation } from '../ui/PwaInvitation';
-import { withSolutionPlaced } from './home-hero';
-import { LevelPreview } from './LevelPreview';
+import { HomeMachine } from './HomeMachine';
 import { useCampaignProgress } from './use-campaign-progress';
 import { usePwaInvitation } from './use-pwa-invitation';
-
-/** The level shown beside the welcome text (V4): the fifth tutorial, else the last one. */
-const heroSource = embeddedLevels.find(({ id }) => id === 'tuto-5') ?? embeddedLevels.at(-1);
-/** Drawn solved, so that the picture shows a whole machine rather than its starting state. */
-const heroLevel = heroSource === undefined ? undefined : withSolutionPlaced(heroSource);
-
-/**
- * The chain of the fifth tutorial, as dotted arrows in world units over its
- * 16 × 9 scene: the blue ball is blown onto the springboard and bounces into
- * the lever; the mass then falls on the seesaw, which throws the red ball
- * into the basket. Decorative, and tied to that level's reference solution.
- */
-const heroHints =
-  heroSource?.id === 'tuto-5'
-    ? [
-        {
-          path: 'M7.56 6.41 C9.16 6.21 10.33 6.69 10.96 8.26',
-          head: 'M10.68 8.03 L10.96 8.26 L11 7.9',
-        },
-        {
-          path: 'M11.33 8.23 C11.95 7.97 12.28 7.8 12.42 7.6',
-          head: 'M12.38 7.96 L12.42 7.6 L12.1 7.76',
-        },
-        {
-          path: 'M2.65 2.63 C1.29 2.85 0.64 4.56 0.64 6.29',
-          head: 'M0.47 5.97 L0.64 6.29 L0.81 5.97',
-        },
-        {
-          path: 'M3.51 6.44 C6.01 0.85 12.02 0.57 14.35 3.3',
-          head: 'M14.01 3.17 L14.35 3.3 L14.28 2.95',
-        },
-      ]
-    : [];
 
 const boltIllustration = publicAssetUrl('/assets/home/bolt.webp', import.meta.env.BASE_URL);
 
@@ -134,27 +100,9 @@ export function HomePage() {
                 </div>
               </div>
             </div>
-            {heroLevel !== undefined && (
-              <div className="home-frame">
-                <div
-                  className="home-board"
-                  role="img"
-                  aria-label={`Aperçu du niveau « ${heroLevel.metadata.title} »`}
-                >
-                  <div className="home-board-scene">
-                    <LevelPreview document={heroLevel} />
-                    <svg className="home-hints" viewBox="0 0.75 16 9" aria-hidden="true">
-                      {heroHints.map(({ path, head }) => (
-                        <g key={path}>
-                          <path className="home-hint-trail" d={path} />
-                          <path d={head} />
-                        </g>
-                      ))}
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="home-frame">
+              <HomeMachine />
+            </div>
             <figure className="home-bolt" aria-hidden="true">
               <img src={boltIllustration} alt="" draggable={false} />
             </figure>

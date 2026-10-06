@@ -64,35 +64,12 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
     });
   });
 
-  it('montre le tutoriel 5 résolu dans son cadre, avec les flèches décoratives de la chaîne', async () => {
+  it('intègre la démo animée dans le cadre de l’accueil', async () => {
     const { container } = await renderStorageReady(<App progressRepository={createRepository()} />);
-
-    const hero = screen.getByRole('img', { name: 'Aperçu du niveau « La chaîne »' });
-    await waitFor(() => {
-      expect(hero.querySelector('.level-preview')).not.toBeNull();
-    });
-    const hints = container.querySelector('.home-board .home-hints');
-    expect(hints).toHaveAttribute('aria-hidden', 'true');
-    expect(hints?.getAttribute('viewBox')).toBe('0 0.75 16 9');
-    // Quatre flèches : une trajectoire pointillée et une pointe chacune.
-    expect(hints?.querySelectorAll('path')).toHaveLength(8);
+    const hero = screen.getByRole('img', { name: 'Démonstration animée d’une machine TinkerBolt' });
+    expect(hero.querySelector('canvas')).not.toBeNull();
     expect(hero.closest('.home-frame')).not.toBeNull();
-  });
-
-  it('montre l’aperçu réel du tutoriel 5, dessiné par le rendu du plateau', async () => {
-    const { container } = await renderStorageReady(<App progressRepository={createRepository()} />);
-
-    const hero = screen.getByRole('img', { name: 'Aperçu du niveau « La chaîne »' });
-    await waitFor(() => {
-      expect(hero.querySelector('.level-preview')).not.toBeNull();
-    });
-    // L'illustration composée et le décor de l'atelier ne sont plus utilisés.
-    await waitFor(() => {
-      expect(container.querySelector('.home-invention')).toBeNull();
-    });
-    await waitFor(() => {
-      expect(container.innerHTML).not.toContain('board-workshop-day-v1.png');
-    });
+    expect(container.querySelector('.home-hints')).toBeNull();
   });
 
   it('affiche Bolt détouré dans la scène d’accueil comme illustration décorative', async () => {

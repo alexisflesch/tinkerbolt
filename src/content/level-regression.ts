@@ -6,7 +6,11 @@ import {
   rotatePlacement,
   type ConstructionErrorCode,
 } from '../application/construction';
-import { levelDocumentAttemptSchema, type LevelDocument } from '../domain/level-document';
+import {
+  completeGoalOf,
+  levelDocumentAttemptSchema,
+  type LevelDocument,
+} from '../domain/level-document';
 import { resolveAttemptOutcome } from '../domain/attempt-failure-evaluator';
 import { createSimulationSession, type SimulationSnapshot } from '../simulation/simulation-session';
 
@@ -90,6 +94,8 @@ export const runLevel = (document: LevelDocument): LevelRun => {
   // Attempts expose remaining inventory, so validate their full structure and
   // relations while leaving the initial-stock challenge check to construction.
   const level = levelDocumentAttemptSchema.parse(document);
+  const goal = completeGoalOf(level);
+  if (goal === null) throw new Error('Un niveau de campagne exige un objectif complet (ADR 0020).');
   const session = createSimulationSession(level, { fixedStepSeconds: FIXED_STEP_SECONDS });
   let ballEnteredTarget = false;
 
@@ -100,8 +106,8 @@ export const runLevel = (document: LevelDocument): LevelRun => {
       ballEnteredTarget ||= finalState.events.some(
         (event) =>
           event.type === 'object-entered-sensor' &&
-          event.placementId === level.goal.ballId &&
-          event.targetId === level.goal.basketId,
+          event.placementId === goal.ballId &&
+          event.targetId === goal.basketId,
       );
 
       const outcome = resolveAttemptOutcome(

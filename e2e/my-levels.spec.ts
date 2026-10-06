@@ -5,6 +5,7 @@ import { navigateTo } from './app-navigation';
 import { creationFromLevel } from '../src/application/drafts/creation-from-level';
 import { levelDocumentSchema } from '../src/domain/level-document';
 import { creationFixture, seedIndexedDB } from './indexed-db-fixture';
+import { pressCardAction } from './card-menu';
 
 const formats = [
   { width: 390, height: 844 },
@@ -66,7 +67,11 @@ test('importe un fichier depuis « Mes niveaux » et le retrouve dans la liste (
 
   // A creation too, for the filled page: the campaign's first level, edited.
   await page.goto('/levels');
-  await page.getByRole('button', { name: 'Modifier le niveau 1', exact: true }).tap();
+  await pressCardAction(
+    page.getByRole('region', { name: 'Niveau 1', exact: true }),
+    'Modifier le niveau 1',
+    'tap',
+  );
   await expect(page).toHaveURL(/\/editor\?draft=tuto-1-brouillon$/u);
   await page.goto('/my-levels');
   await expect(
@@ -77,12 +82,9 @@ test('importe un fichier depuis « Mes niveaux » et le retrouve dans la liste (
   await expect(received.getByRole('region', { name: 'Machine en chaîne' })).toBeVisible();
   await captureFormats(page, 'my-levels-filled');
 
-  await received
-    .getByRole('region', { name: 'Machine en chaîne' })
-    .getByRole('button', {
-      name: 'Supprimer',
-    })
-    .tap();
+  const receivedCard = received.getByRole('region', { name: 'Machine en chaîne' });
+  await receivedCard.getByRole('button', { name: 'Autres actions' }).tap();
+  await receivedCard.getByRole('button', { name: 'Supprimer' }).tap();
   const dialog = page.getByRole('dialog', { name: 'Confirmer la suppression' });
   await expect(dialog).toBeVisible();
   await page.screenshot({
@@ -143,22 +145,21 @@ for (const viewport of [
     await expect(page.locator('.level-preview-image')).toHaveCount(5);
     for (const card of await page.locator('.level-card').all()) {
       await expect(card.locator('.level-card-attachment')).toBeVisible();
-      expect(await card.evaluate((element) => getComputedStyle(element).transform)).not.toBe(
-        'none',
-      );
+      // Only the paper tilts: the card's content stays straight, hence sharp.
+      expect(await card.evaluate((element) => getComputedStyle(element).transform)).toBe('none');
+      expect(
+        await card.evaluate((element) => getComputedStyle(element, '::before').transform),
+      ).not.toBe('none');
       expect(
         await card.evaluate((element) => getComputedStyle(element, '::before').maskImage),
       ).toContain('paper-edge.svg');
-      const primary = card.locator('.level-card-primary');
-      const primaryBounds = await primary.boundingBox();
-      if (primaryBounds === null) throw new Error('Action principale non mesurable.');
-      for (const tool of await card.locator('.level-card-tool').all()) {
-        const bounds = await tool.boundingBox();
-        if (bounds === null) throw new Error('Action secondaire non mesurable.');
-        expect(bounds.y).toBeGreaterThanOrEqual(primaryBounds.y + primaryBounds.height);
-        expect(bounds.x).toBeGreaterThanOrEqual(0);
-        expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
-      }
+      // No row of buttons: the preview acts, and the other actions sit in a menu.
+      await expect(card.locator('.btn')).toHaveCount(0);
+      const menu = card.getByRole('button', { name: 'Autres actions' });
+      const menuBounds = await menu.boundingBox();
+      if (menuBounds === null) throw new Error('Menu des actions non mesurable.');
+      expect(menuBounds.x).toBeGreaterThanOrEqual(0);
+      expect(menuBounds.x + menuBounds.width).toBeLessThanOrEqual(viewport.width);
     }
     await page.screenshot({
       path: `tmp/my-levels/my-levels-${String(viewport.width)}-filled.png`,
@@ -175,13 +176,13 @@ for (const viewport of [
       path: `tmp/my-levels/my-levels-${String(viewport.width)}-error-toast.png`,
     });
     await toast.getByRole('button', { name: 'Fermer la notification' }).click();
-    await creations
-      .getByRole('region', { name: 'Nouveau niveau 1', exact: true })
-      .getByRole('button', { name: 'Dupliquer' })
-      .click();
+    const firstCreation = creations.getByRole('region', { name: 'Nouveau niveau 1', exact: true });
+    await firstCreation.getByRole('button', { name: 'Autres actions' }).click();
+    await firstCreation.getByRole('button', { name: 'Dupliquer' }).click();
     await expect(
       creations.getByRole('region', { name: 'Nouveau niveau 1 (copie)', exact: true }),
     ).toBeVisible();
+    await received.getByRole('button', { name: 'Autres actions' }).click();
     await received.getByRole('button', { name: 'Modifier', exact: true }).click();
     await expect(page).toHaveURL(/\/editor\?draft=/u);
   });
