@@ -5,6 +5,10 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 
 ## [Non publié]
 
+Aucun changement notable pour le moment.
+
+## [0.3.0] - 2026-10-06
+
 - L’accueil montre une machine animée avec deux balles et deux pistons ;
   la démonstration peut être mise en pause et respecte la réduction des animations.
 
