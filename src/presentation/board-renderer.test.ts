@@ -391,6 +391,8 @@ const createPendingSpriteLoader = (): {
     'conveyor-belt': fakeSprite('conveyor-belt'),
     'conveyor-belt-left': fakeSprite('conveyor-belt-left'),
     'conveyor-frame': fakeSprite('conveyor-frame'),
+    'conveyor-wheel': fakeSprite('conveyor-wheel'),
+    'conveyor-loop': fakeSprite('conveyor-loop'),
     'button-base': fakeSprite('button-base'),
     'button-cap': fakeSprite('button-cap'),
     'fan-blades': fakeSprite('fan-blades'),
@@ -633,7 +635,13 @@ describe('projection du plateau', () => {
       .filter((object) => object.family === 'conveyor')
       .map((object) => object.assetKey);
 
-    expect(assets).toEqual(['conveyor-belt-left', 'conveyor-frame']);
+    expect(assets).toEqual([
+      'conveyor-belt-left',
+      'conveyor-wheel',
+      'conveyor-wheel',
+      'conveyor-frame',
+      'conveyor-loop',
+    ]);
     expect(layerOf(construction, 'conveyor-belt-left').source?.x).toBe(0);
   });
 
@@ -645,10 +653,53 @@ describe('projection du plateau', () => {
     const belt = layerOf(projection, 'conveyor-belt');
 
     // A belt moving right shifts its pattern right: the source window moves left.
-    expect(belt.source?.width).toBe(247);
-    expect(belt.source?.x).toBeCloseTo(77 * (1 - 0.15 / 0.6006));
+    expect(belt.source?.width).toBe(264);
+    expect(belt.source?.x).toBeCloseTo(74 * (1 - 0.15 / ((407 * 3) / 2120)));
   });
 
+  it.each(
+    Array.from({ length: 24 }, (_, step) => step * 15).flatMap((degrees) =>
+      [0, 0.15, -0.15, 2].map((offset) => ({ degrees, offset })),
+    ),
+  )('synchronise les deux roues au déplacement $offset à $degrees°', ({ degrees, offset }) => {
+    const document = createWiredDocument('center', 'stopped');
+    const conveyor = document.objects.find(({ type }) => type === 'conveyor');
+    if (conveyor === undefined) throw new Error('Convoyeur absent');
+    const rotation = (degrees * Math.PI) / 180;
+    conveyor.transform.rotation = rotation;
+    const projection = projectLevel(
+      document,
+      simulationView([], [['conveyor-1', { offset, facing: offset < 0 ? -1 : 1 }]]),
+    );
+    const wheels = projection.objects
+      .filter(({ assetKey }) => assetKey === 'conveyor-wheel')
+      .map(({ layer }) => layer);
+    expect(wheels).toHaveLength(2);
+    for (const wheel of wheels) {
+      expect(wheel.rotation).toBeCloseTo(rotation);
+      expect(wheel.spin).toEqual({ angle: offset / ((180 * 3) / 2120), squash: 1 });
+      expect(wheel.destination.width).toBe(wheel.destination.height);
+    }
+    const centers = [
+      { x: ((207 - 1086) * 3) / 2120, y: ((358 - 360) * 3) / 2120 },
+      { x: ((1967.5 - 1086) * 3) / 2120, y: ((358.5 - 360) * 3) / 2120 },
+    ];
+    wheels.forEach((wheel, index) => {
+      const center = centers[index];
+      if (center === undefined) throw new Error('Pivot absent');
+      expect(wheel.position.x).toBeCloseTo(
+        conveyor.transform.position.x +
+          center.x * Math.cos(rotation) -
+          center.y * Math.sin(rotation),
+      );
+      expect(wheel.position.y).toBeCloseTo(
+        conveyor.transform.position.y +
+          center.x * Math.sin(rotation) +
+          center.y * Math.cos(rotation),
+      );
+    });
+    expect(layerOf(projection, 'conveyor-frame').rotation).toBeCloseTo(rotation);
+  });
   it('enfonce le capuchon du bouton pressé, sans bouger son socle', () => {
     const document = createDeviceDocument('button');
     const resting = projectLevel(document);

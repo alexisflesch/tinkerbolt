@@ -249,9 +249,28 @@ export const leverFootprint = (position: LeverPosition): WorldRect =>
     ),
   ]);
 
-/** A three-unit belt; its origin is the centre of its frame. */
+/** Approved no-foot art: common alpha frame (26,172)..(2146,548). */
+const conveyorArtScale = 3 / 2120;
+const conveyorHeight = 376 * conveyorArtScale;
+
+/** A three-unit capsule; render layers and collision share its origin. */
 export const conveyorGeometry = {
-  footprint: centeredRect(3, 0.5799),
+  footprint: centeredRect(3, conveyorHeight),
+  radius: conveyorHeight / 2,
+  endCenterX: 1.5 - conveyorHeight / 2,
+  beltWindow: {
+    x: (361 - 1086) * conveyorArtScale,
+    y: (278 - 360) * conveyorArtScale,
+    width: 1452 * conveyorArtScale,
+    height: 154 * conveyorArtScale,
+  },
+  beltPeriod: 407 * conveyorArtScale,
+  wheelDiameter: 250.8 * conveyorArtScale,
+  wheelPitchRadius: 180 * conveyorArtScale,
+  wheelCenters: [
+    { x: (207 - 1086) * conveyorArtScale, y: (358 - 360) * conveyorArtScale },
+    { x: (1967.5 - 1086) * conveyorArtScale, y: (358.5 - 360) * conveyorArtScale },
+  ],
 } as const;
 
 /**

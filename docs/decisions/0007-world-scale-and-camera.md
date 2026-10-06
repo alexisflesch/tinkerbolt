@@ -261,10 +261,10 @@ face à la lumière).
 | électroaimant C9b | `electro-magnet-off` ou `electro-magnet-on` (même cadre) | 1 × 0,8 (centre) |
 | caisse C9a | `box-wood` ou `box-metal` (corps dynamique)               | 0,8 × 0,8 (centre)                            |
 | levier     | `lever-base` (immobile), `lever-handle` (pivote)          | socle 0,8 × 0,414, poignée 0,35 × 1,0 (pivot) |
-| convoyeur  | `conveyor-belt` ou `conveyor-belt-left`, `conveyor-frame` | 3 × 0,58 (centre)                             |
+| convoyeur  | `conveyor-belt` ou `conveyor-belt-left`, deux instances de `conveyor-wheel`, `conveyor-frame`, `conveyor-loop` | 3 × 0,532075 (centre) |
 
 La bande du convoyeur fait exception au cadre commun : son sprite couvre la
-fenêtre du cadre plus une période exacte du motif (77 px), et le renderer fait
+fenêtre du cadre plus une période exacte du motif (74 px), et le renderer fait
 glisser son rectangle source pour la faire défiler. Chaque famille a aussi une
 vignette pré-composée, `thumbs/<famille>.png`, pour le tiroir du catalogue.
 
@@ -272,6 +272,20 @@ Les colliders polygonaux (pied de la bascule, masse, socle du levier) sont
 mesurés sur les sources par le même script et vivent dans
 `src/domain/family-geometry.ts`, source unique des empreintes pour la physique
 comme pour le rendu.
+
+### Convoyeur sans pieds — 6 octobre 2026
+
+L’auteur valide le kit `art/assets/conveyor/v2/` et demande son intégration.
+Les sources originales restent conservées. L’export ciblé
+`art/build-conveyor-sprites.py` remplace uniquement cette famille ; l’export
+global appelle le même export pour éviter de rétablir l’ancien asset.
+Le cadre commun alpha mesure 2120 × 376 pixels source : largeur monde 3,
+hauteur proportionnelle, sans déformation des roues. Les deux roues partagent
+le même PNG, avec un pivot local propre à chaque extrémité et une rotation
+calculée depuis la distance simulée. Le caoutchouc périphérique reste un calque
+fixe ; ses repères mobiles de l’aperçu sont facultatifs et ne sont pas intégrés.
+Le collider arrondi et le sens périphérique relèvent du contrat Convoyeur du
+catalogue ; aucune donnée persistante ni propriété d’édition ne change.
 
 ## Amendement du 2 octobre 2026 — pas de bordure, pas de perte par le haut
 

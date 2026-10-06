@@ -161,7 +161,11 @@ describe('placementFootprintCorners', () => {
         min: { x: -0.4, y: -0.7460683648 },
         max: { x: 0.7460683648, y: 0.2078893937 },
       },
-      { placement: conveyor(), min: { x: -1.5, y: -0.28995 }, max: { x: 1.5, y: 0.28995 } },
+      {
+        placement: conveyor(),
+        min: { x: -1.5, y: (-376 * 3) / 2120 / 2 },
+        max: { x: 1.5, y: (376 * 3) / 2120 / 2 },
+      },
       { placement: button(), min: { x: -0.4, y: -0.2402 }, max: { x: 0.4, y: 0.2402 } },
       { placement: fan(), min: { x: -0.6, y: -0.4683 }, max: { x: 0.6, y: 0.4684 } },
       { placement: barrier('open'), min: { x: -0.45, y: -0.4779 }, max: { x: 0.45, y: 0.4779 } },

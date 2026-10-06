@@ -200,10 +200,21 @@ tout.
 
 ### Modèle
 
-- corps statique de 3 × 0,58 ; la bande est une vitesse de surface
+- corps statique sans pieds, de 3 × 0,532075 unité, au contour de capsule
+  (rectangle central et deux disques) ; la bande est une vitesse de surface
   (1,5 unité/s), pas un corps qui bouge ;
 - propriété `direction` (`left`, `stopped`, `right`) : son sens quand aucun
   levier ne le commande ;
+- le sens suit l’axe local du convoyeur et ses flèches : une rotation de 180°
+  inverse le déplacement dans le monde, et une rotation de 90° l’oriente
+  verticalement ;
+- courroie périphérique : `right` entraîne vers +x local sur le dessus,
+  vers −x sur le dessous, vers le bas à droite et vers le haut à gauche ;
+  sur les arrondis, l’entraînement suit la tangente du contact. `left` inverse
+  tout le parcours ; `stopped` remet la vitesse de surface à zéro ;
+- l’entraînement exige un contact et reste limité par la friction : la courroie
+  ne colle pas les objets. Les flèches défilent et les deux roues tournent selon
+  la distance réellement parcourue par la courroie ;
 - relié à un levier, il suit ce levier dès le premier pas et à chaque
   changement de cran — gauche, arrêt, droite — et sa propriété est ignorée ;
 - un seul levier par convoyeur ; un levier peut commander plusieurs convoyeurs.

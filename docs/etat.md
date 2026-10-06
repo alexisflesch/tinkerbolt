@@ -20,6 +20,8 @@ Les sources auteur dans `levels/` et les niveaux embarqués dans
 - Fils de commande, bouton, levier, convoyeur, ventilateur et barrière ;
   caisses bois/métal, électroaimant, piston et minuteur sont intégrés et testés.
   Un minuteur intermédiaire retarde les transitions d’un fil logique unique.
+  Le convoyeur sans pieds utilise une courroie périphérique, un contour de
+  capsule et des roues animées synchronisées avec la bande (CONV2).
 - Objectif de panier, victoire, pause, reprise et retour à la construction.
   Le haut de la scène est ouvert ; sortie latérale/basse et durée maximale
   terminent une tentative. Les règles précises sont exécutables dans le domaine
@@ -50,7 +52,8 @@ Les sources auteur dans `levels/` et les niveaux embarqués dans
   conserve les meilleurs résultats. Constructions, créations et préférences ne
   sont pas exportées. Le texte de la feuille d’accueil reste droit (UI4,
   validation visuelle auteur attendue).
-- Démo de l’accueil issue de `levels/demo-landing.json`, simulée sans panier,
+- Démo de l’accueil issue de `levels/demo-landing-remix.json`, avec le convoyeur
+  retourné et les deux balles déjà posées (CONV1), simulée sans panier,
   balle rouge ni bascule, hors campagne et progression. Pause/reprise, suspension
   hors onglet visible et réduction des animations ; validation visuelle auteur attendue.
 - PWA installable, précache des assets/campagne/polices et navigation hors
@@ -79,6 +82,12 @@ pour mémoire, sur demande explicite de l’auteur ; elles ne sont pas des contr
 
 ## Travail restant et limites
 
+- CONV2 : asset sans pieds validé par l’auteur et intégré ; captures du rendu
+  en jeu et de l’accueil dans `tmp/conveyor-integration/` pour la recette finale.
+  Le caoutchouc périphérique reste un calque fixe, les deux roues tournent.
+  L’entraînement est limité par le contact et la friction ; il ne colle pas
+  une caisse sur un arrondi contre la gravité. Les directions sont locales au
+  convoyeur et se retournent avec lui à 180°.
 - **C7d** : recherche et filtre Tous/Créations/Reçus dans Mes niveaux.
   Pas de tri demandé. La maquette d’identité utile reste disponible.
 - **C10** : recette visuelle de l’auteur sur les compléments desktop et
@@ -143,6 +152,21 @@ Les notes sont prêtes dans « Non publié ». Aucun tag ni push n’a été eff
 le push doit être lancé depuis une machine authentifiée auprès du dépôt Git.
 
 ## Dernière gate
+
+`pnpm check` après intégration CONV2, le 6 octobre 2026 : **vert** — contrôle
+version/changelog, typecheck, lint, formatage, Knip, neuf documents validés,
+**2 202 tests Vitest dans 123 fichiers**, build et **121 E2E v1**.
+Log : `/tmp/tinkerbolt-conveyor-integration-check.log`.
+
+Les 576 cas physiques couvrent 24 orientations par pas de 15°, deux sens,
+faces, arcs et jonctions. Les deux pivots et les angles des roues sont vérifiés
+sur les 24 orientations. Les sept solutions de campagne gagnent ; tutoriel 5
+recalé de −0,02 en x et −0,04 en y pour le nouveau contour, sans changer sa
+solution. Animation/pause et victoire du tutoriel 5 contrôlées dans Chromium.
+Captures de l’accueil, du jeu à 0°/15°/180° et de l’Atelier inspectées dans
+`tmp/conveyor-integration/`, aux deux formats desktop. Visuel source accepté
+par l’auteur ; recette finale du rendu intégré attendue. Commit local CONV2,
+aucun push.
 
 Après UI4 et les lots MACH1, CARTES1, UI3, ATL1 et UI1 du 6 octobre, la validation
 visuelle de l’auteur reste attendue pour les lots concernés. Captures Paramètres

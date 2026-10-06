@@ -591,18 +591,19 @@ class PlanckSimulationSession implements SimulationSession {
    * A running belt is a surface speed: Box2D's tangent speed drives what
    * touches it without moving the static frame. The solver aims the
    * velocity of B relative to A, along the tangent (normal.y, -normal.x), at
-   * that speed; only the belt's horizontal component is kept, so the frame's
-   * ends and underside do not drive anything.
+   * that speed. A peripheral loop follows the tangent everywhere: opposite
+   * directions on the two long faces, continuous around the circular ends.
+   * Swapping fixtures reverses both normal and relative velocity: the same
+   * negative speed works for either ordering, at every placement rotation.
    */
   readonly #onPreSolve = (contact: Contact): void => {
-    const onA = this.#conveyorFixtures.get(contact.getFixtureA());
-    const conveyor = onA ?? this.#conveyorFixtures.get(contact.getFixtureB());
-    if (conveyor === undefined || conveyor.direction === 0) return;
-
-    const normal = contact.getWorldManifold(null)?.normal;
-    if (normal === undefined) return;
+    const conveyor =
+      this.#conveyorFixtures.get(contact.getFixtureA()) ??
+      this.#conveyorFixtures.get(contact.getFixtureB());
+    if (conveyor === undefined) return;
     const belt = conveyor.direction * CONVEYOR_SPEED;
-    contact.setTangentSpeed((onA === undefined ? -1 : 1) * belt * normal.y);
+    // Set zero too: the same contact can survive a lever changing to stopped.
+    contact.setTangentSpeed(-belt);
   };
 
   constructor(level: MachineScene, fixedStepSeconds: number, attemptTimeoutSeconds: number) {
@@ -1189,11 +1190,13 @@ class PlanckSimulationSession implements SimulationSession {
       angle: rotation,
     });
     this.#bodies.push({ placementId, role: 'primary', handle: body });
-    const { width, height } = conveyorGeometry.footprint;
-    const fixture = this.#createFixture(body, {
-      shape: new Box(width / 2, height / 2),
-      friction: 0.8,
-    });
+    const { radius, endCenterX } = conveyorGeometry;
+    // Overlapping shapes form a solid capsule, with no feet or faceted ends.
+    const fixtures = [
+      new Box(endCenterX, radius),
+      new Circle(new Vec2(-endCenterX, 0), radius),
+      new Circle(new Vec2(endCenterX, 0), radius),
+    ].map((shape) => this.#createFixture(body, { shape, friction: 0.8 }));
     const record: ConveyorRecord = {
       placementId,
       body,
@@ -1204,7 +1207,7 @@ class PlanckSimulationSession implements SimulationSession {
       beltOffset: 0,
     };
     this.#conveyors.push(record);
-    this.#conveyorFixtures.set(fixture, record);
+    for (const fixture of fixtures) this.#conveyorFixtures.set(fixture, record);
   }
 
   #leverPosition({ base, handle }: LeverRecord): LeverPosition {

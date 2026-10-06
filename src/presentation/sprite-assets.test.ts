@@ -10,8 +10,8 @@ import { spriteAssetPath, spriteAssetsForFamily, spriteThumbnailPath } from './s
 /** ADR 0007 § Convention de sprite. */
 const PIXELS_PER_WORLD_UNIT_AT_2X = 128;
 const SPRITE_BUDGET_BYTES = 60 * 1024;
-/** Measured by `art/build-sprites.py`: the chevron pattern repeats every 77 px. */
-const CONVEYOR_BELT_PERIOD_PX = 77;
+/** Measured by `art/build-sprites.py`: the chevron pattern repeats every 74 px. */
+const CONVEYOR_BELT_PERIOD_PX = 74;
 
 const publicFile = (path: string): Buffer => readFileSync(resolve('public', `.${path}`));
 
@@ -194,7 +194,7 @@ describe('sprites du plateau', () => {
         expect(size.width).toBe(Math.round(destination.width * PIXELS_PER_WORLD_UNIT_AT_2X));
       } else {
         // A scrolling belt is its window plus one period of pattern to slide over.
-        expect(source.width).toBe(Math.round(destination.width * PIXELS_PER_WORLD_UNIT_AT_2X) + 1);
+        expect(source.width).toBe(Math.ceil(destination.width * PIXELS_PER_WORLD_UNIT_AT_2X));
         expect(size.width).toBe(source.width + CONVEYOR_BELT_PERIOD_PX);
       }
     },

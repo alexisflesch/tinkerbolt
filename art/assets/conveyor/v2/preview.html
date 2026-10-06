@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Convoyeur sans pieds — aperçu des calques</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: system-ui, sans-serif;
+        background: #f5ead3;
+        color: #182333;
+      }
+      main {
+        max-width: 1200px;
+        margin: auto;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+      }
+      p {
+        line-height: 1.5;
+        margin: 8px 0 20px;
+      }
+      .board {
+        border: 1px solid #c9b58f;
+        border-radius: 16px;
+        background: #f8efd9;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 260px;
+      }
+      .controls {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 14px;
+        background: #fffaf0;
+        border-top: 1px solid #dbcaa9;
+      }
+      button {
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+        border-radius: 8px;
+        border: 1px solid #bca77f;
+        padding: 9px 14px;
+        background: #ffd04c;
+        color: #182333;
+      }
+      label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      input[type='range'] {
+        width: 160px;
+      }
+      .layers {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .layer {
+        background: #fffaf0;
+        border: 1px solid #d5c09a;
+        border-radius: 12px;
+        padding: 14px;
+        min-width: 0;
+      }
+      .layer h2 {
+        font-size: 16px;
+        margin: 0 0 12px;
+      }
+      .checker {
+        height: 100px;
+        border-radius: 6px;
+        background-color: #f4f4f4;
+        background-image: conic-gradient(
+          #dedede 25%,
+          transparent 0 50%,
+          #dedede 0 75%,
+          transparent 0
+        );
+        background-size: 16px 16px;
+      }
+      .checker img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .layer p {
+        font-size: 13px;
+        margin: 10px 0 0;
+      }
+      small {
+        display: block;
+        margin-top: 16px;
+        color: #645b4b;
+      }
+      @media (max-width: 700px) {
+        body {
+          padding: 16px;
+        }
+        .layers {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Convoyeur sans pieds</h1>
+      <p>
+        Les flèches défilent, les deux roues tournent et le châssis reste fixe. Le contour est libre
+        sur les quatre côtés.
+      </p>
+      <div class="board">
+        <canvas
+          width="1200"
+          height="260"
+          aria-label="Aperçu animé du convoyeur sans pieds"
+        ></canvas>
+        <div class="controls">
+          <button id="play" type="button">Pause</button>
+          <button id="direction" type="button">Sens : droite</button>
+          <label
+            >Rotation <input id="rotation" type="range" min="0" max="345" step="15" value="0" />
+            <output id="angle">0°</output></label
+          >
+          <label><input id="treads" type="checkbox" /> Repères mobiles sur la courroie</label>
+        </div>
+      </div>
+      <div class="layers">
+        <article class="layer">
+          <h2>1. Châssis fixe</h2>
+          <div class="checker">
+            <img src="conveyor-frame.png" alt="Châssis sans pieds, fenêtres transparentes" />
+          </div>
+          <p>Vis, plaques et caches d’axes fixes.</p>
+        </article>
+        <article class="layer">
+          <h2>2. Flèches</h2>
+          <div class="checker"><img src="conveyor-arrows.png" alt="Bande de flèches jaunes" /></div>
+          <p>Motif existant, défilement continu.</p>
+        </article>
+        <article class="layer">
+          <h2>3. Roue × 2</h2>
+          <div class="checker"><img src="conveyor-wheel.png" alt="Roue métallique isolée" /></div>
+          <p>Un calque réutilisé aux deux extrémités.</p>
+        </article>
+        <article class="layer">
+          <h2>4. Courroie</h2>
+          <div class="checker">
+            <img src="conveyor-loop.png" alt="Courroie périphérique fermée" />
+          </div>
+          <p>Contour séparé ; repères mobiles optionnels.</p>
+        </article>
+      </div>
+      <small
+        >Aperçu artistique des calques. La simulation et les collisions de l’application ne sont pas
+        modifiées par cette page.</small
+      >
+    </main>
+    <script type="module">
+      const canvas = document.querySelector('canvas');
+      const context = canvas.getContext('2d');
+      const sources = await Promise.all(
+        ['frame', 'arrows', 'wheel', 'loop'].map(async (name) => {
+          const image = new Image();
+          image.src = `conveyor-${name}.png`;
+          await image.decode();
+          return image;
+        }),
+      );
+      const [frame, arrows, wheel, loop] = sources;
+      const play = document.querySelector('#play');
+      const directionButton = document.querySelector('#direction');
+      const rotation = document.querySelector('#rotation');
+      const angleOutput = document.querySelector('#angle');
+      const treads = document.querySelector('#treads');
+      let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let direction = 1;
+      let elapsed = 0;
+      let previous;
+      play.textContent = playing ? 'Pause' : 'Animer';
+      play.onclick = () => {
+        playing = !playing;
+        play.textContent = playing ? 'Pause' : 'Animer';
+      };
+      directionButton.onclick = () => {
+        direction *= -1;
+        directionButton.textContent = direction === 1 ? 'Sens : droite' : 'Sens : gauche';
+      };
+      rotation.oninput = () => {
+        angleOutput.value = `${rotation.value}°`;
+      };
+      // Measurements belong to this art preview, not to the domain or simulation.
+      const period = 407;
+      const window = { x: 361, y: 278, width: 1452, height: 154 };
+      const wheelCenters = [
+        { x: 207, y: 358 },
+        { x: 1967.5, y: 358.5 },
+      ];
+      function perimeter(distance) {
+        const left = 214,
+          right = 1958,
+          cy = 360,
+          radius = 180;
+        const straight = right - left,
+          arc = Math.PI * radius,
+          total = 2 * (straight + arc);
+        let d = ((distance % total) + total) % total;
+        if (d < straight) return { x: left + d, y: cy - radius, nx: 0, ny: -1 };
+        d -= straight;
+        if (d < arc) {
+          const a = -Math.PI / 2 + d / radius;
+          return {
+            x: right + radius * Math.cos(a),
+            y: cy + radius * Math.sin(a),
+            nx: Math.cos(a),
+            ny: Math.sin(a),
+          };
+        }
+        d -= arc;
+        if (d < straight) return { x: right - d, y: cy + radius, nx: 0, ny: 1 };
+        const a = Math.PI / 2 + (d - straight) / radius;
+        return {
+          x: left + radius * Math.cos(a),
+          y: cy + radius * Math.sin(a),
+          nx: Math.cos(a),
+          ny: Math.sin(a),
+        };
+      }
+      function draw(time) {
+        if (previous !== undefined && playing)
+          elapsed += direction * Math.min(0.05, (time - previous) / 1000);
+        previous = time;
+        const rotationRadians = (Number(rotation.value) * Math.PI) / 180;
+        const width =
+          2120 * Math.abs(Math.cos(rotationRadians)) + 376 * Math.abs(Math.sin(rotationRadians));
+        const height =
+          2120 * Math.abs(Math.sin(rotationRadians)) + 376 * Math.abs(Math.cos(rotationRadians));
+        const scale = Math.min(1120 / width, 220 / height);
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.save();
+        context.translate(600, 130);
+        context.rotate(rotationRadians);
+        context.scale(scale, scale);
+        context.translate(-1086, -360);
+        context.save();
+        context.beginPath();
+        context.roundRect(window.x, window.y, window.width, window.height, 20);
+        context.clip();
+        context.fillStyle = '#292d32';
+        context.fillRect(window.x, window.y, window.width, window.height);
+        const tileWidth = (period * window.height) / 136;
+        const offset = (((elapsed * 180) % tileWidth) + tileWidth) % tileWidth;
+        if (direction === -1) {
+          context.translate(window.x * 2 + window.width, 0);
+          context.scale(-1, 1);
+        }
+        for (
+          let x = window.x - tileWidth + (direction === 1 ? offset : -offset);
+          x < window.x + window.width + tileWidth;
+          x += tileWidth
+        ) {
+          context.drawImage(arrows, 434, 297, period, 136, x, window.y, tileWidth, window.height);
+        }
+        context.restore();
+        for (const center of wheelCenters) {
+          context.save();
+          context.translate(center.x, center.y);
+          context.rotate(elapsed);
+          context.drawImage(wheel, 0, 0, wheel.width, wheel.height, -125.4, -125.4, 250.8, 250.8);
+          context.restore();
+        }
+        context.drawImage(frame, 0, 0, 2172, 724);
+        context.drawImage(loop, 0, 0, 2172, 724);
+        if (treads.checked) {
+          context.save();
+          context.beginPath();
+          context.roundRect(26, 172, 2120, 376, 188);
+          context.roundRect(58, 204, 2056, 312, 156);
+          context.clip('evenodd');
+          const perimeterLength = 2 * (1958 - 214 + Math.PI * 180);
+          for (let index = 0; index < 34; index++) {
+            const point = perimeter((index * perimeterLength) / 34 + elapsed * 180);
+            context.strokeStyle = '#929599';
+            context.lineWidth = 5;
+            context.beginPath();
+            context.moveTo(point.x + point.nx * 12, point.y + point.ny * 12);
+            context.lineTo(point.x - point.nx * 12, point.y - point.ny * 12);
+            context.stroke();
+          }
+          context.restore();
+        }
+        context.restore();
+        canvas.dataset.ready = 'true';
+        requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+    </script>
+  </body>
+</html>

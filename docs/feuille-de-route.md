@@ -46,6 +46,12 @@ pas les anciens lots produit. `art/` est conservé intégralement.
 
 ## Ordre restant
 
+Demande directe de l’auteur du 6 octobre 2026, avant C7d : corriger le sens
+après rotation et remplacer la démo par `levels/demo-landing-remix.json` (CONV1),
+puis créer et intégrer un convoyeur sans pieds (CONV2). Visuel du kit validé
+par l’auteur. Intégration des flèches et roues animées, contour de capsule et
+entraînement périphérique réalisés ; captures intégrées pour la recette finale.
+
 Demande directe de l’auteur du 6 octobre 2026, avant C7d : harmoniser
 Paramètres avec l’identité de l’application, y ajouter import/export de la
 progression et redresser les textes de l’accueil. Implémentation UI4 ci-dessous ;
@@ -248,6 +254,74 @@ déplacer. Aucun de ces exemples n’est déjà un contrat technique.
 la Forge, éventuel relais et hébergement. F1 le fixe avant F2.
 
 ## Journal des lots de maintenance
+
+### CONV2 — Intégrer le convoyeur sans pieds — 6 octobre 2026 — livré, recette intégrée attendue
+
+Visuel du kit `art/assets/conveyor/v2/` validé par l’auteur, puis remplacement
+demandé dans le jeu et l’éditeur. Sources originales conservées. Export ciblé
+`art/build-conveyor-sprites.py`, réutilisé par le script global : même largeur
+monde 3, hauteur proportionnelle 0,532075, tous les PNG sous 60 Ko. Deux instances
+du même sprite de roue ; pivots et angles issus du déplacement simulé de la
+courroie. Le caoutchouc reste fixe, les repères périphériques sont facultatifs.
+
+Contrat accepté consigné dans le catalogue et l’ADR 0007 avant code : capsule
+solide sans pieds (rectangle et deux cercles), vitesse de surface tangentielle
+constante autour du contour, sens opposés sur les deux faces et vitesse nulle
+à l’arrêt. Aucun changement du format de niveau ni des permissions d’édition.
+
+Red-Green : ancien sens de surface remis sur la nouvelle géométrie pour la
+régression finale, 302 cas rouges ; nouvelle logique, 576 cas verts couvrant
+les 24 angles par pas de 15°, deux sens et 12 zones (faces, jonctions, arcs).
+Contact vérifié à chaque pas. Sur les arcs, comparaison avec une caisse témoin
+sur courroie arrêtée : isole la propulsion de la gravité et de la rotation de
+la caisse, sans supposer une adhésion. Les faces vérifient aussi le mouvement
+absolu. 96 cas de rendu couvrent les deux pivots, tous les angles et les offsets
+positifs, négatifs et nuls. Dimensions et budgets des sprites vérifiés.
+
+Les assertions de roulement gardent leurs seuils : fixture réalignée sur la
+même hauteur de contact avec la nouvelle épaisseur. L’ancien export d’accueil,
+retiré du jeu, dépendait du dessous entraînant dans le même sens que le dessus ;
+son scénario de pistons utilise un sens adapté dans une copie de test seulement.
+Exports originaux de la démo inchangés ; le remix actif fonctionne tel quel pendant 30 s et
+se réinitialise sans modifier son document. La première gate a révélé une
+régression du tutoriel 5, sans affaiblir le test de victoire : recalage du seul
+convoyeur de −0,02 en x et −0,04 en y, dans la source auteur et la copie embarquée.
+Même solution et mêmes objets joueur ; les sept solutions de campagne gagnent.
+
+Captures intégrées inspectées dans `tmp/conveyor-integration/`, à 1440 × 900 et
+1280 × 720 : accueil et jeu à 0°, 15° et 180°. Animation et pause vérifiées dans
+Chromium, sans erreur navigateur. Signalement d’inversion des chevrons levé
+par l’auteur : convoyeur retourné à 180°, directions locales confirmées.
+`pnpm check` vert : **2 202 tests Vitest dans 123 fichiers**, neuf documents,
+build et **121 E2E v1**, dont victoire du tutoriel 5. Captures de l’Atelier et de
+cette victoire également inspectées aux deux formats. Log :
+`/tmp/tinkerbolt-conveyor-integration-check.log`. Commit local CONV2, aucun push. Recette auteur du rendu intégré attendue, visuel source accepté.
+
+### CONV1 — Sens du convoyeur et remix de l’accueil — 6 octobre 2026 — validation visuelle attendue
+
+Le calcul de vitesse de surface ignorait la rotation : la caisse partait dans
+le mauvais sens à 180° et les bandes verticales n’entraînaient presque rien.
+Test rouge sur six des huit orientations/sens initiaux ; projection de l’axe
+local sur la tangente du contact, puis vert. À la demande de l’auteur, la
+régression couvre les 24 angles de pose de 0° à 345° par pas de 15°, dans les
+deux sens (48 cas), avec maintien du contact et conservation du document.
+
+La copie embarquée de la démo reprend exactement `levels/demo-landing-remix.json`.
+Rouge puis vert sur l’export actif ; les deux pistons sont observés pendant
+30 secondes sur l’original et le remix, sans résultat de partie, avec reset.
+L’original reste une fixture de projection de solution ; l’export remix de
+l’auteur est conservé. Aucun changement des faces actives : après avis sur
+une courroie périphérique, l’auteur décidera entre celle-ci et une seule face.
+Le faux commentaire annonçant un dessous inerte est corrigé, la limite consignée.
+
+Captures du convoyeur retourné et de l’accueil mis à jour inspectées dans
+`tmp/conveyor-rotation/`, à 1440 × 900 et 1280 × 720. Gate finale `pnpm check`
+verte : 1 566 tests Vitest dans 123 fichiers, neuf documents, build et
+121 E2E v1. Log : `/tmp/tinkerbolt-conveyor-remix-check.log`.
+Validation visuelle auteur attendue. Aucun commit ni push à ce stade.
+Prochaine étape dans ce périmètre : décision auteur sur la courroie ou la
+face unique, puis correction du contour physique en accord avec l’asset.
+Cette suite est réalisée dans CONV2 ci-dessus.
 
 ### UI4 — Paramètres et netteté de l’accueil — 6 octobre 2026 — validation visuelle attendue
 

@@ -25,7 +25,13 @@ const spriteAssetsByFamily = {
   timer: ['timer-background', 'timer-hand'],
   lever: ['lever-base', 'lever-handle'],
   // Both belts are loaded: which one is drawn depends on the belt's direction.
-  conveyor: ['conveyor-belt', 'conveyor-belt-left', 'conveyor-frame'],
+  conveyor: [
+    'conveyor-belt',
+    'conveyor-belt-left',
+    'conveyor-wheel',
+    'conveyor-frame',
+    'conveyor-loop',
+  ],
   button: ['button-base', 'button-cap'],
   // The blades turn behind the body and show through the ring's opening.
   fan: ['fan-blades', 'fan-body'],

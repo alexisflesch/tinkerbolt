@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import math
+import runpy
 import subprocess
 from pathlib import Path
 
@@ -262,32 +263,8 @@ save(
     THUMBS / "lever.png",
 )
 
-# Convoyeur : cadre 3 unités de long. La bande défile derrière la fenêtre du
-# cadre ; son sprite est une bande de la hauteur de la fenêtre, plus longue
-# que la fenêtre d'exactement une période du motif, pour que le renderer n'ait
-# qu'à décaler sa source.
-frame = load("conveyor/conveyor-fixed-part.png")
-frame_box = frame.getbbox()
-conveyor_scale = 3 / (frame_box[2] - frame_box[0])
-frame_center = ((frame_box[0] + frame_box[2]) / 2, (frame_box[1] + frame_box[3]) / 2)
-conveyor_frame = export(frame, frame_box, 3, (frame_box[3] - frame_box[1]) * conveyor_scale, "conveyor-frame")
-window = (434, 297, 1738, 433)
-period = 407
-belt_k = 77 / period
-belt = load("conveyor/conveyor-moving-part.png")
-window_px = math.ceil((window[2] - window[0]) * belt_k)
-strip = belt.crop((0, window[1], math.ceil((window_px + 77) / belt_k), window[3]))
-strip = strip.resize((window_px + 77, round((window[3] - window[1]) * belt_k)), Image.LANCZOS)
-save(strip, OUT / "conveyor-belt@2x.png")
-save(strip.transpose(Image.FLIP_LEFT_RIGHT), OUT / "conveyor-belt-left@2x.png")
-geometry["conveyor"] = {
-    "height": round((frame_box[3] - frame_box[1]) * conveyor_scale, 4),
-    "window": to_world([window[:2], window[2:]], frame_center, conveyor_scale),
-    "beltPeriod": round(period * conveyor_scale, 4),
-    "beltSprite": {"width": strip.width, "height": strip.height, "windowWidth": window_px, "periodPx": 77},
-}
-window_offset = (round((window[0] - frame_box[0]) * conveyor_scale * PX_PER_UNIT), round((window[1] - frame_box[1]) * conveyor_scale * PX_PER_UNIT))
-save(composite([(strip.crop((0, 0, window_px, strip.height)), window_offset), (conveyor_frame, (0, 0))], conveyor_frame.size), THUMBS / "conveyor.png")
+# Convoyeur v2 : même export ciblé qu'en intégration, sans rétablir l'ancien kit.
+runpy.run_path(str(ROOT / 'art/build-conveyor-sprites.py'))['export_conveyor']()
 
 # Les familles suivantes sont composées dans le repère en pixels d'une pièce
 # de référence ; `rect` convertit un cadre de ce repère en rectangle monde

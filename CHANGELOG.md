@@ -5,6 +5,11 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 
 ## [Non publié]
 
+- Les convoyeurs utilisent le nouveau visuel sans pieds, avec flèches et roues
+  animées. Leur courroie entraîne aussi sur les extrémités arrondies ; le dessous
+  va dans le sens opposé au dessus. Le sens suit la rotation du convoyeur.
+- La démonstration de l’accueil utilise le nouveau remix de l’auteur, avec
+  le convoyeur retourné et les deux balles déjà posées.
 - Les Paramètres reprennent les panneaux papier et plan bleu de l’atelier.
   Deux boutons permettent d’exporter et d’importer les niveaux résolus et les
   records de campagne ; l’import conserve les meilleurs résultats déjà présents.

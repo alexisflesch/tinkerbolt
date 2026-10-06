@@ -299,6 +299,8 @@ const layerPoseSources: Record<SpriteAsset, LayerPoseSource> = {
   'conveyor-belt': 'placement',
   'conveyor-belt-left': 'placement',
   'conveyor-frame': 'placement',
+  'conveyor-wheel': 'placement',
+  'conveyor-loop': 'placement',
   'button-base': 'placement',
   'button-cap': 'placement',
   'fan-blades': 'placement',
@@ -315,14 +317,9 @@ const layerPoseSources: Record<SpriteAsset, LayerPoseSource> = {
  * by `art/build-sprites.py`). Its sprite is the window plus one period of
  * chevrons, so scrolling is only a matter of sliding the source rectangle.
  */
-const CONVEYOR_BELT_WINDOW: BoardDestination = {
-  x: -0.9614,
-  y: -0.1306,
-  width: 1.9243,
-  height: 0.2007,
-};
-const CONVEYOR_BELT_PERIOD = 0.6006;
-const CONVEYOR_BELT_SPRITE = { windowWidth: 247, period: 77, height: 26 } as const;
+const CONVEYOR_BELT_WINDOW = conveyorGeometry.beltWindow;
+const CONVEYOR_BELT_PERIOD = conveyorGeometry.beltPeriod;
+const CONVEYOR_BELT_SPRITE = { windowWidth: 264, period: 74, height: 28 } as const;
 
 const conveyorBeltSource = (offset: number): BoardDestination => {
   // A belt moving right carries its pattern right, so the window slides left.
@@ -379,7 +376,7 @@ const layerAssetsFor = (
   if (object.type === 'beam') return [BEAM_LAYERS[object.props.size]];
   if (object.type !== 'conveyor') return spriteAssetsForFamily(object.type);
   const belt = conveyorBeltAt(object, view).facing === -1 ? 'conveyor-belt-left' : 'conveyor-belt';
-  return [belt, 'conveyor-frame'];
+  return [belt, 'conveyor-wheel', 'conveyor-wheel', 'conveyor-frame', 'conveyor-loop'];
 };
 
 /** Whole-object footprint (ADR 0007), shared with the colliders through `family-geometry`. */
@@ -564,6 +561,7 @@ const projectLayer = (
   object: Placement,
   asset: SpriteAsset,
   view: BoardSimulationView | undefined,
+  layerIndex: number,
 ): ProjectedLayer => {
   const placementPose = {
     position: { x: object.transform.position.x, y: object.transform.position.y },
@@ -587,6 +585,25 @@ const projectLayer = (
     destination: sunkDestination(asset, layerDestination(object, asset), sinkOf(object, view)),
   };
   if (object.type === 'fan') return fanLayer(object, asset, view, projected.destination);
+  if (object.type === 'conveyor' && asset === 'conveyor-wheel') {
+    const center = conveyorGeometry.wheelCenters[layerIndex - 1];
+    if (center === undefined) throw new Error('Missing conveyor wheel pivot');
+    const cosine = Math.cos(pose.rotation);
+    const sine = Math.sin(pose.rotation);
+    const diameter = conveyorGeometry.wheelDiameter;
+    return {
+      position: {
+        x: pose.position.x + center.x * cosine - center.y * sine,
+        y: pose.position.y + center.x * sine + center.y * cosine,
+      },
+      rotation: pose.rotation,
+      destination: { x: -diameter / 2, y: -diameter / 2, width: diameter, height: diameter },
+      spin: {
+        angle: conveyorBeltAt(object, view).offset / conveyorGeometry.wheelPitchRadius,
+        squash: 1,
+      },
+    };
+  }
   if (object.type === 'barrier') {
     const { angle, mirrored } = facingPose(object.transform.rotation);
     const turned = { ...projected, rotation: angle, mirrored };
@@ -642,6 +659,8 @@ const drawOrderByAsset: Record<SpriteAsset, number> = {
   'conveyor-belt': 0,
   'conveyor-belt-left': 0,
   'conveyor-frame': 0,
+  'conveyor-wheel': 0,
+  'conveyor-loop': 0,
   'button-base': 0,
   'button-cap': 0,
   'fan-blades': 0,
@@ -732,7 +751,7 @@ export const projectLevel = (
           placementOrder: documentIndex,
           rotatable: object.permissions.rotate,
           destination: footprintForObject(object),
-          layer: projectLayer(object, assetKey, simulation),
+          layer: projectLayer(object, assetKey, simulation, layerIndex),
           appearance: appearanceOf(object.id, ghost),
         },
       })),

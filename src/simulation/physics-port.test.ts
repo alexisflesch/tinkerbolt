@@ -37,6 +37,8 @@ const BARRIER_BAR_CENTER_Y = -0.0414;
 const BARRIER_BAR_HALF_THICKNESS = 0.19;
 /** Vitesse du tapis d'un convoyeur en marche, en unités monde par seconde. */
 const CONVEYOR_SPEED = 1.5;
+/** Approved no-foot contour, independently measured on the 2120 × 376 source frame. */
+const CONVEYOR_RADIUS = (376 * 3) / 2120 / 2;
 /** Hauteur totale du socle de la bascule, posé sous le pivot. */
 const SEESAW_BASE_HEIGHT = 0.7;
 /** Un corps au repos s'enfonce du « linear slop » de Planck avant de se stabiliser. */
@@ -693,15 +695,15 @@ const createRollingLevelDocument = (): LevelDocument =>
       {
         id: 'conveyor-1',
         type: 'conveyor',
-        transform: { position: { x: -3, y: 0 }, rotation: 0 },
+        transform: { position: { x: -3, y: CONVEYOR_RADIUS - 0.29 }, rotation: 0 },
         props: { direction: 'right' },
         permissions,
       },
       {
         id: 'beam-1',
         type: 'beam',
-        // Top flush with the belt: 0,29 above the conveyor's centre.
-        transform: { position: { x: 1.5, y: -0.165 }, rotation: 0 },
+        // Keep the beam flush with the approved conveyor profile.
+        transform: { position: { x: 1.5, y: -0.29 + BEAM_HALF_THICKNESS }, rotation: 0 },
         props: { size: 'long' },
         permissions,
       },
