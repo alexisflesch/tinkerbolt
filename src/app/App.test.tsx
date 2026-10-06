@@ -948,7 +948,7 @@ describe('coque TinkerBolt', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Lancer' })).toBeEnabled();
     });
-  });
+  }, 15_000);
 
   it('conserve la construction après une victoire obtenue dans l’éditeur', async () => {
     const animationFrames = createAnimationFrameHarness();

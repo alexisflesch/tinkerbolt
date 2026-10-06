@@ -64,7 +64,7 @@ describe('cadrage à l’ouverture (ADR 0007, amendement du 5 octobre)', () => {
     await waitFor(() => {
       expect(zoom()).toBeCloseTo(framedZoom);
     });
-  });
+  }, 15_000);
 
   it('garde toute la scène dans l’atelier, où l’auteur construit', async () => {
     window.history.replaceState(null, '', '/editor');

@@ -255,6 +255,16 @@ la Forge, éventuel relais et hébergement. F1 le fixe avant F2.
 
 ## Journal des lots de maintenance
 
+### TEST2 — Stabiliser les délais des tests — 6 octobre 2026 — livré
+
+Trois tests échouaient sous charge à cause de délais trop serrés : deux
+parcours applicatifs dépassaient les 5 s par défaut et l’attente du stockage
+dans le fixture s’arrêtait après 1 s. Les assertions sont inchangées ; ces
+parcours ont un délai de 15 s et l’attente partagée du chargement, 4 s. Les
+trois cas ciblés passent ensemble.
+Gate finale : `pnpm check` verte — 2 202 tests Vitest dans 123 fichiers, build
+et 121 E2E v1. Aucun comportement produit modifié.
+
 ### CONV2 — Intégrer le convoyeur sans pieds — 6 octobre 2026 — livré, recette intégrée attendue
 
 Visuel du kit `art/assets/conveyor/v2/` validé par l’auteur, puis remplacement

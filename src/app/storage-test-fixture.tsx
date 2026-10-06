@@ -74,10 +74,13 @@ export async function renderStorageReady(element: ReactElement): Promise<RenderR
     await Promise.resolve();
   });
   if (screen.queryAllByText(/^Chargement/u).length > 0)
-    await waitFor(() => {
-      if (screen.queryAllByText(/^Chargement/u).length > 0)
-        throw new Error('Lecture encore en cours');
-    });
+    await waitFor(
+      () => {
+        if (screen.queryAllByText(/^Chargement/u).length > 0)
+          throw new Error('Lecture encore en cours');
+      },
+      { timeout: 4_000 },
+    );
   await act(async () => {
     await Promise.resolve();
   });
@@ -94,10 +97,13 @@ export async function storageAction(action: () => unknown = () => undefined): Pr
     await awaitDraftWrites();
   });
   if (screen.queryAllByText(/^Chargement/u).length > 0)
-    await waitFor(() => {
-      if (screen.queryAllByText(/^Chargement/u).length > 0)
-        throw new Error('Lecture encore en cours');
-    });
+    await waitFor(
+      () => {
+        if (screen.queryAllByText(/^Chargement/u).length > 0)
+          throw new Error('Lecture encore en cours');
+      },
+      { timeout: 4_000 },
+    );
   await act(async () => {
     await Promise.resolve();
   });

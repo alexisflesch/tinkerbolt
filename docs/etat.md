@@ -153,6 +153,12 @@ le push doit être lancé depuis une machine authentifiée auprès du dépôt Gi
 
 ## Dernière gate
 
+`pnpm check` après TEST2, le 6 octobre 2026 : **vert** — contrôle
+version/changelog, typecheck, lint, formatage, Knip, validation du contenu,
+**2 202 tests Vitest dans 123 fichiers**, build et **121 E2E v1**.
+Les délais de trois tests signalés sous charge ont été rendus explicites ;
+leurs assertions restent inchangées.
+
 `pnpm check` après intégration CONV2, le 6 octobre 2026 : **vert** — contrôle
 version/changelog, typecheck, lint, formatage, Knip, neuf documents validés,
 **2 202 tests Vitest dans 123 fichiers**, build et **121 E2E v1**.

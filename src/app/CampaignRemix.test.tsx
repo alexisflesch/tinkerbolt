@@ -238,5 +238,5 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
     await waitFor(() => {
       expect(posed[0]?.transform.position.y).toBeCloseTo(3, 1);
     });
-  });
+  }, 15_000);
 });
