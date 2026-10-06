@@ -143,11 +143,9 @@ Après les lots MACH1, CARTES1, UI3, ATL1 et UI1 du 6 octobre, la validation
 visuelle de l’auteur reste attendue pour les lots concernés. Aucun commit ni
 push n’a été effectué.
 
-`pnpm check --config=/tmp/tinkerbolt-catalogue-preview.config.ts` après MACH1,
-6 octobre 2026 : **vert** — contrôle version/changelog, typecheck, lint,
-formatage, Knip, validation de neuf niveaux embarqués,
-**1503 tests Vitest dans 119 fichiers**, build et **118 E2E v1**.
-La configuration externe utilise Chromium 151 déjà installé ; aucun changement
-d’outillage dans le dépôt. Les tests d’en-tête et du catalogue consignés
-auparavant en échec passent après un build frais.
+`pnpm check` après TEST1, le 6 octobre 2026 : **vert** — contrôle
+version/changelog, typecheck, lint, formatage, Knip, validation de neuf niveaux
+embarqués, **1503 tests Vitest dans 119 fichiers**, build et **118 E2E v1**.
+Playwright 1.63.0 utilise son Chromium 153 standard ; les tests d’en-tête et du
+catalogue qui échouaient avec l’ancien Chromium passent sans override.
 Validation visuelle de l’auteur toujours attendue pour les lots concernés.

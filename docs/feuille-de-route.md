@@ -244,6 +244,25 @@ la Forge, éventuel relais et hébergement. F1 le fixe avant F2.
 
 ## Journal des lots de maintenance
 
+### TEST1 — Stabiliser la gate Playwright standard — 6 octobre 2026 — livré
+
+L’auteur a signalé cinq E2E rouges avec `pnpm check` : trois comparaisons de
+l’en-tête et deux recherches du catalogue. Reproduction avec
+`@playwright/test` 1.55.0 et son Chromium 140 : `fill()` laissait la recherche
+vide ; l’en-tête prenait ses dimensions de repli avant le chargement tardif de
+Nunito sur Paramètres. Le navigateur 151 du contournement temporaire faisait
+passer les huit tests ciblés, mais ne réparait pas la commande standard.
+
+Mise à jour de l’outil de test existant en 1.63.0, épinglé dans `package.json`
+et `pnpm-lock.yaml`, avec Chromium 153 installé comme en CI. Les tests et le
+code produit n’ont pas été modifiés : la recherche garde une vraie saisie
+Playwright, et les assertions d’alignement restent actives.
+
+Tests ciblés : huit E2E verts. Gate finale : `pnpm check` sans configuration
+supplémentaire, **1503 tests Vitest dans 119 fichiers**, build et **118 E2E v1**
+verts. Aucun commit ni push ; la validation visuelle des lots UI concernés reste
+attendue.
+
 ### MACH1 — Exporter et jouer une « Machine » — 6 octobre 2026 — livré, validation visuelle attendue
 
 Demande directe de l’auteur ; contrat dans l’ADR 0020 (réécrit le 6 octobre :
@@ -276,11 +295,10 @@ l’aide `e2e/card-menu.ts` (`levels`, `my-levels`, `remix`, `beta-journey`,
 papier des cartes 3n+1 n’avait pas de rotation, `transform: rotate(var(--card-tilt))`
 ajouté à `.level-card::before`, comme le dit déjà le commentaire du CSS.
 
-Gate finale du 6 octobre : `pnpm check --config=/tmp/tinkerbolt-catalogue-preview.config.ts`
-verte — 1503 tests Vitest dans 119 fichiers, build et 118 E2E v1. Les huit E2E
-`app-header.spec.ts` et `catalogue.spec.ts`, dont la recherche du catalogue,
-passent après un build frais avec Chromium 151. Les cinq échecs de l’exécution
-précédente ne se reproduisent pas ; aucun test ni code produit n’a dû être modifié.
+Gate standard finale, après TEST1 : `pnpm check` verte — 1503 tests Vitest dans
+119 fichiers, build et 118 E2E v1. Les huit E2E `app-header.spec.ts` et
+`catalogue.spec.ts`, dont la recherche, passent avec le Chromium fourni par
+Playwright 1.63.0.
 Limites : le choix Défi/Machine au clavier repose sur les boutons radio natifs
 (non simulé en jsdom) ; la boîte d’export entre de justesse (5 px de marge) dans
 le viewport 390 × 508 clavier ouvert ; machine à objectif complet : le jeu
