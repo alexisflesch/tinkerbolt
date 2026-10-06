@@ -276,9 +276,11 @@ l’aide `e2e/card-menu.ts` (`levels`, `my-levels`, `remix`, `beta-journey`,
 papier des cartes 3n+1 n’avait pas de rotation, `transform: rotate(var(--card-tilt))`
 ajouté à `.level-card::before`, comme le dit déjà le commentaire du CSS.
 
-Gate : `pnpm check` verte jusqu’aux tests (119 fichiers, 1503 tests) et au build ;
-E2E critiques 113 verts, 5 rouges hors périmètre : `app-header.spec.ts` (3) et
-`catalogue.spec.ts` (2, champ de recherche du catalogue resté vide).
+Gate finale du 6 octobre : `pnpm check --config=/tmp/tinkerbolt-catalogue-preview.config.ts`
+verte — 1503 tests Vitest dans 119 fichiers, build et 118 E2E v1. Les huit E2E
+`app-header.spec.ts` et `catalogue.spec.ts`, dont la recherche du catalogue,
+passent après un build frais avec Chromium 151. Les cinq échecs de l’exécution
+précédente ne se reproduisent pas ; aucun test ni code produit n’a dû être modifié.
 Limites : le choix Défi/Machine au clavier repose sur les boutons radio natifs
 (non simulé en jsdom) ; la boîte d’export entre de justesse (5 px de marge) dans
 le viewport 390 × 508 clavier ouvert ; machine à objectif complet : le jeu
@@ -319,8 +321,11 @@ animation/pause/reprise, réduction des animations et suspension hors onglet vis
 Captures initiales et après quatre secondes inspectées à 1440 × 900 et 1280 × 720,
 dans `tmp/home-machine/` ; accord visuel de l’auteur attendu.
 
-Gate complète en cours ; aucun commit ni push, le workspace contient aussi
-d’autres lots en cours. Prochaine étape : résultat de la gate et recette visuelle auteur.
+Gate complète verte : 1503 tests Vitest dans 119 fichiers, build et 118 E2E v1
+(configuration Chromium 151 de `/tmp/tinkerbolt-catalogue-preview.config.ts`).
+Les captures initiales et après quatre secondes ont été inspectées à 1440 × 900
+et 1280 × 720 dans `tmp/home-machine/` ; accord visuel de l’auteur attendu.
+Aucun commit ni push ; prochaine étape : recette visuelle auteur.
 
 ### ATL1 — Reprise de l’Atelier et infos du niveau — 6 octobre 2026 — validation visuelle attendue
 

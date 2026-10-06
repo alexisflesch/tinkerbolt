@@ -139,16 +139,15 @@ le push doit être lancé depuis une machine authentifiée auprès du dépôt Gi
 
 ## Dernière gate
 
-Maintenance UI1 du 6 octobre : styles du composant `AppHeader` regroupés dans
-`src/ui/AppHeader.css`, sans marges propres à Paramètres. L’en-tête de Mes niveaux,
-Paramètres, accueil, campagne et Atelier utilise les mêmes règles de présentation.
-Quatre tests de navigateur comparent son alignement et le menu compact ; captures
-inspectées dans `tmp/top-bar/` aux deux formats desktop et aux formats compacts.
-Validation visuelle de l’auteur attendue ; aucun commit ni push pour ce lot.
+Après les lots MACH1, CARTES1, UI3, ATL1 et UI1 du 6 octobre, la validation
+visuelle de l’auteur reste attendue pour les lots concernés. Aucun commit ni
+push n’a été effectué.
 
-`pnpm check --config=/tmp/tinkerbolt-catalogue-preview.config.ts` après UI1,
+`pnpm check --config=/tmp/tinkerbolt-catalogue-preview.config.ts` après MACH1,
 6 octobre 2026 : **vert** — contrôle version/changelog, typecheck, lint,
-formatage, Knip, huit documents, **1 425 tests Vitest dans 114 fichiers**,
-build et **116 E2E v1**. La configuration externe utilise Chromium 151 déjà
-installé ; aucun changement d’outillage dans le dépôt. Log :
-`/tmp/tinkerbolt-topbar-check.log`.
+formatage, Knip, validation de neuf niveaux embarqués,
+**1503 tests Vitest dans 119 fichiers**, build et **118 E2E v1**.
+La configuration externe utilise Chromium 151 déjà installé ; aucun changement
+d’outillage dans le dépôt. Les tests d’en-tête et du catalogue consignés
+auparavant en échec passent après un build frais.
+Validation visuelle de l’auteur toujours attendue pour les lots concernés.
