@@ -1,6 +1,8 @@
 import { useCallback, useId, useRef, useState, type ReactNode } from 'react';
 import {
   Code2,
+  Download,
+  Upload,
   ExternalLink,
   FileText,
   Gauge,
@@ -22,6 +24,9 @@ import { pseudoRefusal } from './level-export';
 import { usePreferencesRepository } from './preferences-repository-context';
 import { useCampaignProgress } from './use-campaign-progress';
 import { appBuildInfo } from './build-info';
+import { downloadWithTemporaryLink } from './browser-share';
+import { encodeProgressFile } from '../infrastructure/progress-file/progress-file-codec';
+import { readProgressFile } from './read-progress-file';
 
 /** Mirrors the pseudonym's length limit (`level-document.ts`), like the export dialog (M14). */
 const MAX_PSEUDO_LENGTH = 40;
@@ -178,10 +183,54 @@ function PseudoForm({
 
 /** U11 (ADR 0010, ADR 0011): forgets the campaign progress only, after confirmation. */
 function ProgressSettings() {
-  const { levels, loading, known, storageError, resetCampaignProgress } = useCampaignProgress();
+  const {
+    progress,
+    levels,
+    loading,
+    known,
+    storageError,
+    resetCampaignProgress,
+    importCampaignProgress,
+  } = useCampaignProgress();
   const [isConfirming, setIsConfirming] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [resetting, setResetting] = useState(false);
+  const [transferring, setTransferring] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportProgress = (): void => {
+    try {
+      downloadWithTemporaryLink(
+        'tinkerbolt-progression.json',
+        'application/json',
+        encodeProgressFile(progress),
+      );
+      setNotice({ tone: 'status', message: 'Fichier de progression exporté.' });
+    } catch {
+      setNotice({ tone: 'alert', message: 'Impossible d’exporter la progression.' });
+    }
+  };
+  const importProgress = async (file: File): Promise<void> => {
+    setTransferring(true);
+    setNotice(null);
+    const decoded = await readProgressFile(file);
+    if (decoded.status === 'error') {
+      setNotice({ tone: 'alert', message: decoded.message });
+    } else {
+      const result = await importCampaignProgress(decoded.progress);
+      setNotice(
+        result.status === 'ok'
+          ? {
+              tone: 'status',
+              message: 'Progression importée. Tes meilleurs records sont conservés.',
+            }
+          : {
+              tone: 'alert',
+              message: `${storageMessage(result.code)} La progression n’a pas été importée.`,
+            },
+      );
+    }
+    setTransferring(false);
+  };
   const cancelRef = useRef<HTMLButtonElement>(null);
   const campaign = Object.values(levels);
   const resolvedCount = campaign.filter(({ resolved }) => resolved).length;
@@ -233,9 +282,45 @@ function ProgressSettings() {
         {known && storageError !== null && notice === null && (
           <p role="alert">La progression ne peut pas être enregistrée sur cet appareil.</p>
         )}
+        <div className="settings-transfer">
+          <p className="panel-note">
+            Garde tes niveaux résolus et tes records dans un fichier, ou retrouve-les sur un autre
+            appareil. Les constructions, les créations et le pseudo ne sont pas inclus. L’import
+            conserve tes meilleurs records.
+          </p>
+          <div className="settings-transfer-actions">
+            <Button
+              disabled={loading || !known || resetting || transferring}
+              onClick={exportProgress}
+            >
+              <Download size={18} aria-hidden="true" />
+              Exporter la progression
+            </Button>
+            <Button
+              disabled={loading || resetting || transferring}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload size={18} aria-hidden="true" />
+              Importer la progression
+            </Button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            aria-label="Fichier de progression"
+            disabled={transferring || resetting}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = '';
+              if (file !== undefined) void importProgress(file);
+            }}
+          />
+        </div>
         <Button
           tone="reset"
-          disabled={loading || resetting}
+          disabled={loading || resetting || transferring}
           onClick={() => {
             setNotice(null);
             setIsConfirming(true);
@@ -302,7 +387,6 @@ function AboutSettings() {
       title={<SettingsPanelTitle icon={<Info size={30} />}>À propos</SettingsPanelTitle>}
       className="settings-panel settings-panel-about"
     >
-      <p className="settings-about-heading">À propos de TinkerBolt</p>
       <div className="settings-about-list">
         <dl className="settings-about-details">
           <div>
@@ -356,6 +440,9 @@ export function SettingsPage() {
   return (
     <AppFrame title="Paramètres" variant="page">
       <div className="page-content settings-page">
+        <p className="settings-intro">
+          Ton profil, tes petits succès et les coulisses de TinkerBolt.
+        </p>
         <PseudoSettings />
         <ProgressSettings />
         <AboutSettings />

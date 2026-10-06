@@ -24,6 +24,27 @@ export const testReceivedRepository = () =>
   createIndexedDBReceivedLevelRepository(testDatabase(), () => new Date());
 export const testPreferencesRepository = () =>
   createIndexedDBPreferencesRepository(testDatabase(), () => new Date());
+export const mergeCampaignProgressForTest = (
+  current: CampaignProgress,
+  imported: CampaignProgress,
+): CampaignProgress => {
+  let merged = current;
+  for (const [id, candidate] of Object.entries(imported)) {
+    if (candidate === undefined) continue;
+    const result = candidate;
+    const previous = Object.hasOwn(merged, id) ? merged[id] : undefined;
+    if (result.resolved && result.bestObjectCount !== null) {
+      const bestObjectCount =
+        previous?.resolved === true && previous.bestObjectCount !== null
+          ? Math.min(previous.bestObjectCount, result.bestObjectCount)
+          : result.bestObjectCount;
+      merged = { ...merged, [id]: { resolved: true, bestObjectCount } };
+    } else if (previous === undefined) {
+      merged = { ...merged, [id]: result };
+    }
+  }
+  return merged;
+};
 export const testProgressRepository = (initial: CampaignProgress = {}): ProgressRepository => {
   let progress = initial;
   return {
@@ -31,6 +52,10 @@ export const testProgressRepository = (initial: CampaignProgress = {}): Progress
     save: (value) => {
       progress = value;
       return Promise.resolve({ status: 'ok' });
+    },
+    merge: (imported) => {
+      progress = mergeCampaignProgressForTest(progress, imported);
+      return Promise.resolve({ status: 'ok', progress });
     },
     recordVictory: (id, count) => {
       progress = recordSuccess(progress, id, count);

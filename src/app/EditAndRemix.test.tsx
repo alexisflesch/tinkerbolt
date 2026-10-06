@@ -19,6 +19,7 @@ import { levelDocumentSchema, type LevelDocument } from '../domain/level-documen
 
 import {
   cardAction,
+  mergeCampaignProgressForTest,
   testDraftRepository,
   testReceivedRepository,
   renderStorageReady,
@@ -113,6 +114,7 @@ const toPlaceObjects = (document: LevelDocument) =>
   document.objects.filter(({ toPlace }) => toPlace === true);
 
 const createProgressRepository = (progress: CampaignProgress = {}) => {
+  let stored = progress;
   const save = vi.fn((_progress: CampaignProgress) => {
     void _progress;
     return Promise.resolve({ status: 'ok' as const });
@@ -124,8 +126,12 @@ const createProgressRepository = (progress: CampaignProgress = {}) => {
       await save(updated);
       return { status: 'ok', progress: updated };
     },
-    load: () => Promise.resolve({ status: 'ok', progress }),
+    load: () => Promise.resolve({ status: 'ok', progress: stored }),
     save,
+    merge: (imported) => {
+      stored = mergeCampaignProgressForTest(stored, imported);
+      return Promise.resolve({ status: 'ok', progress: stored });
+    },
     clear: () => Promise.resolve({ status: 'ok' }),
   };
   return { repository, save };

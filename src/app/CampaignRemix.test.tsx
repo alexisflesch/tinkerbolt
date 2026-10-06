@@ -9,7 +9,12 @@ import { levelDocumentSchema, type LevelDocument } from '../domain/level-documen
 
 import type * as EmbeddedLevels from '../content/embedded-levels';
 
-import { testDraftRepository, renderStorageReady, storageAction } from './storage-test-fixture';
+import {
+  mergeCampaignProgressForTest,
+  testDraftRepository,
+  renderStorageReady,
+  storageAction,
+} from './storage-test-fixture';
 import type { CampaignProgress } from '../application/progression';
 import { recordSuccess } from '../application/progression';
 import { App } from './App';
@@ -151,6 +156,7 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
 
   it('pose la tentative gagnante dans une nouvelle création, la victoire comptée', async () => {
     const flush = createAnimationFrameHarness();
+    let stored: CampaignProgress = {};
     const save = vi.fn((_progress: CampaignProgress) => {
       void _progress;
       return Promise.resolve({ status: 'ok' as const });
@@ -162,8 +168,12 @@ describe('remixer un niveau de campagne gagné (M11, ADR 0015 § Points d’entr
         await save(updated);
         return { status: 'ok', progress: updated };
       },
-      load: () => Promise.resolve({ status: 'ok', progress: {} }),
+      load: () => Promise.resolve({ status: 'ok', progress: stored }),
       save,
+      merge: (imported) => {
+        stored = mergeCampaignProgressForTest(stored, imported);
+        return Promise.resolve({ status: 'ok', progress: stored });
+      },
       clear: () => Promise.resolve({ status: 'ok' }),
     };
     window.history.replaceState(null, '', `/levels/${levelOneId}/play`);

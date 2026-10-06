@@ -28,6 +28,7 @@ import { ROTATION_HANDLE_CORNER_OFFSET_CSS_PIXELS } from '../presentation/rotati
 import styles from '../ui/styles.css?raw';
 
 import {
+  mergeCampaignProgressForTest,
   testReceivedRepository,
   renderStorageReady,
   storageAction,
@@ -119,6 +120,7 @@ const openEmbeddedLevelOne = async (): Promise<void> => {
 };
 
 const createProgressRepository = (progress: CampaignProgress = {}) => {
+  let stored = progress;
   const save = vi.fn((_progress: CampaignProgress) => {
     void _progress;
     return Promise.resolve({ status: 'ok' as const });
@@ -130,8 +132,12 @@ const createProgressRepository = (progress: CampaignProgress = {}) => {
       await save(updated);
       return { status: 'ok', progress: updated };
     },
-    load: () => Promise.resolve({ status: 'ok', progress }),
+    load: () => Promise.resolve({ status: 'ok', progress: stored }),
     save,
+    merge: (imported) => {
+      stored = mergeCampaignProgressForTest(stored, imported);
+      return Promise.resolve({ status: 'ok', progress: stored });
+    },
     clear: () => Promise.resolve({ status: 'ok' }),
   };
   return { repository, save };

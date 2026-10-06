@@ -16,19 +16,9 @@ import {
 } from './indexed-db-common';
 import { decodePlayerConstructionRow } from '../player-construction/player-construction-codec';
 
-const levelProgressSchema = z
-  .strictObject({
-    resolved: z.boolean(),
-    bestObjectCount: z.int().nonnegative().max(Number.MAX_SAFE_INTEGER).nullable(),
-  })
-  .refine(({ resolved, bestObjectCount }) => resolved === (bestObjectCount !== null));
-const progressSchema = z.record(idSchema, levelProgressSchema);
-const envelopeSchema = z.strictObject({
-  kind: z.literal('progress'),
-  version: z.literal(1),
-  data: progressSchema,
-});
-const rowSchema = z.strictObject({ id: z.literal('campaign'), envelope: envelopeSchema });
+import { progressSchema, progressEnvelopeSchema } from '../progress-file/progress-file-codec';
+
+const rowSchema = z.strictObject({ id: z.literal('campaign'), envelope: progressEnvelopeSchema });
 const decodeRow = (raw: unknown): CampaignProgress | null => {
   const parsed = rowSchema.safeParse(raw);
   return parsed.success ? parsed.data.envelope.data : null;
@@ -74,6 +64,27 @@ export const createIndexedDBProgressRepository = (
           return { status: 'error', code: 'unsupported-version' } as const;
         await db.table('progress').put(rowFor(progress));
         return { status: 'ok', ...warningPart(checked.warning) } as const;
+      });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+  async merge(imported) {
+    const validated = progressSchema.safeParse(imported);
+    if (!validated.success) return { status: 'error', code: 'invalid-progress' };
+    try {
+      return await db.transaction('rw', db.table('progress'), db.table('backups'), async () => {
+        const checked = await checkedRow(db, 'progress', 'campaign', decodeRow, 1, clock);
+        if (checked.status === 'future')
+          return { status: 'error', code: 'unsupported-version' } as const;
+        let progress: CampaignProgress = checked.value ?? {};
+        for (const [id, result] of Object.entries(validated.data)) {
+          if (result.resolved && result.bestObjectCount !== null)
+            progress = recordSuccess(progress, id, result.bestObjectCount);
+          else if (progress[id] === undefined) progress = { ...progress, [id]: result };
+        }
+        await db.table('progress').put(rowFor(progress));
+        return { status: 'ok', progress, ...warningPart(checked.warning) } as const;
       });
     } catch (error) {
       return failure(error);

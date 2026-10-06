@@ -237,3 +237,23 @@ toutes les constructions `campaign` ; une source modifiée invalide la
 construction sans secours avec avertissement `source-changed`. Les créations
 et les reçus restent indépendants du reset. Les décisions C0 ci-dessus restent
 acceptées.
+
+## Amendement du 6 octobre 2026 — fichier de progression
+
+Demande directe de l’auteur : importer et exporter la progression depuis Paramètres.
+Le fichier JSON contient l’enveloppe `progress` v1 existante : niveaux résolus et
+meilleurs nombres d’objets. Il ne contient ni constructions/solutions, ni créations,
+niveaux reçus ou préférences ; l’interface précise ce périmètre.
+
+Un codec dédié partage le schéma Zod strict avec le repository IndexedDB, limite
+le fichier à 256 Kio avant parsing, et refuse JSON invalide, version inconnue,
+identifiants invalides ou couples résolution/record incohérents. Les identifiants
+inconnus de la campagne actuelle restent conservés pour la compatibilité.
+
+L’import fusionne atomiquement les résultats avec la progression relue dans la
+transaction : une réussite acquise et un meilleur record ne sont jamais perdus.
+`ProgressRepository.merge` renvoie la progression réellement enregistrée ; le
+contexte attend ses écritures précédentes et actualise les déblocages seulement
+après réussite. Un échec laisse l’état affiché et les données locales inchangés.
+Les autres tables, y compris les constructions, ne sont pas modifiées.
+Aucun changement du format persistant ni migration n’est nécessaire.

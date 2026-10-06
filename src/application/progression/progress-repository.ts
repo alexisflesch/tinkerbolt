@@ -18,7 +18,7 @@ export type ProgressSaveResult =
   | { readonly status: 'ok'; readonly warning?: 'invalid-data-backed-up' }
   | { readonly status: 'error'; readonly code: ProgressRepositoryErrorCode };
 
-type ProgressVictoryResult =
+export type ProgressVictoryResult =
   | {
       readonly status: 'ok';
       readonly progress: CampaignProgress;
@@ -30,6 +30,8 @@ type ProgressVictoryResult =
 export interface ProgressRepository {
   load(): Promise<ProgressLoadResult>;
   save(progress: CampaignProgress): Promise<ProgressSaveResult>;
+  /** Merge validated imported records atomically, preserving every better result. */
+  merge(progress: CampaignProgress): Promise<ProgressVictoryResult>;
   recordVictory(levelId: string, objectsUsed: number): Promise<ProgressVictoryResult>;
   /**
    * U11: forget the whole campaign progress (resolved levels, records, hence

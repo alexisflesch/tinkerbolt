@@ -12,6 +12,7 @@ import type * as EmbeddedLevels from '../content/embedded-levels';
 
 import {
   cardAction,
+  mergeCampaignProgressForTest,
   testDraftRepository,
   renderStorageReady,
   storageAction,
@@ -144,6 +145,9 @@ const dragBeamSizeHandle = async (distanceX: number, distanceY: number): Promise
 
 /** M11: level 2 can only be modified once level 1 is resolved (ADR 0015, ADR 0010). */
 const createProgressRepository = () => {
+  let stored: CampaignProgress = {
+    'campaign-01-la-bille-de-service': { resolved: true, bestObjectCount: 1 },
+  };
   const save = vi.fn((_progress: CampaignProgress) => {
     void _progress;
     return Promise.resolve({ status: 'ok' as const });
@@ -155,12 +159,12 @@ const createProgressRepository = () => {
       await save(updated);
       return { status: 'ok', progress: updated };
     },
-    load: () =>
-      Promise.resolve({
-        status: 'ok',
-        progress: { 'campaign-01-la-bille-de-service': { resolved: true, bestObjectCount: 1 } },
-      }),
+    load: () => Promise.resolve({ status: 'ok', progress: stored }),
     save,
+    merge: (imported) => {
+      stored = mergeCampaignProgressForTest(stored, imported);
+      return Promise.resolve({ status: 'ok', progress: stored });
+    },
     clear: () => Promise.resolve({ status: 'ok' }),
   };
   return { repository, save };

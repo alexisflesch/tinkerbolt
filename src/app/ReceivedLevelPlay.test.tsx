@@ -17,6 +17,7 @@ import { encodeShareFragment } from '../infrastructure/level-share/level-share-c
 
 import {
   testReceivedRepository,
+  mergeCampaignProgressForTest,
   renderStorageReady,
   storageAction,
   activeStoredRowCount,
@@ -86,6 +87,7 @@ const storedEntry = async (id: string): Promise<ReceivedLevel | null> => {
 };
 
 const createProgressRepository = () => {
+  let stored: CampaignProgress = {};
   const save = vi.fn((_progress: CampaignProgress) => {
     void _progress;
     return Promise.resolve({ status: 'ok' as const });
@@ -97,8 +99,12 @@ const createProgressRepository = () => {
       await save(updated);
       return { status: 'ok', progress: updated };
     },
-    load: () => Promise.resolve({ status: 'ok', progress: {} }),
+    load: () => Promise.resolve({ status: 'ok', progress: stored }),
     save,
+    merge: (imported) => {
+      stored = mergeCampaignProgressForTest(stored, imported);
+      return Promise.resolve({ status: 'ok', progress: stored });
+    },
     clear: () => Promise.resolve({ status: 'ok' }),
   };
   return { repository, save };

@@ -5,7 +5,10 @@ de niveaux. Les refactorings sans effet visible ne nécessitent pas d’entrée.
 
 ## [Non publié]
 
-Aucun changement notable pour le moment.
+- Les Paramètres reprennent les panneaux papier et plan bleu de l’atelier.
+  Deux boutons permettent d’exporter et d’importer les niveaux résolus et les
+  records de campagne ; l’import conserve les meilleurs résultats déjà présents.
+- Le texte de la feuille d’accueil reste droit pour améliorer sa netteté.
 
 ## [0.3.0] - 2026-10-06
 

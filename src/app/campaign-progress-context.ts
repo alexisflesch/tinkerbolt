@@ -4,6 +4,7 @@ import type { CampaignProgress, ChallengeHint } from '../application/progression
 import type {
   ProgressRepositoryErrorCode,
   ProgressSaveResult,
+  ProgressVictoryResult,
 } from '../application/progression/progress-repository';
 
 interface CampaignLevelProgressView {
@@ -23,6 +24,7 @@ interface CampaignProgressContextValue {
   readonly storageWarning: 'invalid-data-backed-up' | null;
   readonly recordCampaignSuccess: (levelId: string, objectsUsed: number) => void;
   /** U11: « Remettre la progression à zéro » from `/settings`; an error leaves it as it was. */
+  readonly importCampaignProgress: (progress: CampaignProgress) => Promise<ProgressVictoryResult>;
   readonly resetCampaignProgress: () => Promise<ProgressSaveResult>;
   /**
    * Dev-mode override (`pnpm dev`, injected from `main.tsx`): every level

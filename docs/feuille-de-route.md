@@ -46,6 +46,11 @@ pas les anciens lots produit. `art/` est conservé intégralement.
 
 ## Ordre restant
 
+Demande directe de l’auteur du 6 octobre 2026, avant C7d : harmoniser
+Paramètres avec l’identité de l’application, y ajouter import/export de la
+progression et redresser les textes de l’accueil. Implémentation UI4 ci-dessous ;
+validation visuelle auteur attendue.
+
 Demande directe de l’auteur du 5 octobre 2026, avant la reprise de C7d :
 rapprocher les cartes communes de niveaux de `art/campaign/campaign-v2.png`.
 Papier irrégulier et ombré, très faible inclinaison dans les deux sens,
@@ -243,6 +248,36 @@ déplacer. Aucun de ces exemples n’est déjà un contrat technique.
 la Forge, éventuel relais et hébergement. F1 le fixe avant F2.
 
 ## Journal des lots de maintenance
+
+### UI4 — Paramètres et netteté de l’accueil — 6 octobre 2026 — validation visuelle attendue
+
+Demande directe de l’auteur, avant C7d. Paramètres utilise les textures papier
+et plan bleu des panneaux de Mes niveaux, en deux colonnes desktop, avec un
+bloc À propos commun. La feuille d’accueil est redressée ; le contenu n’est
+plus sous une transformation de rotation.
+
+Import/export de progression : fichier JSON `progress` v1 (résolutions et
+records, sans constructions, créations ni préférences), validation Zod partagée
+avec IndexedDB et limite 256 Kio avant parsing. L’import fusionne atomiquement
+les résultats en conservant les meilleurs records, attend les écritures précédentes
+et actualise la campagne seulement après succès. Aucun changement de format ni
+migration ; contrat dans l’amendement de l’ADR 0011. Les autres tables restent
+intactes. Erreurs de fichier, lecture et stockage affichées sans faux succès.
+
+Rouge puis vert : codec absent, méthode de fusion absente, boutons absents et
+rotation héritée du titre. Tests du codec, de la lecture, du repository et du
+contexte (refus, ordre victoire/import/reset), E2E export → reset → réimport,
+fusion, conservation du pseudo, refus de fichiers et déblocages après rechargement.
+Luna `xhigh` a adapté les repositories simulés des anciens tests et couvert le
+refus des clés réservées sans modifier les assertions existantes.
+
+Captures après disparition du splash, inspectées à 1440 × 900 et 1280 × 720 :
+`tmp/settings-home/settings-*.png` et `home-*.png`. Validation visuelle auteur
+attendue. Gate finale `pnpm check` verte : 1 516 tests Vitest dans 122 fichiers,
+contrôles statiques/contenu, build et 121 E2E v1. Le sélecteur de jauge des nouveaux
+E2E utilise son nom accessible et attend la fin du splash ; les assertions de
+conservation des records restent inchangées. Log :
+`/tmp/tinkerbolt-settings-check.log`. Aucun commit ni push ; C7d reste séparé.
 
 ### TEST1 — Stabiliser la gate Playwright standard — 6 octobre 2026 — livré
 

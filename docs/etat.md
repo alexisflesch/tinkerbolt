@@ -45,6 +45,11 @@ Les sources auteur dans `levels/` et les niveaux embarqués dans
 - Identité graphique de l’accueil, du plateau, des pages et Paramètres,
   Bolt à l’accueil/victoire, catalogue par catégories, poignées harmonisées,
   splash avec progression réelle, sept niveaux annoncés et cadrage utile.
+- Paramètres reprend les panneaux papier/bleu de Mes niveaux et propose
+  import/export des résolutions et records de campagne en JSON validé ; la fusion
+  conserve les meilleurs résultats. Constructions, créations et préférences ne
+  sont pas exportées. Le texte de la feuille d’accueil reste droit (UI4,
+  validation visuelle auteur attendue).
 - Démo de l’accueil issue de `levels/demo-landing.json`, simulée sans panier,
   balle rouge ni bascule, hors campagne et progression. Pause/reprise, suspension
   hors onglet visible et réduction des animations ; validation visuelle auteur attendue.
@@ -139,13 +144,15 @@ le push doit être lancé depuis une machine authentifiée auprès du dépôt Gi
 
 ## Dernière gate
 
-Après les lots MACH1, CARTES1, UI3, ATL1 et UI1 du 6 octobre, la validation
-visuelle de l’auteur reste attendue pour les lots concernés. Aucun commit ni
-push n’a été effectué.
+Après UI4 et les lots MACH1, CARTES1, UI3, ATL1 et UI1 du 6 octobre, la validation
+visuelle de l’auteur reste attendue pour les lots concernés. Captures Paramètres
+et accueil aux viewports 1440 × 900 et 1280 × 720 dans `tmp/settings-home/`.
+Aucun commit ni push n’a été effectué pour UI4.
 
-`pnpm check` après TEST1, le 6 octobre 2026 : **vert** — contrôle
+`pnpm check` après UI4, le 6 octobre 2026 : **vert** — contrôle
 version/changelog, typecheck, lint, formatage, Knip, validation de neuf niveaux
-embarqués, **1503 tests Vitest dans 119 fichiers**, build et **118 E2E v1**.
-Playwright 1.63.0 utilise son Chromium 153 standard ; les tests d’en-tête et du
-catalogue qui échouaient avec l’ancien Chromium passent sans override.
-Validation visuelle de l’auteur toujours attendue pour les lots concernés.
+embarqués, **1516 tests Vitest dans 122 fichiers**, build et **121 E2E v1**.
+Playwright 1.63.0 utilise son Chromium 153 standard, sans configuration externe.
+Log : `/tmp/tinkerbolt-settings-check.log`. L’exécution a nécessité de sortir du
+bac à sable pour les canaux locaux TSX et le serveur d’aperçu ; aucune dépendance
+ni commande du dépôt n’a été changée pour contourner cette restriction.

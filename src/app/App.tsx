@@ -73,6 +73,7 @@ interface AppProps {
 }
 
 const unavailableProgressRepository: ProgressRepository = {
+  merge: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
   load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
   save: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
   recordVictory: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),

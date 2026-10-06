@@ -11,6 +11,7 @@ import type {
   ProgressRepository,
   ProgressRepositoryErrorCode,
   ProgressSaveResult,
+  ProgressVictoryResult,
 } from '../application/progression/progress-repository';
 import { campaignChapters } from '../content/embedded-levels';
 import { CampaignProgressContext } from './campaign-progress-context';
@@ -109,6 +110,30 @@ export function CampaignProgressProvider({
     return result;
   }, [repository, constructionWrites]);
 
+  const importCampaignProgress = useCallback(
+    (imported: CampaignProgress): Promise<ProgressVictoryResult> => {
+      const current = generation.current;
+      const task = writes.current.then(async (): Promise<ProgressVictoryResult> => {
+        const result = await repository
+          .merge(imported)
+          .catch(() => ({ status: 'error' as const, code: 'storage-unavailable' as const }));
+        if (generation.current === current) {
+          if (result.status === 'ok') {
+            progressRef.current = result.progress;
+            setProgress(result.progress);
+            setKnown(true);
+            setStorageWarning(result.warning ?? null);
+          }
+          setStorageError(result.status === 'error' ? result.code : null);
+        }
+        return result;
+      });
+      writes.current = task.then(() => undefined);
+      return task;
+    },
+    [repository],
+  );
+
   const levels = useMemo(() => {
     const entries = campaignChapters.flatMap(({ levels: chapterLevels }) =>
       chapterLevels.map((level) => {
@@ -147,6 +172,7 @@ export function CampaignProgressProvider({
       storageWarning,
       recordCampaignSuccess,
       resetCampaignProgress,
+      importCampaignProgress,
       unlockAllLevels,
     }),
     [
@@ -156,6 +182,7 @@ export function CampaignProgressProvider({
       progress,
       recordCampaignSuccess,
       resetCampaignProgress,
+      importCampaignProgress,
       storageError,
       storageWarning,
       unlockAllLevels,

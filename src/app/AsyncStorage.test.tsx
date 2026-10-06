@@ -29,6 +29,7 @@ import type {
 import { embeddedLevels, embeddedWorkshopDocument } from '../content/embedded-levels';
 import { App } from './App';
 import { orderDraftWrite } from './draft-writes';
+import { mergeCampaignProgressForTest } from './storage-test-fixture';
 
 const source = embeddedLevels[0];
 const levelTwo = embeddedLevels[1];
@@ -67,13 +68,20 @@ const receivedRepository = (
   delete: () => Promise.resolve({ status: 'ok' }),
   ...overrides,
 });
-const progressRepository = (overrides: Partial<ProgressRepository> = {}): ProgressRepository => ({
-  load: () => Promise.resolve({ status: 'ok', progress: {} }),
-  save: () => Promise.resolve({ status: 'ok' }),
-  recordVictory: () => Promise.resolve({ status: 'ok', progress: {} }),
-  clear: () => Promise.resolve({ status: 'ok' }),
-  ...overrides,
-});
+const progressRepository = (overrides: Partial<ProgressRepository> = {}): ProgressRepository => {
+  let progress = {};
+  return {
+    load: () => Promise.resolve({ status: 'ok', progress }),
+    save: () => Promise.resolve({ status: 'ok' }),
+    recordVictory: () => Promise.resolve({ status: 'ok', progress }),
+    merge: (imported) => {
+      progress = mergeCampaignProgressForTest(progress, imported);
+      return Promise.resolve({ status: 'ok', progress });
+    },
+    clear: () => Promise.resolve({ status: 'ok' }),
+    ...overrides,
+  };
+};
 const preferencesRepository = (
   overrides: Partial<PreferencesRepository> = {},
 ): PreferencesRepository => ({

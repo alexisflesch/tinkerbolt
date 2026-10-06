@@ -8,9 +8,15 @@ import type {
   PreferencesRepository,
 } from '../application/preferences/preferences-repository';
 import type { ProgressRepository } from '../application/progression/progress-repository';
+import type { CampaignProgress } from '../application/progression';
 import { campaignChapters } from '../content/embedded-levels';
 import { appBuildInfo } from './build-info';
-import { renderStorageReady, storageAction, testDatabase } from './storage-test-fixture';
+import {
+  mergeCampaignProgressForTest,
+  renderStorageReady,
+  storageAction,
+  testDatabase,
+} from './storage-test-fixture';
 import { App } from './App';
 
 const progressKey = 'progress:campaign';
@@ -393,14 +399,15 @@ describe('Paramètres — remettre la progression à zéro (U11, ADR 0010, ADR 0
   });
 
   it('dit que rien n’a été effacé quand le stockage refuse, sans exception', async () => {
+    let stored: CampaignProgress = { [firstLevelId]: { resolved: true, bestObjectCount: 2 } };
     const repository: ProgressRepository = {
       recordVictory: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
-      load: () =>
-        Promise.resolve({
-          status: 'ok',
-          progress: { [firstLevelId]: { resolved: true, bestObjectCount: 2 } },
-        }),
+      load: () => Promise.resolve({ status: 'ok', progress: stored }),
       save: () => Promise.resolve({ status: 'ok' }),
+      merge: (imported) => {
+        stored = mergeCampaignProgressForTest(stored, imported);
+        return Promise.resolve({ status: 'ok', progress: stored });
+      },
       clear: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
     };
     await renderSettings({ progressRepository: repository });

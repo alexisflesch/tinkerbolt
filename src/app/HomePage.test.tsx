@@ -7,18 +7,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CampaignProgress } from '../application/progression';
 import type { ProgressRepository } from '../application/progression/progress-repository';
 import { embeddedLevels } from '../content/embedded-levels';
-import { renderStorageReady, storageAction } from './storage-test-fixture';
+import {
+  mergeCampaignProgressForTest,
+  renderStorageReady,
+  storageAction,
+} from './storage-test-fixture';
 import { App } from './App';
 
-const createRepository = (progress: CampaignProgress = {}): ProgressRepository => ({
-  recordVictory: () => Promise.resolve({ status: 'ok', progress }),
-  load: () => Promise.resolve({ status: 'ok', progress }),
-  save: vi.fn((_progress: CampaignProgress) => {
-    void _progress;
-    return Promise.resolve({ status: 'ok' as const });
-  }),
-  clear: () => Promise.resolve({ status: 'ok' }),
-});
+const createRepository = (initial: CampaignProgress = {}): ProgressRepository => {
+  let progress = initial;
+  return {
+    recordVictory: () => Promise.resolve({ status: 'ok', progress }),
+    load: () => Promise.resolve({ status: 'ok', progress }),
+    save: vi.fn((_progress: CampaignProgress) => {
+      void _progress;
+      return Promise.resolve({ status: 'ok' as const });
+    }),
+    merge: (imported) => {
+      progress = mergeCampaignProgressForTest(progress, imported);
+      return Promise.resolve({ status: 'ok', progress });
+    },
+    clear: () => Promise.resolve({ status: 'ok' }),
+  };
+};
 
 const HERO_TITLE = 'Amène la balle jusqu’au panier.';
 
@@ -235,6 +246,7 @@ describe('Accueil TinkerBolt (V7, maquette validée en V4)', () => {
           recordVictory: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
           load: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
           save: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
+          merge: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
           clear: () => Promise.resolve({ status: 'error', code: 'storage-unavailable' }),
         }}
       />,
